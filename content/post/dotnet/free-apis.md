@@ -2,7 +2,7 @@
 title: 一些免费易用的 API 汇总
 date: 2024-04-10
 tags:
-    - API
+    - api
 ---
 
 ## PokéAPI
