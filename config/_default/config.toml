@@ -1,5 +1,5 @@
 # Change baseurl before deploy
-baseurl = "https://byjrk.github.io"
+baseurl = "https://blog.coldwind.top"
 languageCode = "zh-cn"
 paginate = 8
 title = "寒流の编程笔记"
@@ -13,4 +13,4 @@ defaultContentLanguage = "zh-cn"
 hasCJKLanguage = true
 
 # Change it to your Disqus shortname before using
-disqusShortname = "hugo-theme-stack"
+# disqusShortname = "hugo-theme-stack"
