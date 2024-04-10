@@ -1,11 +1,11 @@
 ---
 title: EntityFrameworkCore 最小入门指南
+slug: efcore-minimal-example
 date: 2024-03-13
 tags:
     - ef
     - csharp
     - .net
-    
 ---
 
 ## 安装 EntityFrameworkCore
