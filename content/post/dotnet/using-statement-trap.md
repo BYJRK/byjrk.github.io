@@ -3,7 +3,6 @@ title: "Using 语句的陷阱"
 slug: "using-statement-trap"
 description: "using 语句的减少一层缩进的新用法在释放资源时可能会有意想不到的效果，不能无脑使用。"
 date: 2024-04-11
-draft: true
 tags:
     - dotnet
     - csharp
