@@ -5,7 +5,7 @@ date: 2024-03-13
 tags:
     - ef
     - csharp
-    - .net
+    - dotnet
 ---
 
 ## 安装 EntityFrameworkCore
