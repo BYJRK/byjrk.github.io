@@ -2,6 +2,7 @@
 title: "Using 语句的陷阱"
 slug: "using-statement-trap"
 description: "using 语句的减少一层缩进的新用法在释放资源时可能会有意想不到的效果，不能无脑使用。"
+image: https://s2.loli.net/2024/04/11/lbxw86NGjKJyqAv.jpg
 date: 2024-04-11
 tags:
     - dotnet
@@ -97,7 +98,7 @@ finally
 新的语法会将 `using` 语句下面的内容（准确地说，是当前作用域中剩下的代码）包装在 `try-finally` 语句中，从而保证代码在离开作用域前，会释放资源。
 
 {{<notice info>}}
-仔细观察的话还可以发现，`Dispose` 的顺序是从内到外的，或者说先被 `using` 的对象会后被释放。
+仔细观察还可以发现，`Dispose` 的顺序是从内到外的，或者说先被 `using` 的对象会后被释放。
 {{</notice>}}
 
 ## 新语法的陷阱

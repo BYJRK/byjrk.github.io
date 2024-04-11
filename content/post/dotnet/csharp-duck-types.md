@@ -2,6 +2,7 @@
 title: "C# 鸭子类型汇总"
 slug: "csharp-duck-types"
 description: "这篇文章我们来总结一下 C# 中的那些不为人知的鸭子类型。"
+image: https://s2.loli.net/2024/04/11/SIRUGn7OflgEWsr.jpg
 date: 2024-04-04
 tags:
     - csharp
@@ -114,7 +115,7 @@ await 1.0;
 
 ### `using` 语句
 
-如果你认为 `using` 语句只能用于实现了 `IDisposable` 接口的类，那你终于基本上对了一次。的确，对于一个 `class` 类型的对象，如果它没有实现 `IDisposable` 接口，那么即便它拥有 `public void Dispose()` 方法，它仍然是无法使用 `using` 语句的（编译器会提示，这个对象必须可以隐式转换为 `IDisposable` 对象）。
+如果你认为 `using` 语句只能用于实现了 `IDisposable` 接口的类，那你终于基本上对了一次😂。的确，对于一个 `class` 类型的对象，如果它没有实现 `IDisposable` 接口，那么即便它拥有 `public void Dispose()` 方法，它仍然是无法使用 `using` 语句的（编译器会提示，这个对象必须可以隐式转换为 `IDisposable` 对象）。
 
 但是！
 
@@ -205,7 +206,7 @@ var (year, month, day) = dt;
 
 此外，如果我们声明一个 `record` 类型，那么底层也会为我们提供元组拆分的功能。
 
-实际上，元组拆分的语法是通过 `Deconstruct` 方法实现的。只要类中有一个名为 `Deconstruct` 的方法，返回一个元组，那么这个类就可以使用元组拆分语法。
+实际上，元组拆分的语法是通过 `Deconstruct` 方法实现的。只要类中有一个名为 `Deconstruct` 的方法，并且用 `out` 进行传参，那么这个类就可以使用元组拆分语法。
 
 ```csharp
 class Point2d

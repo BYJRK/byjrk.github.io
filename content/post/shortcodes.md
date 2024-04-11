@@ -1,10 +1,16 @@
 ---
-title: Shortcodes
-description: Useful shortcodes that can be used in Markdown
+title: "Stack 主题的特殊用法汇总"
+slug: shortcodes
+description: Useful tips & tricks that can be used in Stack theme
 date: 2023-08-25 00:00:00+0000
 draft: True
 tags:
     - misc
+links:
+  - title: GitHub
+    description: GitHub is the world's largest software development platform.
+    website: https://github.com
+    image: https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png
 ---
 
 For more details, check out the [documentation](https://stack.jimmycai.com/writing/shortcodes).
