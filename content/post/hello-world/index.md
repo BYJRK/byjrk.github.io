@@ -12,7 +12,7 @@ weight: 1       # You can add weight to some posts to override the default sorti
 欢迎来到我的博客！
 
 {{< notice info >}}
-这里目前仍在施工中，一些文章是滥竽充数的，只是为了查看整体的效果。等待时机成熟，我会向大家正式宣传。
+这里目前仍在施工中。**一些文章是滥竽充数的，只是为了查看整体的效果，不代表最终品质**。等待时机成熟，我会向大家正式宣传。
 {{< /notice >}}
 
 虽然博客的绝大多数所需功能都已经实现，但仍有一些细节需要微调，比如：
@@ -23,4 +23,6 @@ weight: 1       # You can add weight to some posts to override the default sorti
 - [ ] 去掉文章小标题前面的“#”号
 - [ ] 添加 RSS 订阅功能
 - [x] 添加一个「关于我」页面
-- [x 添加评论区
+- [x] 添加评论区
+
+更多关于我的信息，请查看[关于我](/about)页面。

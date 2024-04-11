@@ -1,6 +1,6 @@
 ---
 title: 关于我
-slug: about-me
+slug: about
 menu:
     main: 
         weight: 4
@@ -21,4 +21,8 @@ readingTime: false
 - Go
 - ……
 
-平时的我喜欢学习语言（英语、日语），吹吹半音阶口琴，玩一些单机游戏，偶尔可能还会<a href="https://yunwuyue.xyz" target="_blank">发点牢骚</a>。学习语言之余，有时我还会翻译一些外语内容，和大家分享一些有趣的东西。
+平时的我喜欢学习语言（English、日本語），吹吹半音阶口琴，玩一些单机游戏，偶尔可能还会<a href="https://yunwuyue.xyz" target="_blank">发点牢骚</a>。学习语言之余，有时我还会翻译一些外语内容，和大家分享一些有趣的东西。
+
+如果你想联系我，可以发送邮件到：[albedo.shade@proton.me](mailto:albedo.shade@proton.me)
+
+当然，你也可以在本博客任意评论区留言。你也可以在 B 站视频评论区留言，或者私信我。
