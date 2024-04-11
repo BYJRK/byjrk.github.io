@@ -39,6 +39,28 @@ For more details, check out the [documentation](https://stack.jimmycai.com/writi
 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 {{< /quote >}}
 
+## Admonition
+
+{{< notice note >}}
+This is a note
+
+1. First item
+2. Second item
+3. Third item
+{{< /notice >}}
+
+{{< notice tip >}} This is a tip {{< /notice >}}
+
+{{< notice example >}} This is an example {{< /notice >}}
+
+{{< notice question >}} This is a question {{< /notice >}}
+
+{{< notice info >}} This is an info {{< /notice >}}
+
+{{< notice warning >}} This is a warning {{< /notice >}}
+
+{{< notice error >}} This is an error {{< /notice >}}
+
 -----
 
 > Photo by [Codioful](https://unsplash.com/@codioful) on [Unsplash](https://unsplash.com/photos/WDSN62Qdxuk)
