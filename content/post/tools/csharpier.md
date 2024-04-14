@@ -2,6 +2,7 @@
 title: "C# 代码格式化工具 CSharpier 上手指南"
 slug: csharpier
 date: 2023-10-16
+image: https://s2.loli.net/2024/04/14/qZeQzEnSDvWpPyL.png
 tags:
     - csharp
     - tool

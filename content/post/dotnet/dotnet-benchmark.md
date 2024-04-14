@@ -1,5 +1,6 @@
 ---
 title: 'Benchmark.NET 简易指南'
+description: 这篇文章是凑数的
 slug: benchmark-dotnet
 date: 2024-03-05T10:52:37+08:00
 tags: 
@@ -17,7 +18,7 @@ tags:
 
 - Class
   - `MemoryDiagnoser`：查看内存分配情况（有一个 bool 参数，表示是否显示 GC 的情况）
-  - `SimpleJob`：可以设置 `RuntimeMoniker.Net60`
+  - `SimpleJob`：可以设置 .NET 版本，如 `RuntimeMoniker.Net60`
   - `Orderer(SummaryOrderPolicy.SlowestToFastest)`：输出结果的排序
   - `RankColumn`：为结果表格添加一列 Rank，表示当前行的方法的排名
 - Method

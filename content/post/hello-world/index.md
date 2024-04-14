@@ -26,3 +26,5 @@ weight: 1       # You can add weight to some posts to override the default sorti
 - [x] 添加评论区
 
 更多关于我的信息，请查看[关于我](/about)页面。
+
+封面图片使用 [Fooocus](https://github.com/lllyasviel/Fooocus) 绘制。
