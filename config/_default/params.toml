@@ -12,6 +12,9 @@ customText = ""
 published = "Jan 02, 2006"
 lastUpdated = "Jan 02, 2006 15:04 MST"
 
+[cloudflare]
+token = "33ec0787c9c944adaa40262a752889b9"
+
 [sidebar]
 # emoji = "🍥"
 subtitle = "记录那些稍纵即逝的编程心得。"
