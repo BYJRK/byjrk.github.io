@@ -24,3 +24,12 @@ url = "https://space.bilibili.com/600592"
 
 [social.params]
 icon = "brand-bilibili"
+
+[[social]]
+identifier = "rss"
+weight = 3
+name = "RSS"
+url = "/index.xml"
+
+[social.params]
+icon = "rss"
