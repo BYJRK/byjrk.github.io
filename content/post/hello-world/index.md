@@ -12,7 +12,7 @@ weight: 1       # You can add weight to some posts to override the default sorti
 欢迎来到我的博客！
 
 {{< notice info >}}
-这里目前仍在施工中。**一些文章是滥竽充数的，只是为了查看整体的效果，不代表最终品质**。
+《CommunityToolkit.Mvvm 社区工具包从入门到精通》系列教程已经基本完工！你可以[点击这里](https://mvvm.coldwind.top/)查看。
 {{< /notice >}}
 
 虽然博客的绝大多数所需功能都已经实现，但仍有一些细节需要微调，比如：
@@ -20,7 +20,8 @@ weight: 1       # You can add weight to some posts to override the default sorti
 - [ ] 右侧目录宽度太大
 - [ ] 博客正文的标题下方不需要显示摘要内容
 - [ ] 添加用户访问统计
-- [ ] 去掉文章小标题前面的“#”号
+- [ ] 阅读时长的计算并不十分准确
+- [x] 去掉文章小标题前面的“#”号
 - [x] 添加 RSS 订阅功能
 - [x] 添加一个「关于我」页面
 - [x] 添加评论区
