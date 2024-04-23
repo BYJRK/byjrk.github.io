@@ -21,3 +21,12 @@ $bg-color-notice-error-title: #f443361a !default;
 $bg-color-notice-error-content: #ef53501a !default;
 
 @import "notices";
+
+a.anchor {
+    opacity: 0.05;
+    transition: opacity 0.075s;
+}
+
+a.anchor:hover {
+    opacity: 0.75;
+}
