@@ -6,14 +6,14 @@ date: 2024-02-18
 image: cover.jpg
 tags:
     - misc
-weight: 1       # You can add weight to some posts to override the default sorting (date descending)
+weight: 1
 ---
 
 欢迎来到我的博客！
 
-{{< notice info >}}
-《CommunityToolkit.Mvvm 社区工具包从入门到精通》系列教程已经基本完工！你可以[点击这里](https://mvvm.coldwind.top/)查看。
-{{< /notice >}}
+{{<notice info>}}
+《CommunityToolkit.Mvvm 社区工具包从入门到精通》系列教程已经基本完工！你可以[点击这里](https://mvvm.coldwind.top/)查看，并在评论区留下你的宝贵意见。
+{{</notice>}}
 
 虽然博客的绝大多数所需功能都已经实现，但仍有一些细节需要微调，比如：
 
