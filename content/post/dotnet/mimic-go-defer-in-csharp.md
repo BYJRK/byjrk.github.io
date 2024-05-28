@@ -172,6 +172,12 @@ async Task SearchMovieAsync(string movieName)
 }
 ```
 
+{{<notice info>}}
+这里有一个需要注意的点：我们是在 ViewModel 中对 `IsBusy` 进行的操作，并借助绑定来控制前台进度条的显示。**这无形中帮助我们解决了一个重要的隐患：线程安全**。即便我们在非 UI 线程中修改了 `IsBusy` 属性，由于 WPF 的数据绑定机制，我们也不用担心线程安全问题。
+
+但如果是在 View 中去直接操作进度条的 `Visibility` 属性，那么就可能需要我们自己去处理线程安全问题了。常见的方式比如使用 `Dispatcher`，或参考我的这篇 [关于使用 IProgress 的文章](/posts/how-to-report-progress)。
+{{</notice>}}
+
 相信大家立刻就能够明白这个方式有多么简洁和优雅了。我们通过使用 `using` 关键字，保证了当前作用域中的代码不管是正常执行还是异常退出，都会在离开作用域之前执行 `IsBusy = false` 这一行代码。这样我们就不用在方法中多次设置 `IsBusy` 属性了。
 
 甚至我们还能再稍微优化一下，比如使用一个自动属性来简化 `BusyDisposable` 的实例化：
