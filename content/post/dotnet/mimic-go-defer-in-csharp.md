@@ -8,6 +8,7 @@ tags:
     - dotnet
     - csharp
     - wpf
+    - syntax
 ---
 
 ## Go 中的 defer 大概是怎么一回事
