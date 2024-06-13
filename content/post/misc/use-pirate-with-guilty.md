@@ -1,9 +1,8 @@
 ---
 title: "可以用盗版，但是要怀着愧疚的心"
 slug: "use-pirate-with-guilty"
-description: 
+description: "国内盗版泛滥，正版意识缺乏。我们该如何看待使用盗版软件这一问题？"
 image: https://s2.loli.net/2024/04/20/9dsCD7m1FJBQKZz.png
-draft: true
 date: 2022-12-25
 tags:
     - misc
