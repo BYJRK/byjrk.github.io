@@ -1,9 +1,9 @@
 ---
 title: "使用 AsyncBarrier 来等待并同步多个异步任务"
 slug: "use-asyncbarrier-to-sync-tasks"
-description: 
-date: 2024-08-11T11:48:18+08:00
-draft: true
+description: 如果在异步编程开发过程中遇到了多个异步任务需要在某一时刻全部完成后才能继续执行的情形，那么可以使用 AsyncBarrier 来帮助我们实现这一需求。这篇文章我们就来学习一下如何将它用在一个 WPF 项目中。
+image: https://s2.loli.net/2024/08/11/15IEZJX7fCq4caS.jpg
+date: 2024-08-11
 tags:
     - dotnet
     - csharp
