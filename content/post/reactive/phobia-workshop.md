@@ -120,7 +120,7 @@ Jim 的逻辑也很简单，只要听到了 “Sorry” 这个词（不用管是
 using var agent2 = bus.Messages
     .Where(m => m.Content == "sorry") // 无论是谁说的 sorry
     .Delay(reactionDelay)
-    .Subscribe(_ => bus.SendMessage(new("agent2", "sorry")));
+    .Subscribe(_ => bus.SendMessage(new("agent2", "aagh")));
 ```
 
 ### Karen
