@@ -10,6 +10,8 @@ tags:
     - string
 ---
 
+> 本文有对应的视频教程：[哔哩哔哩](https://www.bilibili.com/video/BV1mx4y1x7JR/)
+
 C# 为字符串相关的操作提供了很多实用的类，比如：
 
 - `string`

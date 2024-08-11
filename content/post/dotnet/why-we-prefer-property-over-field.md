@@ -10,6 +10,8 @@ tags:
     - syntax
 ---
 
+> 本文有对应的视频教程：[哔哩哔哩](https://www.bilibili.com/video/BV1ci421v7Uc/)
+
 在写 C# 代码的时候，我们经常会写诸如此类的自动属性：
 
 ```c#
