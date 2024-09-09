@@ -2,6 +2,7 @@
 title: "WPF 设计时特性的实用技巧"
 slug: "wpf-design-time-attributes"
 description: "本文介绍 WPF 中设计时特性的使用方法，让我们在设计时就能看到更多的效果，显著提高开发效率和体验。"
+image: 
 date: 2024-09-07
 tags:
     - dotnet
@@ -18,10 +19,6 @@ tags:
 - `Window` 的 `DataContext` 因为在后台代码中赋值，导致在设计时无法看到绑定的数据，也无法在书写绑定时获得智能提示。
 
 如果你有过这样的困扰，那么这篇文章一定可以帮助到你。本文将介绍 WPF 中设计时特性的使用方法，让你在设计时就能看到更多的效果，提高开发效率。
-
-{{<notice warning>}}
-这篇文章是占坑用的，内容尚未完善。待相关视频发布后，会及时更新。
-{{</notice>}}
 
 ## 基本概念
 
@@ -61,6 +58,11 @@ tags:
         <Run Text="World!" FontWeight="Bold" />
     </d:TextBlock.Inlines>
 </TextBlock>
+<!-- 或者也可以用下面将要介绍的虚拟控件 -->
+<d:TextBlock>
+    <Run Text="Hello, " />
+    <d:Run Text="World!" FontWeight="Bold"/>
+</d:TextBlock>
 ```
 
 其他类似的例子还比如：
@@ -88,6 +90,14 @@ tags:
 还有一种常见情形是，我们设计的软件会让用户去手动添加一些项目，从而动态生成对应的控件。对于这样的情况，我们如果能在设计时就看到一些“生成”出来的控件，那么就能更好地开发样式了。此时，我们添加一些虚拟控件，就可以满足这个需求。
 
 ```xml
+<ItemsControl>
+    <d:ItemsControl.Items>
+            <Button Content="Button 1" />
+            <Button Content="Button 2" />
+            <Button Content="Button 3" />
+    </d:ItemsControl.Items>
+</ItemsControl>
+```
 
 ## 设计时数据
 
@@ -98,6 +108,8 @@ tags:
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}">
 </Window>
 ```
+
+`DesignInstance` 还有一个 `IsDesignTimeCreatable` 属性，用于指定是否在设计时创建实例。如果设为 `True`，还将能够在设计时看到一些 ViewModel 中属性的默认值。
 
 或者我们还可以这样写，并且还可以在 XAML 中定制一些 ViewModel 的属性的初始值，便于观察效果：
 
