@@ -30,3 +30,41 @@ a.anchor {
 a.anchor:hover {
     opacity: 0.75;
 }
+
+.right-sidebar {
+    width: 75%;
+    display: none;
+    flex-direction: column;
+    gap: var(--widget-separation);
+
+    &.sticky {
+        top: 0;
+    }
+
+    @include respond(lg) {
+        padding-top: var(--main-top-padding);
+        padding-bottom: var(--main-top-padding);
+    }
+}
+
+.container {
+    &.extended {
+        @include respond(md) {
+            max-width: 1024px;
+            --left-sidebar-max-width: 20%;
+            --right-sidebar-max-width: 20%;
+        }
+
+        @include respond(lg) {
+            max-width: 1280px;
+            --left-sidebar-max-width: 20%;
+            --right-sidebar-max-width: 20%;
+        }
+
+        @include respond(xl) {
+            max-width: 1536px;
+            --left-sidebar-max-width: 15%;
+            --right-sidebar-max-width: 20%;
+        }
+    }
+}
