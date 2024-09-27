@@ -1,5 +1,5 @@
 ---
-title: 如何高效读取 XML 中所需的内容
+title: 如何高效读取 XML 中所需的内容（其一）
 slug: "xml-read-benchmarks"
 description: "最近工作中遇到了读写 XML 的情形，所以索性简单探索了一下相关的性能调优，在这里把我的发现分享给大家。"
 image: https://s2.loli.net/2024/08/18/d1TnRLiG4kOu6j8.jpg
@@ -7,7 +7,8 @@ date: 2024-08-18
 tags:
     - csharp
     - dotnet
-    - string
+    - xml
+    - benchmark
 ---
 
 这次我们用于演示的 XML 文本来自 W3Schools 的[一个样例](https://www.w3schools.com/xml/simple.xml)，内容如下：
