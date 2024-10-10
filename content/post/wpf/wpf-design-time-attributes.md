@@ -6,7 +6,6 @@ image:
 date: 2024-09-07
 tags:
     - dotnet
-    - csharp
     - wpf
 ---
 
