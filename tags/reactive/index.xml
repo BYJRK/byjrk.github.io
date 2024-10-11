@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>reactive on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/reactive/</link><description>Recent content in reactive on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Sat, 20 Apr 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/reactive/index.xml" rel="self" type="application/rss+xml"/><item><title>如何用 Rx.NET 来模拟情景短剧《恐惧症研讨会》</title><link>https://blog.coldwind.top/posts/phobia-workshop/</link><pubDate>Sat, 20 Apr 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/phobia-workshop/</guid><description>&lt;img src="https://s2.loli.net/2024/04/20/tAq5BvYJUkQgReP.png" alt="Featured image of post 如何用 Rx.NET 来模拟情景短剧《恐惧症研讨会》" />&lt;p>不知道大家有没有看过这样一个视频：&lt;/p>
+&lt;div class="video-wrapper">
+&lt;iframe src="https://player.bilibili.com/player.html?as_wide=1&amp;amp;high_quality=1&amp;amp;page=1&amp;bvid=BV1js411z7wf&amp;mute=0&amp;autoplay=0"
+scrolling="no"
+frameborder="no"
+framespacing="0"
+allowfullscreen="true"
+>
+&lt;/iframe>
+&lt;/div>
+&lt;p>（或者也可以看油管上的 &lt;a class="link" href="https://www.youtube.com/watch?v=koNwUeG-iKE" target="_blank" rel="noopener"
+>原版视频&lt;/a>）&lt;/p>
+&lt;p>我们这次就来玩一玩，如何使用 Rx.NET 来模拟这个情景短剧。&lt;/p>
+&lt;h2 id="简单分析每个人的特点">
+简单分析每个人的特点
+&lt;a href="#%e7%ae%80%e5%8d%95%e5%88%86%e6%9e%90%e6%af%8f%e4%b8%aa%e4%ba%ba%e7%9a%84%e7%89%b9%e7%82%b9" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>通过观看视频，我们发现一共有五个人，且这五个人各有特点，或者说各自会在特定情况下触发自己的恐惧症，进而发出尖叫。具体来说：&lt;/p>
+&lt;ul>
+&lt;li>Lee：对于“AAGH!”（也就是“啊！”）这个词很恐惧
+&lt;ul>
+&lt;li>且这个词必须是别人发出的&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Jim：对于道歉（或者说“Sorry”这个词）很恐惧
+&lt;ul>
+&lt;li>自己说的这个词也是可以触发自己的恐惧的&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Karen：对于重复的话很恐惧
+&lt;ul>
+&lt;li>两句重复的话必须都是别人说的&lt;/li>
+&lt;li>（从视频中来看，两句重复的话甚至可以间隔很久，但这种情况难以概括，且视频中其他时候也有重复的话，但并未触发，所以存在 BUG，暂不考虑）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Ronnie：对于“尴尬的沉默”很恐惧
+&lt;ul>
+&lt;li>也就是说，如果有人说了一句话，然后没有人回应，那么就会触发&lt;/li>
+&lt;li>前提是必须有人先说了什么，而不是打一开始就没有任何人说话&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>Tim：对于别人因恐惧而发出尖叫这件事情感到恐惧，并且会吓出狗叫
+&lt;ul>
+&lt;li>当其他有人发出了恐惧的尖叫，且之后不再会有人尖叫时，他会发出狗叫&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>大家可以多看几遍视频，尤其是靠近后面的地方，他们连续相继发出尖叫声的片段，看看我上面总结的是否正确。&lt;/p>
+&lt;p>那么现在，我们就来模拟这个情景短剧吧。&lt;/p>
+&lt;h2 id="实现消息总线">
+实现消息总线
+&lt;a href="#%e5%ae%9e%e7%8e%b0%e6%b6%88%e6%81%af%e6%80%bb%e7%ba%bf" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在模拟每个人之前，我们首先需要有一个消息总线（Message Bus）。有了这个总线，我们才可以既让所有人都能够收听（或者说订阅）这个总线，又可以向总线中发送消息。&lt;/p>
+&lt;p>在 Rx.NET 中，&lt;code>Subject&lt;/code> 这个类型就是典型的能够实现这一效果的类。我们可以使用它来实现一个消息总线。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">MessageBus&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">IDisposable&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 内部使用一个 Subject 对象&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">Subject&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Message&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">_subject&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 当用于订阅时，返回一个 IObservable&amp;lt;Message&amp;gt; 对象，从而封装类中其他功能&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">IObservable&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Message&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">Messages&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">_subject&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AsObservable&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 当向总线中发送消息时，底层会调用 Subject 的 OnNext 方法&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">SendMessage&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Message&lt;/span> &lt;span class="n">message&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">message&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Content&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="s">&amp;#34;exit&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_subject&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnCompleted&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_subject&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnNext&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">message&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">Dispose&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_subject&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Dispose&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>同时，我们也需要一个 &lt;code>Message&lt;/code> 类型，从而更好地让接下来的每一个人都能够判断自己是否应该发出尖叫。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="k">record&lt;/span> &lt;span class="nc">Message&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span> &lt;span class="n">Sender&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Content&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>是的，一个简单的记录类就可以满足我们的需求了。上面的每一个人，它们都只需要知道是谁说的，以及说了什么，就足够处理各自的逻辑了。&lt;/p>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">在 &lt;a class="link" href="https://github.com/reactiveui/ReactiveUI" target="_blank" rel="noopener"
+>ReactiveUI&lt;/a> 中也有一个消息总线类型，名叫 &lt;code>MessageBus&lt;/code>。它底层其实就是借助了一个 &lt;code>Subject&lt;/code> 来实现的。当然实际上更复杂一些，因为还有与 &lt;code>Scheduler&lt;/code> 相关的一些额外的功能，所以它额外实现了一个名为 &lt;a class="link" href="https://github.com/reactiveui/ReactiveUI/blob/main/src/ReactiveUI/Scheduler/ScheduledSubject.cs" target="_blank" rel="noopener"
+>&lt;code>ScheduledSubject&lt;/code>&lt;/a> 的类。&lt;/div>
+&lt;/div>
+&lt;h2 id="模拟每一个人的行为">
+模拟每一个人的行为
+&lt;a href="#%e6%a8%a1%e6%8b%9f%e6%af%8f%e4%b8%80%e4%b8%aa%e4%ba%ba%e7%9a%84%e8%a1%8c%e4%b8%ba" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>下面我们就根据出场顺序，来逐个模拟每个人的逻辑吧。这里为了简单起见，我们统一使用小写，并且为所有人设定了一个固定的延迟。此外，还需要给两个人额外的时间：&lt;/p>
+&lt;ul>
+&lt;li>给 Ronnie 一个时间阈值，表示多久之后才会被她判定为长时间的“尴尬的沉默”&lt;/li>
+&lt;li>给 Tim 一个相对更长一点的延迟，从而让他能够在确保其他人都不再尖叫之后，才发出自己的狗叫&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">reactionDelay&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">TimeSpan&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">FromSeconds&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">0.25&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">ronnieSilenceThreshold&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">TimeSpan&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">FromSeconds&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">3&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">timReactionDelay&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">TimeSpan&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">FromSeconds&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">0.3&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>同时，我们还要声明前面定义好的消息总线：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">bus&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">MessageBus&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这样，每个人都能够收听这个总线，并且自己发出的尖叫也要传递给这个总线。&lt;/p>
+&lt;h3 id="lee">
+Lee
+&lt;a href="#lee" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>Lee 的逻辑很简单，只要听到了别人说的 “AAGH!”这个词，就会发出尖叫。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">agent1&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Messages&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Where&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">m&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">m&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Content&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="s">&amp;#34;aagh&amp;#34;&lt;/span> &lt;span class="p">&amp;amp;&amp;amp;&lt;/span> &lt;span class="n">m&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Sender&lt;/span> &lt;span class="p">!=&lt;/span> &lt;span class="s">&amp;#34;agent1&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="c1">// 别人说的 aagh&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Delay&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">reactionDelay&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Subscribe&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SendMessage&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;agent1&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;aagh&amp;#34;&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="jim">
+Jim
+&lt;a href="#jim" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>Jim 的逻辑也很简单，只要听到了 “Sorry” 这个词（不用管是谁发出的），就会发出尖叫。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">agent2&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Messages&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Where&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">m&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">m&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Content&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="s">&amp;#34;sorry&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="c1">// 无论是谁说的 sorry&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Delay&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">reactionDelay&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Subscribe&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SendMessage&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;agent2&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;aagh&amp;#34;&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="karen">
+Karen
+&lt;a href="#karen" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>Karen 的逻辑稍微复杂一点，因为她需要判断两句话是否重复，且都是别人说的。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">agent3&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Messages&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Buffer&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Where&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ms&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">ms&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Count&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="m">2&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">&amp;amp;&amp;amp;&lt;/span> &lt;span class="n">ms&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="n">Content&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">ms&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="n">Content&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">&amp;amp;&amp;amp;&lt;/span> &lt;span class="n">ms&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="n">Sender&lt;/span> &lt;span class="p">!=&lt;/span> &lt;span class="s">&amp;#34;agent3&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">&amp;amp;&amp;amp;&lt;/span> &lt;span class="n">ms&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="n">Sender&lt;/span> &lt;span class="p">!=&lt;/span> &lt;span class="s">&amp;#34;agent3&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Delay&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">reactionDelay&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Subscribe&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SendMessage&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;agent3&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;aagh&amp;#34;&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="ronnie">
+Ronnie
+&lt;a href="#ronnie" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>Ronnie 的逻辑也比较简单，只要有人说了话，然后没有人回应，就会发出尖叫。那么 Rx 中的 &lt;code>Throttle&lt;/code> 方法简直就是为她量身打造的。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">agent4&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Messages&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Throttle&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ronnieSilenceThreshold&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// .Delay(reactionDelay) // 这句也可以不写&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Subscribe&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SendMessage&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;agent4&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;aagh&amp;#34;&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="tim">
+Tim
+&lt;a href="#tim" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>Tim 其实与 Ronnie 类似，只要有人发出了尖叫，然后之后没有人再发出尖叫，他就会发出狗叫。所以我们同样可以使用 &lt;code>Throttle&lt;/code> 方法来实现。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">agent5&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Messages&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Where&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">m&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">m&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Content&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="s">&amp;#34;aagh&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Throttle&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">timReactionDelay&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Subscribe&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SendMessage&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;agent5&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;woof&amp;#34;&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="放在一起">
+放在一起
+&lt;a href="#%e6%94%be%e5%9c%a8%e4%b8%80%e8%b5%b7" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>最后，我们将上面的代码放在一起。为了能够便于观察效果，我们使用 LINQPad 来简单地搭建这段代码，并且额外添加一个 &lt;code>agent&lt;/code>，代表用户的输入。这样，我们就可以通过输入来模拟每个人的发言了。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">bool&lt;/span> &lt;span class="n">isCompleted&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kc">false&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Messages&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Subscribe&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">m&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">$&amp;#34;[{DateTime.Now: mm:ss.fff}] {m.Sender}: {m.Content}&amp;#34;&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">()&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">isCompleted&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kc">true&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">while&lt;/span> &lt;span class="p">(!&lt;/span>&lt;span class="n">isCompleted&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">input&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Util&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ReadLine&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SendMessage&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;user&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">input&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>完整版代码可以查看&lt;a class="link" href="https://gist.github.com/BYJRK/6912c2df1e6dd5b705400c006b6be627" target="_blank" rel="noopener"
+>这个 Gist&lt;/a>。&lt;/p>
+&lt;p>运行看一下效果。输入“aagh”会看到：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">[55:26.812] user: aagh
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[55:27.112] agent1: aagh
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[55:27.362] agent3: aagh
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[55:27.625] agent1: aagh
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[55:27.941] agent5: woof
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>输入“sorry”会看到：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">[55:34.985] user: sorry
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[55:35.236] agent2: aagh
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[55:35.499] agent1: aagh
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[55:35.763] agent3: aagh
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[55:36.027] agent1: aagh
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">[55:36.339] agent5: woof
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>通过这个简单的例子，我们可以看到，Rx.NET 的强大之处。我们可以通过简单的类似 LINQ 一样的查询，就能够实现复杂的逻辑。这种方式不仅简洁，而且易于理解，同时也能够很好地处理异步的情况。试想一下，如果我们使用传统的多线程或异步编程来实现相同的效果，那么代码会变得多么复杂。&lt;/p>
+&lt;p>之后我们还会继续探讨 Rx.NET 的更多用法，用更多实际且生动的例子，来帮助大家更好地理解这个库。&lt;/p></description></item></channel></rss>
