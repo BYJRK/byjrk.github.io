@@ -1,7 +1,8 @@
 ---
 title: "如何高效读取 XML 中所需的内容（其二）"
 slug: "xml-read-benchmarks-2"
-description: 
+description: 这次我们的任务是读取 XML 文档中位于具体位置的某个节点的值，看看 LINQ to XML、XPath 以及正则表达式之间的性能差别。
+image: https://s2.loli.net/2024/10/11/XEIhj5DuRS6Wa4n.png
 date: 2024-09-27
 tags:
     - csharp

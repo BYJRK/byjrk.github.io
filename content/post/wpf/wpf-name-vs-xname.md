@@ -2,6 +2,7 @@
 title: "WPF 中的 Name 与 x:Name 究竟是什么区别？"
 slug: "wpf-name-vs-xname"
 description: 在 WPF 开发中，可以给控件添加 Name 或 x:Name 属性。那么这二者究竟是什么区别呢？本文就来简单探讨一下。
+image: https://s2.loli.net/2024/10/11/jurJoLAN3aWBgZ6.png
 date: 2024-10-10
 tags:
     - dotnet
@@ -12,7 +13,7 @@ tags:
 
 ## 本质不同，但却又几乎相同
 
-别的暂且不谈，我们只关注 XML 文档的命名空间，不难发现 `Name` 和 `x:Name` 的区别在于前者没有命名空间，而后者有一个 `x` 命名空间。这也就意味着，`Name` 是没有命名空间的，而 `x:Name` 是有命名空间的。具体来说，通常我们的一个 XAML 文件的根元素是这样的：
+别的暂且不谈，我们只关注 XML 文档的命名空间，不难发现 `Name` 和 `x:Name` 的区别在于前者没有命名空间，而后者有一个 `x` 命名空间。具体来说，通常我们的一个 XAML 文件的根元素是这样的：
 
 ```xml
 <Window x:Class="WpfApp1.MainWindow"
