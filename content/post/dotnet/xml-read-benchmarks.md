@@ -86,6 +86,7 @@ public List<string> XDocument()
 {
     var doc = XDocument.Parse(testXml);
     return doc
+        .Root
         .Elements("food")
         .Select(node => node.Element("name")!.Value)
         .ToList();
