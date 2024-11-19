@@ -28,4 +28,6 @@ weight: 1
 
 更多关于我的信息，请查看[关于我](/about)页面。
 
+本博客使用 Hugo 搭建，主题是 [Stack](https://github.com/CaiJimmy/hugo-theme-stack)。
+
 封面图片使用 [Fooocus](https://github.com/lllyasviel/Fooocus) 绘制。
