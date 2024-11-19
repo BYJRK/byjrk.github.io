@@ -16,7 +16,7 @@ lastUpdated = "Jan 02, 2006 15:04 MST"
 token = "33ec0787c9c944adaa40262a752889b9"
 
 [sidebar]
-# emoji = "🍥"
+emoji = "☘️"
 subtitle = "记录那些稍纵即逝的编程心得。"
 
 [sidebar.avatar]
@@ -139,6 +139,8 @@ lightTheme = "light"
 darkTheme = "dark"
 reactionsEnabled = 1
 emitMetadata = 0
+loading = "lazy"
+lang = "zh-CN"
 
 [comments.gitalk]
 owner = ""
