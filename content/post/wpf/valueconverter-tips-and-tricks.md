@@ -1,5 +1,5 @@
 ---
-title: "WPF 中值转换器（ValueConverter）的实用技巧"
+title: "WPF 值转换器（ValueConverter）的一些实用技巧"
 slug: "valueconverter-tips-and-tricks"
 description: "在这篇文章中，我们会介绍 WPF 的值转换器的一些实用技巧，相信一定可以帮助大家更好地使用值转换器，提高开发效率。"
 image: https://s2.loli.net/2024/12/18/dRbx2KJsHOmaPG7.webp
