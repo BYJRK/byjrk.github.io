@@ -320,7 +320,13 @@ Thread.CurrentThread.CurrentUICulture = culture;
 或者，我们还可以用 `OverrideMetadata` 的方式来修改全局的 `Language` 属性：
 
 ```csharp
-FrameworkElement.LanguageProperty.OverrideMetadata(typeof(FrameworkElement), new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)));
+FrameworkElement.LanguageProperty
+    .OverrideMetadata(
+        typeof(FrameworkElement),
+        new FrameworkPropertyMetadata(
+            XmlLanguage.GetLanguage(CultureInfo.CurrentCulture.IetfLanguageTag)
+        )
+    );
 ```
 
 这样就可以让值转换器获取到当前的 `CultureInfo`，从而实现多语言支持。
