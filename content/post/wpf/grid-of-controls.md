@@ -1,7 +1,8 @@
 ---
 title: "如何在 WPF 中高效布局多行多列的控件"
 slug: "grid-of-controls"
-description: "探讨 WPF 中的简单而又不简单的布局问题：如何实现多行多列的控件布局？"
+description: "探讨一个 WPF 中的简单而又不简单的布局问题：如何高效地实现多行多列的控件布局？"
+image: https://s2.loli.net/2024/12/26/kgGyXcYIlnMNpSr.jpg
 date: 2024-12-26
 tags:
     - dotnet
