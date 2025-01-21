@@ -81,9 +81,9 @@ tags:
         <Style TargetType="StackPanel">
             <Setter Property="Orientation" Value="Horizontal" />
         </Style>
-        <style TargetType="Label">
+        <Style TargetType="Label">
             <Setter Property="Width" Value="50" />
-        </style>
+        </Style>
     </UniformGrid.Resources>
     <StackPanel>
         <Label Content="1" />
