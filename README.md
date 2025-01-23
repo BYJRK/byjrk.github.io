@@ -11,4 +11,4 @@ This blog also borrows the admonition feature from the theme [Coder](https://git
 ## Commands
 
 - `hugo server -D`: Run the development server
-- `hugo new [content] posts/<post-name>.md`: Create a new post
+- `hugo new [content] post/<post-name>.md`: Create a new post

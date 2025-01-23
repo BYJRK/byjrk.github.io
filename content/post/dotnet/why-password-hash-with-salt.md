@@ -1,7 +1,7 @@
 ---
 title: "为什么用户密码需要加盐哈希后再存储？"
 slug: "why-password-hash-with-salt"
-description: 密码的加盐哈希是一个老生常谈的话题，但是为什么要这样做呢？这篇文章将会从不安全到安全，逐步这样做的目的及必要性。
+description: 密码的加盐哈希是一个老生常谈的话题，但是为什么要这样做呢？本文将会从不安全到安全，逐步探讨密码加盐哈希的必要性及实现方式。
 date: 2025-01-23
 image: https://s2.loli.net/2025/01/23/oNjelMu2p8TmiPw.jpg
 math: true
@@ -179,7 +179,7 @@ class PasswordHelper
 
 但可惜的是，道高一尺，魔高一丈。PBKDF2 算法虽然提高了黑客暴力破解密码的难度，但是仍然有一些问题。比如，黑客可以使用 GPU 或 FPGA 来加速计算，从而提高暴力破解的速度。所以，我们还有更加重量级的选手：BCrypt 及 Argon2。
 
-我们先来看 BCrypt。在 C# 中，我们可以使用 `BCrypt.Net-Next` 库来实现 BCrypt 算法。我们只需要稍加修改我们的 `PasswordHelper` 类即可：
+我们先来看 BCrypt。在 C# 中，我们可以使用 [`BCrypt.Net-Next`](https://github.com/BcryptNet/bcrypt.net) 库来实现 BCrypt 算法。我们只需要稍加修改我们的 `PasswordHelper` 类即可：
 
 ```csharp
 class PasswordHelper
@@ -209,6 +209,8 @@ class PasswordHelper
 {{</ notice >}}
 
 但黑客依旧不甘心，还是打算借助其强大的硬件来尝试破解。这样，我们就要请出我们的杀手锏：Argon2 算法了。
+
+与 BCrypt 一样，Argon2 同样没有 .NET 标准库的实现。我们可以选择一些第三方的库，比如 [`Konscious.Security.Cryptography`](https://github.com/kmaragon/Konscious.Security.Cryptography)。
 
 这里，我们不演示实际在 C# 中该如何使用 Argon2 算法，因为它与 BCrypt 在开发体验及数据模型和表的设计上是类似的。但是，Argon2 算法在安全性上要比 BCrypt 更胜一筹。它引入了更多防止黑客暴力破解的机制，比如内存硬化、并行计算等。它可以轻易调整破解的时间、内存成本以及并行度。
 
