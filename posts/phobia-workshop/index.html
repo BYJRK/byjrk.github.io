@@ -1,0 +1,181 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="这次我们来尝试使用响应式编程来模拟一个有趣的情景短剧《恐惧症研讨会》，并借助各种运算符来模拟剧中每个人的行为逻辑"><title>如何用 Rx.NET 来模拟情景短剧《恐惧症研讨会》</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/phobia-workshop/><link rel=stylesheet href=/scss/style.min.1c23b918464bb2496e1a2213c41eb0c981727449579f04f0b661ec26d1435c17.css><meta property='og:title' content="如何用 Rx.NET 来模拟情景短剧《恐惧症研讨会》"><meta property='og:description' content="这次我们来尝试使用响应式编程来模拟一个有趣的情景短剧《恐惧症研讨会》，并借助各种运算符来模拟剧中每个人的行为逻辑"><meta property='og:url' content='https://blog.coldwind.top/posts/phobia-workshop/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='csharp'><meta property='article:tag' content='reactive'><meta property='article:published_time' content='2024-04-20T00:00:00+00:00'><meta property='article:modified_time' content='2024-04-20T00:00:00+00:00'><meta property='og:image' content='https://s2.loli.net/2024/04/20/tAq5BvYJUkQgReP.png'><meta name=twitter:title content="如何用 Rx.NET 来模拟情景短剧《恐惧症研讨会》"><meta name=twitter:description content="这次我们来尝试使用响应式编程来模拟一个有趣的情景短剧《恐惧症研讨会》，并借助各种运算符来模拟剧中每个人的行为逻辑"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://s2.loli.net/2024/04/20/tAq5BvYJUkQgReP.png'><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu_8d4398be70dacda7.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#简单分析每个人的特点>简单分析每个人的特点</a></li><li><a href=#实现消息总线>实现消息总线</a></li><li><a href=#模拟每一个人的行为>模拟每一个人的行为</a><ol><li><a href=#lee>Lee</a></li><li><a href=#jim>Jim</a></li><li><a href=#karen>Karen</a></li><li><a href=#ronnie>Ronnie</a></li><li><a href=#tim>Tim</a></li></ol></li><li><a href=#放在一起>放在一起</a></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/posts/phobia-workshop/><img src=https://s2.loli.net/2024/04/20/tAq5BvYJUkQgReP.png loading=lazy alt="Featured image of post 如何用 Rx.NET 来模拟情景短剧《恐惧症研讨会》"></a></div><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/phobia-workshop/>如何用 Rx.NET 来模拟情景短剧《恐惧症研讨会》</a></h2><h3 class=article-subtitle>这次我们来尝试使用响应式编程来模拟一个有趣的情景短剧《恐惧症研讨会》，并借助各种运算符来模拟剧中每个人的行为逻辑</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published>Apr 20, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 4 分钟</time></div></footer></div></header><section class=article-content><p>不知道大家有没有看过这样一个视频：</p><div class=video-wrapper><iframe src="https://player.bilibili.com/player.html?as_wide=1&amp;high_quality=1&amp;page=1&bvid=BV1js411z7wf&mute=0&autoplay=0" scrolling=no frameborder=no framespacing=0 allowfullscreen></iframe></div><p>（或者也可以看油管上的 <a class=link href="https://www.youtube.com/watch?v=koNwUeG-iKE" target=_blank rel=noopener>原版视频</a>）</p><p>我们这次就来玩一玩，如何使用 Rx.NET 来模拟这个情景短剧。</p><h2 id=简单分析每个人的特点>简单分析每个人的特点
+<a href=#%e7%ae%80%e5%8d%95%e5%88%86%e6%9e%90%e6%af%8f%e4%b8%aa%e4%ba%ba%e7%9a%84%e7%89%b9%e7%82%b9 class=anchor>&para;</a></h2><p>通过观看视频，我们发现一共有五个人，且这五个人各有特点，或者说各自会在特定情况下触发自己的恐惧症，进而发出尖叫。具体来说：</p><ul><li>Lee：对于“AAGH!”（也就是“啊！”）这个词很恐惧<ul><li>且这个词必须是别人发出的</li></ul></li><li>Jim：对于道歉（或者说“Sorry”这个词）很恐惧<ul><li>自己说的这个词也是可以触发自己的恐惧的</li></ul></li><li>Karen：对于重复的话很恐惧<ul><li>两句重复的话必须都是别人说的</li><li>（从视频中来看，两句重复的话甚至可以间隔很久，但这种情况难以概括，且视频中其他时候也有重复的话，但并未触发，所以存在 BUG，暂不考虑）</li></ul></li><li>Ronnie：对于“尴尬的沉默”很恐惧<ul><li>也就是说，如果有人说了一句话，然后没有人回应，那么就会触发</li><li>前提是必须有人先说了什么，而不是打一开始就没有任何人说话</li></ul></li><li>Tim：对于别人因恐惧而发出尖叫这件事情感到恐惧，并且会吓出狗叫<ul><li>当其他有人发出了恐惧的尖叫，且之后不再会有人尖叫时，他会发出狗叫</li></ul></li></ul><p>大家可以多看几遍视频，尤其是靠近后面的地方，他们连续相继发出尖叫声的片段，看看我上面总结的是否正确。</p><p>那么现在，我们就来模拟这个情景短剧吧。</p><h2 id=实现消息总线>实现消息总线
+<a href=#%e5%ae%9e%e7%8e%b0%e6%b6%88%e6%81%af%e6%80%bb%e7%ba%bf class=anchor>&para;</a></h2><p>在模拟每个人之前，我们首先需要有一个消息总线（Message Bus）。有了这个总线，我们才可以既让所有人都能够收听（或者说订阅）这个总线，又可以向总线中发送消息。</p><p>在 Rx.NET 中，<code>Subject</code> 这个类型就是典型的能够实现这一效果的类。我们可以使用它来实现一个消息总线。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MessageBus</span> <span class=p>:</span> <span class=n>IDisposable</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// 内部使用一个 Subject 对象</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>Subject</span><span class=p>&lt;</span><span class=n>Message</span><span class=p>&gt;</span> <span class=n>_subject</span> <span class=p>=</span> <span class=k>new</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// 当用于订阅时，返回一个 IObservable&lt;Message&gt; 对象，从而封装类中其他功能</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>IObservable</span><span class=p>&lt;</span><span class=n>Message</span><span class=p>&gt;</span> <span class=n>Messages</span> <span class=p>=&gt;</span> <span class=n>_subject</span><span class=p>.</span><span class=n>AsObservable</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// 当向总线中发送消息时，底层会调用 Subject 的 OnNext 方法</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>SendMessage</span><span class=p>(</span><span class=n>Message</span> <span class=n>message</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>message</span><span class=p>.</span><span class=n>Content</span> <span class=p>==</span> <span class=s>&#34;exit&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=n>_subject</span><span class=p>.</span><span class=n>OnCompleted</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=k>else</span>
+</span></span><span class=line><span class=cl>            <span class=n>_subject</span><span class=p>.</span><span class=n>OnNext</span><span class=p>(</span><span class=n>message</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Dispose</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_subject</span><span class=p>.</span><span class=n>Dispose</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>同时，我们也需要一个 <code>Message</code> 类型，从而更好地让接下来的每一个人都能够判断自己是否应该发出尖叫。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=k>record</span> <span class=nc>Message</span><span class=p>(</span><span class=kt>string</span> <span class=n>Sender</span><span class=p>,</span> <span class=kt>string</span> <span class=n>Content</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><p>是的，一个简单的记录类就可以满足我们的需求了。上面的每一个人，它们都只需要知道是谁说的，以及说了什么，就足够处理各自的逻辑了。</p><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content>在 <a class=link href=https://github.com/reactiveui/ReactiveUI target=_blank rel=noopener>ReactiveUI</a> 中也有一个消息总线类型，名叫 <code>MessageBus</code>。它底层其实就是借助了一个 <code>Subject</code> 来实现的。当然实际上更复杂一些，因为还有与 <code>Scheduler</code> 相关的一些额外的功能，所以它额外实现了一个名为 <a class=link href=https://github.com/reactiveui/ReactiveUI/blob/main/src/ReactiveUI/Scheduler/ScheduledSubject.cs target=_blank rel=noopener><code>ScheduledSubject</code></a> 的类。</div></div><h2 id=模拟每一个人的行为>模拟每一个人的行为
+<a href=#%e6%a8%a1%e6%8b%9f%e6%af%8f%e4%b8%80%e4%b8%aa%e4%ba%ba%e7%9a%84%e8%a1%8c%e4%b8%ba class=anchor>&para;</a></h2><p>下面我们就根据出场顺序，来逐个模拟每个人的逻辑吧。这里为了简单起见，我们统一使用小写，并且为所有人设定了一个固定的延迟。此外，还需要给两个人额外的时间：</p><ul><li>给 Ronnie 一个时间阈值，表示多久之后才会被她判定为长时间的“尴尬的沉默”</li><li>给 Tim 一个相对更长一点的延迟，从而让他能够在确保其他人都不再尖叫之后，才发出自己的狗叫</li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kt>var</span> <span class=n>reactionDelay</span> <span class=p>=</span> <span class=n>TimeSpan</span><span class=p>.</span><span class=n>FromSeconds</span><span class=p>(</span><span class=m>0.25</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>ronnieSilenceThreshold</span> <span class=p>=</span> <span class=n>TimeSpan</span><span class=p>.</span><span class=n>FromSeconds</span><span class=p>(</span><span class=m>3</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>timReactionDelay</span> <span class=p>=</span> <span class=n>TimeSpan</span><span class=p>.</span><span class=n>FromSeconds</span><span class=p>(</span><span class=m>0.3</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><p>同时，我们还要声明前面定义好的消息总线：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kt>var</span> <span class=n>bus</span> <span class=p>=</span> <span class=k>new</span> <span class=n>MessageBus</span><span class=p>();</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样，每个人都能够收听这个总线，并且自己发出的尖叫也要传递给这个总线。</p><h3 id=lee>Lee
+<a href=#lee class=anchor>&para;</a></h3><p>Lee 的逻辑很简单，只要听到了别人说的 “AAGH!”这个词，就会发出尖叫。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=k>using</span> <span class=nn>var</span> <span class=n>agent1</span> <span class=p>=</span> <span class=n>bus</span><span class=p>.</span><span class=n>Messages</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Where</span><span class=p>(</span><span class=n>m</span> <span class=p>=&gt;</span> <span class=n>m</span><span class=p>.</span><span class=n>Content</span> <span class=p>==</span> <span class=s>&#34;aagh&#34;</span> <span class=p>&amp;&amp;</span> <span class=n>m</span><span class=p>.</span><span class=n>Sender</span> <span class=p>!=</span> <span class=s>&#34;agent1&#34;</span><span class=p>)</span> <span class=c1>// 别人说的 aagh</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Delay</span><span class=p>(</span><span class=n>reactionDelay</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Subscribe</span><span class=p>(</span><span class=n>_</span> <span class=p>=&gt;</span> <span class=n>bus</span><span class=p>.</span><span class=n>SendMessage</span><span class=p>(</span><span class=k>new</span><span class=p>(</span><span class=s>&#34;agent1&#34;</span><span class=p>,</span> <span class=s>&#34;aagh&#34;</span><span class=p>)));</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=jim>Jim
+<a href=#jim class=anchor>&para;</a></h3><p>Jim 的逻辑也很简单，只要听到了 “Sorry” 这个词（不用管是谁发出的），就会发出尖叫。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=k>using</span> <span class=nn>var</span> <span class=n>agent2</span> <span class=p>=</span> <span class=n>bus</span><span class=p>.</span><span class=n>Messages</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Where</span><span class=p>(</span><span class=n>m</span> <span class=p>=&gt;</span> <span class=n>m</span><span class=p>.</span><span class=n>Content</span> <span class=p>==</span> <span class=s>&#34;sorry&#34;</span><span class=p>)</span> <span class=c1>// 无论是谁说的 sorry</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Delay</span><span class=p>(</span><span class=n>reactionDelay</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Subscribe</span><span class=p>(</span><span class=n>_</span> <span class=p>=&gt;</span> <span class=n>bus</span><span class=p>.</span><span class=n>SendMessage</span><span class=p>(</span><span class=k>new</span><span class=p>(</span><span class=s>&#34;agent2&#34;</span><span class=p>,</span> <span class=s>&#34;aagh&#34;</span><span class=p>)));</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=karen>Karen
+<a href=#karen class=anchor>&para;</a></h3><p>Karen 的逻辑稍微复杂一点，因为她需要判断两句话是否重复，且都是别人说的。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=k>using</span> <span class=nn>var</span> <span class=n>agent3</span> <span class=p>=</span> <span class=n>bus</span><span class=p>.</span><span class=n>Messages</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Buffer</span><span class=p>(</span><span class=m>2</span><span class=p>,</span> <span class=m>1</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Where</span><span class=p>(</span><span class=n>ms</span> <span class=p>=&gt;</span> <span class=n>ms</span><span class=p>.</span><span class=n>Count</span> <span class=p>==</span> <span class=m>2</span>
+</span></span><span class=line><span class=cl>        <span class=p>&amp;&amp;</span> <span class=n>ms</span><span class=p>[</span><span class=m>0</span><span class=p>].</span><span class=n>Content</span> <span class=p>==</span> <span class=n>ms</span><span class=p>[</span><span class=m>1</span><span class=p>].</span><span class=n>Content</span>
+</span></span><span class=line><span class=cl>        <span class=p>&amp;&amp;</span> <span class=n>ms</span><span class=p>[</span><span class=m>0</span><span class=p>].</span><span class=n>Sender</span> <span class=p>!=</span> <span class=s>&#34;agent3&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=p>&amp;&amp;</span> <span class=n>ms</span><span class=p>[</span><span class=m>1</span><span class=p>].</span><span class=n>Sender</span> <span class=p>!=</span> <span class=s>&#34;agent3&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Delay</span><span class=p>(</span><span class=n>reactionDelay</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Subscribe</span><span class=p>(</span><span class=n>_</span> <span class=p>=&gt;</span> <span class=n>bus</span><span class=p>.</span><span class=n>SendMessage</span><span class=p>(</span><span class=k>new</span><span class=p>(</span><span class=s>&#34;agent3&#34;</span><span class=p>,</span> <span class=s>&#34;aagh&#34;</span><span class=p>)));</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=ronnie>Ronnie
+<a href=#ronnie class=anchor>&para;</a></h3><p>Ronnie 的逻辑也比较简单，只要有人说了话，然后没有人回应，就会发出尖叫。那么 Rx 中的 <code>Throttle</code> 方法简直就是为她量身打造的。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kt>var</span> <span class=n>agent4</span> <span class=p>=</span> <span class=n>bus</span><span class=p>.</span><span class=n>Messages</span>
+</span></span><span class=line><span class=cl>   <span class=p>.</span><span class=n>Throttle</span><span class=p>(</span><span class=n>ronnieSilenceThreshold</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>   <span class=c1>// .Delay(reactionDelay) // 这句也可以不写</span>
+</span></span><span class=line><span class=cl>   <span class=p>.</span><span class=n>Subscribe</span><span class=p>(</span><span class=n>_</span> <span class=p>=&gt;</span> <span class=n>bus</span><span class=p>.</span><span class=n>SendMessage</span><span class=p>(</span><span class=k>new</span><span class=p>(</span><span class=s>&#34;agent4&#34;</span><span class=p>,</span> <span class=s>&#34;aagh&#34;</span><span class=p>)));</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=tim>Tim
+<a href=#tim class=anchor>&para;</a></h3><p>Tim 其实与 Ronnie 类似，只要有人发出了尖叫，然后之后没有人再发出尖叫，他就会发出狗叫。所以我们同样可以使用 <code>Throttle</code> 方法来实现。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kt>var</span> <span class=n>agent5</span> <span class=p>=</span> <span class=n>bus</span><span class=p>.</span><span class=n>Messages</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Where</span><span class=p>(</span><span class=n>m</span> <span class=p>=&gt;</span> <span class=n>m</span><span class=p>.</span><span class=n>Content</span> <span class=p>==</span> <span class=s>&#34;aagh&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Throttle</span><span class=p>(</span><span class=n>timReactionDelay</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Subscribe</span><span class=p>(</span><span class=n>_</span> <span class=p>=&gt;</span> <span class=n>bus</span><span class=p>.</span><span class=n>SendMessage</span><span class=p>(</span><span class=k>new</span><span class=p>(</span><span class=s>&#34;agent5&#34;</span><span class=p>,</span> <span class=s>&#34;woof&#34;</span><span class=p>)));</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=放在一起>放在一起
+<a href=#%e6%94%be%e5%9c%a8%e4%b8%80%e8%b5%b7 class=anchor>&para;</a></h2><p>最后，我们将上面的代码放在一起。为了能够便于观察效果，我们使用 LINQPad 来简单地搭建这段代码，并且额外添加一个 <code>agent</code>，代表用户的输入。这样，我们就可以通过输入来模拟每个人的发言了。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kt>bool</span> <span class=n>isCompleted</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>bus</span><span class=p>.</span><span class=n>Messages</span>
+</span></span><span class=line><span class=cl>    <span class=p>.</span><span class=n>Subscribe</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=n>m</span> <span class=p>=&gt;</span> <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>$&#34;[{DateTime.Now: mm:ss.fff}] {m.Sender}: {m.Content}&#34;</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>        <span class=p>()</span> <span class=p>=&gt;</span> <span class=n>isCompleted</span> <span class=p>=</span> <span class=kc>true</span>
+</span></span><span class=line><span class=cl>    <span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>while</span> <span class=p>(!</span><span class=n>isCompleted</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>input</span> <span class=p>=</span> <span class=n>Util</span><span class=p>.</span><span class=n>ReadLine</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=n>bus</span><span class=p>.</span><span class=n>SendMessage</span><span class=p>(</span><span class=k>new</span><span class=p>(</span><span class=s>&#34;user&#34;</span><span class=p>,</span> <span class=n>input</span><span class=p>));</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>完整版代码可以查看<a class=link href=https://gist.github.com/BYJRK/6912c2df1e6dd5b705400c006b6be627 target=_blank rel=noopener>这个 Gist</a>。</p><p>运行看一下效果。输入“aagh”会看到：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>[55:26.812] user: aagh
+</span></span><span class=line><span class=cl>[55:27.112] agent1: aagh
+</span></span><span class=line><span class=cl>[55:27.362] agent3: aagh
+</span></span><span class=line><span class=cl>[55:27.625] agent1: aagh
+</span></span><span class=line><span class=cl>[55:27.941] agent5: woof
+</span></span></code></pre></td></tr></table></div></div><p>输入“sorry”会看到：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>[55:34.985] user: sorry
+</span></span><span class=line><span class=cl>[55:35.236] agent2: aagh
+</span></span><span class=line><span class=cl>[55:35.499] agent1: aagh
+</span></span><span class=line><span class=cl>[55:35.763] agent3: aagh
+</span></span><span class=line><span class=cl>[55:36.027] agent1: aagh
+</span></span><span class=line><span class=cl>[55:36.339] agent5: woof
+</span></span></code></pre></td></tr></table></div></div><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p>通过这个简单的例子，我们可以看到，Rx.NET 的强大之处。我们可以通过简单的类似 LINQ 一样的查询，就能够实现复杂的逻辑。这种方式不仅简洁，而且易于理解，同时也能够很好地处理异步的情况。试想一下，如果我们使用传统的多线程或异步编程来实现相同的效果，那么代码会变得多么复杂。</p><p>之后我们还会继续探讨 Rx.NET 的更多用法，用更多实际且生动的例子，来帮助大家更好地理解这个库。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/csharp/>csharp</a>
+<a href=/tags/reactive/>reactive</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2025 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.29.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.1e9a3bafd846ced4c345d084b355fb8c7bae75701c338f8a1f8a82c780137826.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>misc on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/misc/</link><description>Recent content in misc on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Mon, 23 Sep 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/misc/index.xml" rel="self" type="application/rss+xml"/><item><title>你好，世界！</title><link>https://blog.coldwind.top/posts/hello-world/</link><pubDate>Sun, 18 Feb 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/hello-world/</guid><description>&lt;img src="https://blog.coldwind.top/posts/hello-world/cover.jpg" alt="Featured image of post 你好，世界！" />&lt;p>欢迎来到我的博客！&lt;/p>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">《CommunityToolkit.Mvvm 社区工具包从入门到精通》系列教程已经基本完工！你可以&lt;a class="link" href="https://mvvm.coldwind.top/" target="_blank" rel="noopener"
+>点击这里&lt;/a>查看，并在评论区留下你的宝贵意见。&lt;/div>
+&lt;/div>
+&lt;p>虽然博客的绝大多数所需功能都已经实现，但仍有一些细节需要微调，比如：&lt;/p>
+&lt;ul>
+&lt;li>&lt;input disabled="" type="checkbox"> 右侧目录宽度太大&lt;/li>
+&lt;li>&lt;input disabled="" type="checkbox"> 博客正文的标题下方不需要显示摘要内容&lt;/li>
+&lt;li>&lt;input disabled="" type="checkbox"> 添加用户访问统计&lt;/li>
+&lt;li>&lt;input disabled="" type="checkbox"> 阅读时长的计算并不十分准确&lt;/li>
+&lt;li>&lt;input checked="" disabled="" type="checkbox"> 去掉文章小标题前面的“#”号&lt;/li>
+&lt;li>&lt;input checked="" disabled="" type="checkbox"> 添加 RSS 订阅功能&lt;/li>
+&lt;li>&lt;input checked="" disabled="" type="checkbox"> 添加一个「关于我」页面&lt;/li>
+&lt;li>&lt;input checked="" disabled="" type="checkbox"> 添加评论区&lt;/li>
+&lt;/ul>
+&lt;p>更多关于我的信息，请查看&lt;a class="link" href="https://blog.coldwind.top/about" >关于我&lt;/a>页面。&lt;/p>
+&lt;p>本博客使用 Hugo 搭建，主题是 &lt;a class="link" href="https://github.com/CaiJimmy/hugo-theme-stack" target="_blank" rel="noopener"
+>Stack&lt;/a>。&lt;/p>
+&lt;p>封面图片使用 &lt;a class="link" href="https://github.com/lllyasviel/Fooocus" target="_blank" rel="noopener"
+>Fooocus&lt;/a> 绘制。&lt;/p></description></item><item><title>要认识、理解、重视信息差</title><link>https://blog.coldwind.top/posts/notice-understand-info-asymmetry/</link><pubDate>Mon, 23 Sep 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/notice-understand-info-asymmetry/</guid><description>&lt;p>在我们的学习与生活中，信息差可以说是无处不在。所谓“信息差”，其实就是因为不同的人的见识、经历、机会等的不同，而产生的一种所了解的信息的不平等的现象。这一现象将会导致掌握更多信息的一方在某些情况下具有显著的优势。有一个经典的寓言故事，“拧这颗螺丝值 1 美元，而知道要拧这颗螺丝值 999 美元”。这其实就是信息差。&lt;/p>
+&lt;h2 id="认识信息差">
+认识信息差
+&lt;a href="#%e8%ae%a4%e8%af%86%e4%bf%a1%e6%81%af%e5%b7%ae" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>信息差是客观存在且几乎不可能消除的。韩愈在《师说》中提到，“闻道有先后，术业有专攻”。每个人去学习并了解一样事物的早晚和快慢都是不同的。有的人可能是相关经验比较丰富，或从小就对某样东西充满了兴趣和探索的欲望，又或者运气好，早早就找到了点醒自己的学习资料。也因此，他们早早地掌握了更多的信息，并且基于这些信息，又能够如同指数爆炸一样，快速接受更多的内容。这就是一种优势。&lt;/p>
+&lt;p>比如最近大火的游戏《黑神话·悟空》，就会出现一种分歧：一部分人觉得，这游戏并不难啊，一些比较厉害的 BOSS 网上很容易找到攻略，直接“耍赖皮”就能过关；而也有一些不擅长动作类游戏，或者说不擅长各种游戏、只是因为游戏的热度和对于剧情的兴趣慕名而来的玩家们就会叫苦不迭，因为游戏还没有提供难度选择。不是所有人都会越挫越勇，屡战屡败本身就很可能消磨人的意志，最终产生负面情感。但前者就会觉得，你们就是菜、就是懒，明明网上大把的攻略，你们都懒得找。&lt;/p>
+&lt;p>早些年深度学习很火的时候，国内有一些卖课的博主，他们只是把斯坦福大学的 CS231N 的课件拿过来就能放在知乎割大把的韭菜；电商平台时常会见到的“i7 级处理器”和只要九块九的 1T 容量的 U 盘，这种看似“明显”的骗局却屡屡有人中招；机圈人尽皆知的搭载骁龙 680 的电子垃圾，却有可能被人以 2000 元的价格买走……这样的例子数不胜数，但它们也终究是一直并将长期存在着。这些都是因为信息差导致的。&lt;/p>
+&lt;h2 id="理解信息差">
+理解信息差
+&lt;a href="#%e7%90%86%e8%a7%a3%e4%bf%a1%e6%81%af%e5%b7%ae" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>但是我们仅仅认识到信息差的存在是不够的。重要的是，我们要理解信息差。为什么这么说呢？还是上面提到的《黑神话》的例子。或许你知道某个 BOSS 有一个很偷鸡很轻松的打法，但是你比那些“菜鸟”多知道的，其实远不仅仅是“有这个打法”。很有可能是，你在发现这篇攻略之前，已经在相关的社区和论坛沉浸了数个小时。或许这时在你看来，只要在搜索引擎里面简单敲几个字，就能再找到这一篇；可这对于一个完全不了解这方面信息的人来说，所欠缺的时间，可能是巨大的。&lt;/p>
+&lt;p>在每个领域都是，就比如我和我的绝大多数读者们所处的 .NET 这一领域。或许有一个知识、一个概念、一个技巧对于你来说仿佛家常便饭，相应的博客文章、视频教程、官方文档你可以信手拈来；或许有一个问题，身经百战的你一看报错信息就知道是因为配错了环境，但是却可能让新手在百度上搜索了半天，最后找到了一篇机翻的 CSDN 文章才勉强解决问题；一个简单的接口、依赖注入，对于你来说早已经是轻车熟路、老生常谈，却依旧能够轻易地困惑一个非 CS 科班出身的新手数年。很多时候，人和人之间的差别并不是智商，而是信息。&lt;/p>
+&lt;p>虽然我明白这个道理，但我也经常会不由自主地去产生不好的情感。比如我经常会在弹幕或评论区看到有人问主题配色和字体用的是什么，或者问一些我早就有相关视频探讨过的内容。明明我已经专门出了视频、在很多处评论给出了解答，还专门写了置顶专栏来解答常见问题，可就是有人不知道。但是换位思考，当我正在看油管上的 Tim Corey、Nick Chapsas、Brian Launas 这些大佬的视频的时候，除非我把他们的所有视频都大致刷了一遍，否则我依旧要花时间去搜索、去研究、去搞懂。我仍记得，第一次看 Brian 的视频时，他项目中使用了 Prism 框架，但是我并不知道他一直都是这样做的，所以第一次看到他的 MVVM 框架“莫名其妙”地自动实现了一些功能时完全一脸懵逼。而这一点，对于他的其他观众而言，简直可以说是“常识”——是的，每个人都有自己的“常识”，而且有可能和别人的交集占比并不大。&lt;/p>
+&lt;p>也因此，每次我介绍 MVVM 相关的内容时，我会尽量多说两句 MVVM 社区工具包的原理，从而让之前没接触过的观众不至于搞不清楚那些看不到的属性是哪儿来的；看到问主题颜色和字体的问题时，我也时刻提醒自己，我知道我在很多地方提供了回答，也依旧是不够的——我现在已经有一百多期视频了，连我自己有时候都搞不清楚某个知识点我到底有没有讲过。甚至因为我用了包含连字符的字体，导致代码中有时候会出现诸如“≠”的符号，我现在都觉得有些不妥。这里给看我 MVVM 工具包视频并且因为这些符号感到困惑过的观众朋友们道个歉。&lt;/p>
+&lt;h2 id="重视信息差">
+重视信息差
+&lt;a href="#%e9%87%8d%e8%a7%86%e4%bf%a1%e6%81%af%e5%b7%ae" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>前面我们说了，对于信息差，我们要认识、要理解，但同时，我们还要重视。什么是重视呢？我们要知道，虽然我们可能比其他人碰巧多知道了一些知识，从而使我们在某些时候占据了优势，但是我们也要时常反思。“吾日三省吾身”，因为信息差客观存在，别人有欠缺的信息，我们极有可能也有，而且可能还有不少。所以，谁也别瞧不起谁。每个人都有自己的盲区，都有自己还不熟悉的领域。在这个信息爆炸的时代，我们永远都不要只活在自己的舒适区，要敢于跳出自己的成见，去了解、去学习、去接受新的事物。&lt;/p>
+&lt;p>人怎样才能进步呢？程序员的进步，不是靠着写相同的代码写 10000 遍，而是靠着每天都能写点之前从来没写过的代码，思考一些以前没想过或没相同的事情。每天都做自己认为对的事情，或许并没有进步；每天意识到曾经的自己犯过一些错误，这才是吐故纳新。要敢于承认自己的不足，正视自己的缺点，笑对别人的鄙夷。相信将来的自己，回过头来，会觉得一路走来，每一次“难受”都是值得的。&lt;/p>
+&lt;p>除此之外，我们还有另外一个层面的“重视”——我们要警惕别人利用信息差来欺骗或蒙蔽自己。有的人掌握了信息差，或许只是妄自尊大、盲目自信、充满了优越感；但更有一部分人，会特意借助信息差来收“智商税”。这样的例子在我们的生活中可以说是无处不在，不管是网店、二手交易平台、网课平台，还是各种中介、招聘平台等等。我们一定要擦亮自己的眼睛。&lt;/p>
+&lt;h2 id="结语">
+结语
+&lt;a href="#%e7%bb%93%e8%af%ad" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>最后，希望大家都能够理解信息差，要时刻怀着一种“自己还有很多不知道的东西”的态度，努力学习，尽力减少此类情形。另一方面，我们还要提高警惕，因为可能会有人借助信息差来欺骗我们。面对那些当下掌握了比自己少的信息的人，不要嗤之以鼻，而是友好相处，伸出援手。毕竟，把自己掌握的知识教会给别人，不正是践行了费曼学习法、证明自己确实掌握了这个知识吗？只有每个人都这样，我们才能建设一个良好的社区环境。&lt;/p></description></item><item><title>可以用盗版，但是要怀着愧疚的心</title><link>https://blog.coldwind.top/posts/use-pirate-with-guilty/</link><pubDate>Sun, 25 Dec 2022 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/use-pirate-with-guilty/</guid><description>&lt;img src="https://s2.loli.net/2024/04/20/9dsCD7m1FJBQKZz.png" alt="Featured image of post 可以用盗版，但是要怀着愧疚的心" />&lt;p>.NET 开发这一领域有一款特别有名的小工具名叫 LINQPad，是一位国外技术大牛开发的软件，能够显著提高 .NET 工程师的效率，但是价格也一点不便宜。除了（基本上是个半残的）免费版，还有专业版、开发者版以及尊享版，而我买的就是最贵的版本，$115，按照当时的汇率，足足 800+ RMB。但是我认为买得很值。我一直在用，它帮上了大忙，那么我觉得它是完全值得我花这笔钱的。&lt;/p>
+&lt;p>不仅如此，我还觉得这款软件在国外非常火爆，在国内却鲜有人知道，所以我专门制作了一期视频分享给了大家。&lt;/p>
+&lt;div class="video-wrapper">
+&lt;iframe src="https://player.bilibili.com/player.html?as_wide=1&amp;amp;high_quality=1&amp;amp;page=1&amp;bvid=BV1544y1S7j3&amp;mute=0&amp;autoplay=0"
+scrolling="no"
+frameborder="no"
+framespacing="0"
+allowfullscreen="true"
+>
+&lt;/iframe>
+&lt;/div>
+&lt;p>不久之后，我就看到了评论区这么一条内容：&lt;/p>
+&lt;p>&lt;img src="https://s2.loli.net/2024/04/20/EwK7Upm6tWbOCHZ.png"
+loading="lazy"
+alt="软件是好软件，可惜太贵啦"
+>&lt;/p>
+&lt;p>这条评论我觉得真是又好气又好笑。这句话实在是不合逻辑，槽点太多，也让我看到了一些人对于所谓的付费软件以及程序员群体有着怎样的误解。&lt;/p>
+&lt;h2 id="只适合专业程序员">
+只适合专业程序员？
+&lt;a href="#%e5%8f%aa%e9%80%82%e5%90%88%e4%b8%93%e4%b8%9a%e7%a8%8b%e5%ba%8f%e5%91%98" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>首先第一条，什么叫“可惜太贵，只适合专业程序员”？意思是说，不专业的程序员，或者学生党之类的就不适合？这款软件虽然最高一档的价值 800+，但是免费版也凑活着能用啊？或者你咬咬牙，花个不到 400 元就可以买一个专业版了。讲道理，400 块算多吗？放在氪金手游里面，怕不是只能抽出来一些卡池里面的乐色吧？我现在上班，每天光是坐地铁就要 10 元，一个月就是 200 多；每天三餐要花三四十，一个月就要 1000 块；这年头手机的话费，一年怎么着不得 400+？为什么这些都像是习以为常的东西，眼前的一款买断制的软件你却下不了手了？&lt;/p>
+&lt;p>更重要的是，买了这款软件，它可以帮助你不说一辈子了，最起码在接下来几年的学习工作生涯的黄金期里助你一臂之力，大幅提高工作学习的效率，明显发挥出软件自身的价值，难道不比你买一个氪个什么 328、648 要有意义得多？&lt;/p>
+&lt;h2 id="程序员不在乎这点钱">
+程序员不在乎这点钱？
+&lt;a href="#%e7%a8%8b%e5%ba%8f%e5%91%98%e4%b8%8d%e5%9c%a8%e4%b9%8e%e8%bf%99%e7%82%b9%e9%92%b1" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>第二条，什么叫“程序员不在乎这点钱”？意思是说程序员都是高薪行业的人才，一个个月入好几万，根本不会在乎这么一丁点钱？不好意思，你又错了。首先，程序员就不是你想象中的这么高薪。或许能月入个一万多，但是大都是在北上广深这些地方，每月光是房租就要花个好几千，最后算下来也不剩多少了。就这还是拿身体换来的，一个个年纪轻轻地就眼睛也不好了，颈椎腰椎也不好了，手腕也不好了，头发也不剩多少了。所以程序员也不见得就不在乎这点钱的。&lt;/p>
+&lt;p>这种说的还是单身的没有梦想成为咸鱼的程序员。如果想结婚生子，想买房买车，想提升自己，给自己买个网课、健身房会员卡什么的，那更是开支大了去了。你月入 40K 又如何？说不定月供就两三万。所以专业程序员就不差钱了？真是想太多了。&lt;/p>
+&lt;h2 id="不差钱的程序员就会愿意掏钱">
+不差钱的程序员就会愿意掏钱？
+&lt;a href="#%e4%b8%8d%e5%b7%ae%e9%92%b1%e7%9a%84%e7%a8%8b%e5%ba%8f%e5%91%98%e5%b0%b1%e4%bc%9a%e6%84%bf%e6%84%8f%e6%8e%8f%e9%92%b1" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>再然后，“他们不差这点钱”，所以他们就“适合买这款软件了”？不好意思，我身边“在乎这点钱”的程序员多了去了。我认识一位程序员，每周工作日至少喝三四杯国内某知名连锁店铺的奶茶，每杯按 18 块算，一个月最少也要 200 多块了。但是咧，人家连 Office 用的都是盗版的 2010，整天标题栏都是大红色的，连个京东淘宝上搞活动 200 多块的正版 Office 365（后来改名叫 Microsoft 365 了）都舍不得买，即便人家每天到手的工资都够买原价的 365 了。这种人有可能会愿意花好几百买一款没有任何开发功能，只是方便自己工作学习的小软件？&lt;/p>
+&lt;p>我身边这样的程序员真的是不少。我推荐他们用 XMind，明明这玩意有免费的试用版，但是他们就是喜欢一上去就在百度搜索破解版，最后下了个盗版的 XMind 8；开发软件用的 IDE，直接去搜个破解版 JetBrains 系列的，都不知道有免费的 Visual Studio 社区版以及 Visual Studio Code 可以用的；iPad 上看 PDF 记个笔记或者画个画，连个 Notability 或者 Procreate 都舍不得买，非得去找个多人共用的苹果账号用“分享版”的，不知道哪天 APP 就不能更新了。那我要是推荐他们去用 LINQPad，不用说，肯定去找盗版了，明明还有一个免费的平替 RoslynPad。&lt;/p>
+&lt;p>所以我想说的是，并不是所有程序员都不觉得这笔钱不是钱，也并不是所有程序员在买得起这款软件的情况下就会愿意掏钱。退一步说，就算是舍不得买正版，也不代表你就要去用盗版啊？我买不起正版 PS，但我买得起 Affinity Photo；我买不起 PR，但我可以用免费的 DaVinci；买不起 Office，但还可以用 WPS（如果你能接受广告什么的）或者 LibreOffice；买不起 LINQPad，那还可以用平替的 RoslynPad，或者不然就在 VS 里面新建一个 Console App 呗。&lt;/p>
+&lt;h2 id="到底什么样的人适合这款软件">
+到底什么样的人适合这款软件？
+&lt;a href="#%e5%88%b0%e5%ba%95%e4%bb%80%e4%b9%88%e6%a0%b7%e7%9a%84%e4%ba%ba%e9%80%82%e5%90%88%e8%bf%99%e6%ac%be%e8%bd%af%e4%bb%b6" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>那到底什么样的人才适合这款软件呢？我开头就已经说了，这款软件可以帮到这个行业的所有人群，不论你的技术是强还是弱，你的钱包是鼓还是瘪。只要你有着一颗想要提升自己的心，以及对正版优质软件的认可，那么我都认为你可以去买这款软件。&lt;/p>
+&lt;p>而这样的人恐怕并不是很多。有的图像工作者，已经依靠修图挣了很多钱，却不愿买正版的 PS；有的音乐工作者，依靠编曲已经足够养家糊口，但依旧不愿意买个正版 FL；有的程序员，已经依靠写代码挣了这么多钱，却依旧不愿意为他们使用的软件付个费，凡事总是想着去搜索破解版，甚至不以为耻，反而觉得占到了多大的便宜。当然还有些蠢货觉得这都是外国软件，跟境外势力有什么好客气的，或者“慈禧太后当年都把钱给掏过了”之类，那我真是无 f*ck 说。&lt;/p>
+&lt;p>曾经有一个同事得知我用的是每年花费好几百的正版 Office 订阅，觉得不以为然，说自己用的是破解版，不照样可以用吗，还省下了不少钱。我没有回答他，但是我有一句差点到嘴边了的话被我给咽了回去：请问你每年比我省下了好几百，那么你比我多得到了什么呢？&lt;/p>
+&lt;h2 id="到底能不能用盗版软件">
+到底能不能用盗版软件？ 
+&lt;a href="#%e5%88%b0%e5%ba%95%e8%83%bd%e4%b8%8d%e8%83%bd%e7%94%a8%e7%9b%97%e7%89%88%e8%bd%af%e4%bb%b6" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>最后，我想聊的是，盗版软件到底能不能用？我认为可以用，但是要时刻知道这样做是不对的。Minecraft《我的世界》（以下简称 MC）是一款全球知名的沙盒类游戏，但是正版是要钱的。有一位学生写信给 MC 的创始人 Notch 说，自己想玩 MC，但是没有足够的钱，问能不能玩盗版的？Notch 笑着回答说，可以玩，但是要怀着愧疚的心。&lt;/p>
+&lt;p>&lt;img src="https://s2.loli.net/2024/04/20/9dsCD7m1FJBQKZz.png"
+loading="lazy"
+alt="don’t forget to feel bad. ;)"
+>&lt;/p>
+&lt;p>你如果对这款软件实际的效果不够放心，那你大可以去找一个破解版，然后用上一段时间（虽然它本身也提供了 30 天无条件退款）。如果你觉得这个软件不行，那你可以不去用它；如果你觉得这款软件不错，那你可以选择付费；但是你不能就这么一直用着盗版。用一段时间的盗版之后，如果觉得软件确实很好，那么我相信，善良正直的你，会选择为这款优秀的软件补票的。&lt;/p>
+&lt;p>&lt;img src="https://s2.loli.net/2024/04/20/oPbWSFTZ4DMquBI.png"
+loading="lazy"
+alt="评论区的“已下到破解版”"
+>&lt;/p>
+&lt;p>这也正是我对那些使用破解版软件的人的建议。&lt;/p></description></item></channel></rss>
