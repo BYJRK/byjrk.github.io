@@ -30,13 +30,13 @@ jobs:
 
             - uses: actions/setup-go@v5
               with:
-                  go-version: "^1.22.0"
+                  go-version: "1.24.0"
             - run: go version
 
             - name: Setup Hugo
               uses: peaceiris/actions-hugo@v2
               with:
-                  hugo-version: "latest"
+                  hugo-version: "0.139.4"
                   extended: true
 
             - name: Build
