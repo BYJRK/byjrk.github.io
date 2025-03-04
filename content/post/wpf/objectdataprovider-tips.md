@@ -2,6 +2,7 @@
 title: "WPF 中 ObjectDataProvider 的一些有趣用法"
 slug: "objectdataprovider-tips"
 description: "WPF 中的 ObjectDataProvider 是一个很有用的类。如果运用得当，我们可以实现很多传统方法无法实现的功能。本文将介绍一些 ObjectDataProvider 的实用而有趣的用法。"
+image: https://s2.loli.net/2025/03/04/6BmTwRWGapOPoIE.webp
 date: 2025-02-07
 tags:
     - dotnet
