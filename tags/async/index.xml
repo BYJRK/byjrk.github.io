@@ -1,0 +1,907 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>async on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/async/</link><description>Recent content in async on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Sun, 11 Aug 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/async/index.xml" rel="self" type="application/rss+xml"/><item><title>使用 AsyncBarrier 来等待并同步多个异步任务</title><link>https://blog.coldwind.top/posts/use-asyncbarrier-to-sync-tasks/</link><pubDate>Sun, 11 Aug 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/use-asyncbarrier-to-sync-tasks/</guid><description>&lt;img src="https://s2.loli.net/2024/08/11/15IEZJX7fCq4caS.jpg" alt="Featured image of post 使用 AsyncBarrier 来等待并同步多个异步任务" />&lt;blockquote>
+&lt;p>本文有对应的视频教程：&lt;a class="link" href="https://www.bilibili.com/video/BV1Gx4y1479f/" target="_blank" rel="noopener"
+>哔哩哔哩&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>大家在做异步编程开发的时候，不知道是否会遇到这样的一种情形：&lt;/p>
+&lt;p>有多个异步任务，这些任务之间没有依赖关系，但是我们需要等待所有任务都完成后再继续执行后续的操作。我们唯一知道的，就是这些任务的数量。&lt;/p>
+&lt;p>举个例子：我们现在有三个 IO 相关的异步任务。这些任务的先后顺序是不确定的，并且这些任务也不必同时发起，但是我们需要等待这三个任务都完成后再继续执行后续的操作。&lt;/p>
+&lt;p>对于最普通的等待多个异步任务，我们首先肯定会想到使用 &lt;code>Task.WhenAll&lt;/code> 方法。但是 &lt;code>Task.WhenAll&lt;/code> 现在并不能满足我们的需求，因为它需要能够立刻获取到所有任务的集合。并且因为我们希望在每个异步任务的中间某个环节去等待其他任务的完成，而并不是所有异步任务都会在同一时间点发起，所以这就产生了一个矛盾。&lt;/p>
+&lt;p>这时候大家可能会想到另外一种更加简单粗暴的方式：我们创建一个局部字段 &lt;code>int count&lt;/code>，然后每个异步任务完成后，我们将 &lt;code>count&lt;/code> 自增。当 &lt;code>count&lt;/code> 的值等于我们预期的任务数量时，我们就可以继续执行后续的操作。这种方式虽然可以解决问题，但是实现起来比较繁琐，因为我们还需要考虑使用什么机制来控制这些异步任务在 &lt;code>count&lt;/code> 达到预期值时进行后续操作。最简单的方式无疑是使用轮询，但这显然是不够好的。聪明一些的方式是使用信号量，如 &lt;code>SemaphoreSlim&lt;/code>，或者其他库提供的 &lt;code>AsyncAutoResetEvent&lt;/code> 等。当然，我们还可以采用更加轻量的 TCS（&lt;code>TaskCompletionSource&lt;/code>）来实现。但即便思路已经有了，实际实现起来依旧非常复杂，因为我们还要考虑 &lt;code>count&lt;/code> 变量的线程安全、异常处理、取消任务等。&lt;/p>
+&lt;h2 id="引入-asyncbarrier">
+引入 AsyncBarrier
+&lt;a href="#%e5%bc%95%e5%85%a5-asyncbarrier" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>这时候，&lt;code>AsyncBarrier&lt;/code> 就派上用场了。&lt;code>AsyncBarrier&lt;/code> 是一个非常轻量级的类，它可以帮助我们等待并同步多个异步任务。这个类是由 &lt;code>Microsoft.VisualStudio.Threading&lt;/code> 提供的，我们可以轻易地找到&lt;a class="link" href="https://github.com/microsoft/vs-threading/blob/main/src/Microsoft.VisualStudio.Threading/AsyncBarrier.cs" target="_blank" rel="noopener"
+>它的源代码&lt;/a>。&lt;/p>
+&lt;p>实际在使用时，我并不推荐大家去直接将 &lt;code>Microsoft.VisualStudio.Threading&lt;/code> 这个库引入到项目中，因为这个库本身是一个非常庞大的库，而且里面还包含了一些代码分析器（Code Analyzers），会给我们的项目添加一些恼人的“波浪线”。所以，一般情况下，我更推荐大家去使用 &lt;code>Nito.AsyncEx&lt;/code> 这个库。但是它又不包含 &lt;code>AsyncBarrier&lt;/code> 这个类，所以我们可以直接将 &lt;code>AsyncBarrier&lt;/code> 的源代码复制到我们的项目中，然后稍作修改即可。如果你不想麻烦，我也提供了一个开箱即用的版本，在 &lt;a class="link" href="https://gist.github.com/BYJRK/b1b893bb5660cea32326025f49116609" target="_blank" rel="noopener"
+>GitHub Gist&lt;/a> 上。&lt;/p>
+&lt;p>我们来简单理解一下它的源代码。这里我节选了一部分：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;span class="lnt">54
+&lt;/span>&lt;span class="lnt">55
+&lt;/span>&lt;span class="lnt">56
+&lt;/span>&lt;span class="lnt">57
+&lt;/span>&lt;span class="lnt">58
+&lt;/span>&lt;span class="lnt">59
+&lt;/span>&lt;span class="lnt">60
+&lt;/span>&lt;span class="lnt">61
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">AsyncBarrier&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">participantCount&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">Stack&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Waiter&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">waiters&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">AsyncBarrier&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">participants&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">participants&lt;/span> &lt;span class="p">&amp;lt;=&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">throw&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">ArgumentOutOfRangeException&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">nameof&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">participants&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">$&amp;#34;Argument {nameof(participants)} must be a positive number.&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">participantCount&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">participants&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">waiters&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Stack&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Waiter&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="n">participants&lt;/span> &lt;span class="p">-&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">ValueTask&lt;/span> &lt;span class="n">SignalAndWait&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">CancellationToken&lt;/span> &lt;span class="n">cancellationToken&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">lock&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">waiters&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">waiters&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Count&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">1&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">participantCount&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">waiters&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Count&lt;/span> &lt;span class="p">&amp;gt;&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Waiter&lt;/span> &lt;span class="n">waiter&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">waiters&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Pop&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">waiter&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CompletionSource&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">TrySetResult&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">default&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">waiter&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CancellationRegistration&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Dispose&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">ValueTask&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">cancellationToken&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IsCancellationRequested&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">?&lt;/span> &lt;span class="n">Task&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">FromCanceled&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">cancellationToken&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">:&lt;/span> &lt;span class="n">Task&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CompletedTask&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">TaskCompletionSource&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">EmptyStruct&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">tcs&lt;/span> &lt;span class="p">=&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">TaskCreationOptions&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">RunContinuationsAsynchronously&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CancellationTokenRegistration&lt;/span> &lt;span class="n">ctr&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">cancellationToken&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CanBeCanceled&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ctr&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">cancellationToken&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Register&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">static&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">tcs&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ct&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">((&lt;/span>&lt;span class="n">TaskCompletionSource&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">EmptyStruct&lt;/span>&lt;span class="p">&amp;gt;)&lt;/span>&lt;span class="n">tcs&lt;/span>&lt;span class="p">!).&lt;/span>&lt;span class="n">TrySetCanceled&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ct&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">tcs&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ctr&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">default&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">waiters&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Push&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span> &lt;span class="n">Waiter&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">tcs&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ctr&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">ValueTask&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">tcs&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Task&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这里还有另外两个类型 &lt;code>Waiter&lt;/code> 和 &lt;code>EmptyStruct&lt;/code>，这里由于篇幅的关系就不展示了。它们做的事情也非常简单，前者用于存储等待器的信息，后者则是一个空结构体，用于表示一个空的异步操作。它们并不是我们的重点，所以就不展开讨论了。&lt;/p>
+&lt;p>我们不难观察到这么几点：&lt;/p>
+&lt;ol>
+&lt;li>它内部有一个 &lt;code>participantCount&lt;/code> 字段，表示参与者的数量；另外还有一个 &lt;code>Stack&lt;/code>，用来存储所有等待的参与者；&lt;/li>
+&lt;li>它只有一个公开的方法 &lt;code>SignalAndWait&lt;/code>，表示调用者现在要进入等待状态。在这个方法中：
+&lt;ul>
+&lt;li>首先，它会判断当前等待的参与者数量是否等于预期的参与者数量。如果是，那么就将等待器逐个从 &lt;code>Stack&lt;/code> 中弹出并唤醒；&lt;/li>
+&lt;li>如果不是，那么就创建一个新的 &lt;code>TaskCompletionSource&lt;/code>，并将其存入 &lt;code>Stack&lt;/code> 中，然后返回这个 &lt;code>TaskCompletionSource&lt;/code> 的 &lt;code>Task&lt;/code> 给参与者用于 &lt;code>await&lt;/code>。&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>当所有参与者都到齐后，&lt;code>SignalAndWait&lt;/code> 方法会返回一个已完成的 &lt;code>ValueTask&lt;/code>，这时候所有参与者都可以继续执行后续的操作。&lt;/li>
+&lt;/ol>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">这里其实还有一个小细节，就是 &lt;code>Stack&lt;/code> 的容量是 &lt;code>participantCount - 1&lt;/code>。这是因为我们并不需要将最后一个参与者也入栈。毕竟，当“倒数第一”到达终点时，我们就可以宣告比赛结束了。&lt;/div>
+&lt;/div>
+&lt;h2 id="使用-asyncbarrier">
+使用 AsyncBarrier
+&lt;a href="#%e4%bd%bf%e7%94%a8-asyncbarrier" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>现在我们就可以来用一用它了。我们这里借助 &lt;code>CommunityToolkit.Mvvm&lt;/code> 这个库来写一个视图模型（ViewModel），大致如下：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">partial&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">MainViewModel&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">ObservableObject&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">ObservableCollection&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">Results&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="n">AsyncBarrier&lt;/span> &lt;span class="n">_asyncBarrier&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">3&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [RelayCommand]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">async&lt;/span> &lt;span class="n">Task&lt;/span> &lt;span class="n">FirstJobAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">CancellationToken&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">Task&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Delay&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">1500&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Results&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;First job completed. Waiting for async barrier...&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">_asyncBarrier&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SignalAndWait&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">token&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Results&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;First job completed.&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [RelayCommand]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">async&lt;/span> &lt;span class="n">Task&lt;/span> &lt;span class="n">SecondJobAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">CancellationToken&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">Task&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Delay&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">1500&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Results&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Second job completed. Waiting for async barrier...&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">_asyncBarrier&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SignalAndWait&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">token&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Results&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Second job completed.&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [RelayCommand]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">async&lt;/span> &lt;span class="n">Task&lt;/span> &lt;span class="n">ThirdJobAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">CancellationToken&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">Task&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Delay&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">1500&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Results&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Third job completed. Waiting for async barrier...&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">_asyncBarrier&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SignalAndWait&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">token&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Results&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Third job completed.&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这里我们定义了三个异步方法 &lt;code>FirstJobAsync&lt;/code>、&lt;code>SecondJobAsync&lt;/code> 和 &lt;code>ThirdJobAsync&lt;/code>，它们分别模拟了三个异步任务。这三个任务之间没有依赖关系，但是我们希望在它们都完成后再继续执行后续的操作。我们在类中声明了一个 &lt;code>AsyncBarrier&lt;/code> 字段，然后让这三个任务都调用它的 &lt;code>SignalAndWait&lt;/code> 方法，这样就可以保证这三个任务都完成后才会继续执行后续的操作。&lt;/p>
+&lt;p>实际运行代码，我们可以发现确实达到了我们想要实现的效果。这三个按钮可以让用户以任意的顺序及时间间隔进行点击，并且每个任务接近完成的时候，都会进入等待状态。只有当所有任务都完成后，我们才会看到所有任务都已完成的提示。&lt;/p>
+&lt;p>更棒的是，&lt;code>AsyncBarrier&lt;/code> 还可以重复使用。毕竟它底层只是一个 &lt;code>Stack&lt;/code>。我们在等待时会入栈，等待完成后会出栈，最终使它回归初始状态。这样我们就可以在界面中反复实验这一现象。&lt;/p>
+&lt;h2 id="取消任务">
+取消任务
+&lt;a href="#%e5%8f%96%e6%b6%88%e4%bb%bb%e5%8a%a1" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>现在我们希望更进一步，为这些异步任务添加取消功能。那么，首先我们可以添加 &lt;code>InitAllJobs&lt;/code> 与 &lt;code>FinishJobs&lt;/code> 两个方法：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">private&lt;/span> &lt;span class="n">AsyncBarrier&lt;/span>&lt;span class="p">?&lt;/span> &lt;span class="n">_asyncBarrier&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">[MemberNotNull(nameof(_asyncBarrier))]&lt;/span> &lt;span class="c1">// 提示编译器，这个方法会确保 _asyncBarrier 不为空&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">private&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">InitJobs&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">_asyncBarrier&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_asyncBarrier&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">AsyncBarrier&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">3&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Results&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Clear&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">private&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">FinishJobs&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">bool&lt;/span> &lt;span class="n">success&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kc">true&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">_asyncBarrier&lt;/span> &lt;span class="p">!=&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_asyncBarrier&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">success&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Results&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;All jobs completed successfully.&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Results&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Jobs were canceled.&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这两个方法分别用于初始化任务与结束任务。在初始化任务时，我们会创建一个新的 &lt;code>AsyncBarrier&lt;/code> 实例，并清空 &lt;code>Results&lt;/code> 集合。在结束任务时，我们会将 &lt;code>AsyncBarrier&lt;/code> 实例置空，并根据是否成功完成任务来添加提示信息。&lt;/p>
+&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">这其实也是我比较推荐的使用 &lt;code>AsyncBarrier&lt;/code> 的方式。虽然我们前面说了，它可以被重复使用。但是观察它的源代码会发现，它非常轻量，也不需要担心资源释放的问题，因为我们大可以每次使用的时候都实例化一个新的出来。毕竟这样还有一个好处，就是每次我们都可以根据实际情况去调整它的 &lt;code>participantCount&lt;/code>。&lt;/div>
+&lt;/div>
+&lt;p>接下来我们就可以在每个异步任务中添加取消逻辑。以 &lt;code>FirstJobAsync&lt;/code> 为例：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="na">[RelayCommand]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">async&lt;/span> &lt;span class="n">Task&lt;/span> &lt;span class="n">FirstJobAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">CancellationToken&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">InitJobs&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">try&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">Task&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Delay&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">1200&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Results&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;First job completed. Waiting for async barrier...&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">_asyncBarrier&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SignalAndWait&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">token&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">FinishJobs&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">catch&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">TaskCanceledException&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Results&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;First job was canceled.&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">FinishJobs&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kc">false&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这里的大致思路是：&lt;/p>
+&lt;ol>
+&lt;li>首先会调用 &lt;code>InitJobs&lt;/code> 方法，初始化任务。这里每个异步方法都会尝试去初始化，但只有第一个（即 &lt;code>AsyncBarrier&lt;/code> 字段为空时）是有效的；&lt;/li>
+&lt;li>在异步任务中使用 &lt;code>try-catch&lt;/code> 块，捕获 &lt;code>TaskCanceledException&lt;/code> 异常。因为如果我们想要取消任务，那么这个异步任务中的 &lt;code>Task.Delay&lt;/code> 以及 &lt;code>AsyncBarrier.SignalAndWait&lt;/code> 都会抛出这个异常；&lt;/li>
+&lt;li>当异步任务完成时，会调用 &lt;code>FinishJobs&lt;/code> 方法，结束任务。并且这里类似 &lt;code>InitJobs&lt;/code>，只有第一个异步任务会有效调用。&lt;/li>
+&lt;/ol>
+&lt;p>然后，我们还需要一个 &lt;code>RelayCommand&lt;/code>，用来实现取消功能：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="na">[RelayCommand]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">private&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">CancelAllJobs&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">FirstJobCommand&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IsRunning&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="n">FirstJobCommand&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Cancel&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">SecondJobCommand&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IsRunning&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="n">SecondJobCommand&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Cancel&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ThirdJobCommand&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IsRunning&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="n">ThirdJobCommand&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Cancel&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这样我们就实现了想要的效果了。此时，我们在 XAML 中的代码如下：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Window&lt;/span> &lt;span class="err">...&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Window.DataContext&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;local:MainViewModel&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/Window.DataContext&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;DockPanel&lt;/span> &lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;DockPanel&lt;/span> &lt;span class="na">DockPanel.Dock=&lt;/span>&lt;span class="s">&amp;#34;Bottom&amp;#34;&lt;/span> &lt;span class="na">LastChildFill=&lt;/span>&lt;span class="s">&amp;#34;False&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Job1&amp;#34;&lt;/span> &lt;span class="na">Command=&lt;/span>&lt;span class="s">&amp;#34;{Binding FirstJobCommand}&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Job2&amp;#34;&lt;/span> &lt;span class="na">Command=&lt;/span>&lt;span class="s">&amp;#34;{Binding SecondJobCommand}&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Job3&amp;#34;&lt;/span> &lt;span class="na">Command=&lt;/span>&lt;span class="s">&amp;#34;{Binding ThirdJobCommand}&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Cancel&amp;#34;&lt;/span> &lt;span class="na">Command=&lt;/span>&lt;span class="s">&amp;#34;{Binding CancelAllJobsCommand}&amp;#34;&lt;/span> &lt;span class="na">DockPanel.Dock=&lt;/span>&lt;span class="s">&amp;#34;Right&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/DockPanel&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;ListBox&lt;/span> &lt;span class="na">ItemsSource=&lt;/span>&lt;span class="s">&amp;#34;{Binding Results}&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/DockPanel&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/Window&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>其实上面的故事还没有结束，因为实际运行后会发现，&lt;code>Cancel&lt;/code> 按钮在任何时候都是可用的。这是因为我们没有正确处理它的 ICommand 的 &lt;code>CanExecute&lt;/code> 方法。这里我就不展开讲了，我在视频中有详细讲解，大家可以在文章开头找到相应的视频链接。&lt;/p>
+&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>&lt;code>AsyncBarrier&lt;/code> 是一个非常轻量级的类，它可以帮助我们等待并同步多个异步任务。它的实现非常简单，但是却非常实用。我们可以在异步任务中使用它，来保证多个异步任务都完成后再继续执行后续的操作。同时，我们还可以在异步任务中添加取消逻辑，来保证任务的可靠性。&lt;/p>
+&lt;p>大家如果有这样的需求，不妨去试一下这个类，相信一定可以帮上忙。不仅如此，我们还可以借此学习微软官方的源代码，了解一下它的实现细节。这对我们提升编程能力也是非常有帮助的。&lt;/p></description></item><item><title>如何在异步任务中汇报进度</title><link>https://blog.coldwind.top/posts/how-to-report-progress/</link><pubDate>Thu, 09 May 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/how-to-report-progress/</guid><description>&lt;img src="https://s2.loli.net/2024/05/09/RJYeMSKs5q6UdQn.jpg" alt="Featured image of post 如何在异步任务中汇报进度" />&lt;blockquote>
+&lt;p>本文有对应的视频教程：&lt;a class="link" href="https://www.bilibili.com/video/BV1SD421P76s/" target="_blank" rel="noopener"
+>哔哩哔哩&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>在执行异步任务时，有时候我们会希望有办法汇报进度。比如在一个 WPF 程序中，我们在界面上放了一个进度条，从而展示当前任务的进度。那么该如何汇报异步任务的进度呢？&lt;/p>
+&lt;p>其实 .NET 标准库就为我们提供了实现这一功能的接口和类：&lt;code>IProgress&amp;lt;T&amp;gt;&lt;/code> 与 &lt;code>Progress&amp;lt;T&amp;gt;&lt;/code>，其中 &lt;code>T&lt;/code> 是一个泛型类型，表示要汇报的内容。如果我们希望汇报一个百分比进度，那么使用 &lt;code>double&lt;/code> 类型即可；类似地，如果我们希望汇报一些更加复杂的内容，还可以使用 &lt;code>string&lt;/code> 甚至一些自定义类与结构体。&lt;/p>
+&lt;p>下面我们就来看看该如何使用吧。&lt;/p>
+&lt;h2 id="搭建项目">
+搭建项目
+&lt;a href="#%e6%90%ad%e5%bb%ba%e9%a1%b9%e7%9b%ae" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>首先我们创建一个简易的 WPF 项目。因为这次的任务比较简单，所以我们就不遵循 MVVM 模式了，而是使用最传统的 WPF 事件注册的方式。&lt;/p>
+&lt;p>它的 &lt;code>MainWindow&lt;/code> 形如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Window&lt;/span> &lt;span class="err">...&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;StackPanel&lt;/span> &lt;span class="na">VerticalAlignment=&lt;/span>&lt;span class="s">&amp;#34;Center&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Width=&lt;/span>&lt;span class="s">&amp;#34;100&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">Margin=&lt;/span>&lt;span class="s">&amp;#34;0,0,0,10&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Run&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">Click=&lt;/span>&lt;span class="s">&amp;#34;Button_Click&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;ProgressBar&lt;/span> &lt;span class="na">Height=&lt;/span>&lt;span class="s">&amp;#34;20&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">d:Value=&lt;/span>&lt;span class="s">&amp;#34;10&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">Name=&lt;/span>&lt;span class="s">&amp;#34;progressBar&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/StackPanel&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/Window&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>然后在 &lt;code>MainWindow.xaml.cs&lt;/code> 中实现一些简单的逻辑：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kd">partial&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">MainWindow&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">Window&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">MainWindow&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">InitializeComponent&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="kd">async&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">Button_Click&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">object&lt;/span> &lt;span class="n">sender&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">RoutedEventArgs&lt;/span> &lt;span class="n">e&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">DoJobAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">CancellationToken&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">None&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">async&lt;/span> &lt;span class="n">Task&lt;/span> &lt;span class="n">DoJobAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">CancellationToken&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">token&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IsCancellationRequested&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="p">&amp;lt;&lt;/span> &lt;span class="m">100&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="p">++)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">Task&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Delay&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">50&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">progressBar&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Value&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">token&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IsCancellationRequested&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">break&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>我们将按钮注册的 &lt;code>Button_Click&lt;/code> 方法修改为 &lt;code>async void&lt;/code>，这样我们就可以在里面等待一个异步任务了。&lt;/p>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">虽然 &lt;code>async void&lt;/code> 是一种非常危险的方式，但因为 &lt;code>Button&lt;/code> 控件的 &lt;code>Click&lt;/code> 事件对应委托对于函数传参及返回值的限制，这里我们不得不这样做。&lt;/div>
+&lt;/div>
+&lt;p>然后，我们在 &lt;code>DoJobAsync&lt;/code> 中实现后台的异步任务。这里我们简单地使用一个 &lt;code>for&lt;/code> 循环，并在其中使用 &lt;code>Task.Delay&lt;/code>，从而实现一个拥有进度的异步任务。然后，我们在每次循环中直接修改 &lt;code>progressBar&lt;/code> 控件的值。运行程序，就可以直接看到效果了：&lt;/p>
+&lt;p>&lt;img src="https://s2.loli.net/2024/05/09/F6o97PzSaO4kiDc.gif"
+loading="lazy"
+alt="动画"
+>&lt;/p>
+&lt;p>这个问题难道就这么轻松地就解决了吗？其实不是的，因为在异步任务中，很可能会出现在别的线程中操作 UI 线程的资源（也就是控件及其属性），这种情况下程序会报错。所以如果使用这样的方式，通常我们还需要使用老套的 &lt;code>Dispatcher.Invoke&lt;/code> 的方式来规避这个问题。但这样就显得不够优雅了。&lt;/p>
+&lt;p>那么同样的功能，我们该如何使用 &lt;code>Progress&lt;/code> 类来实现呢？&lt;/p>
+&lt;h2 id="使用-progress-类">
+使用 Progress 类
+&lt;a href="#%e4%bd%bf%e7%94%a8-progress-%e7%b1%bb" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>首先我们需要稍稍修改一下 &lt;code>DoJobAsync&lt;/code> 方法：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">async&lt;/span> &lt;span class="n">Task&lt;/span> &lt;span class="n">DoJobAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IProgress&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">double&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">reporter&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">CancellationToken&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">for&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span> &lt;span class="p">&amp;lt;&lt;/span> &lt;span class="m">100&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="n">i&lt;/span>&lt;span class="p">++)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">token&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IsCancellationRequested&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">Task&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Delay&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">50&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">token&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">ConfigureAwait&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kc">false&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">reporter&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Report&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">i&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">token&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IsCancellationRequested&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">break&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>然后，这个 &lt;code>Progress&lt;/code> 类的实例来自哪儿呢？我们再修改一下 &lt;code>Button_Click&lt;/code> 方法：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">private&lt;/span> &lt;span class="kd">async&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">Button_Click&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">object&lt;/span> &lt;span class="n">sender&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">RoutedEventArgs&lt;/span> &lt;span class="n">e&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">reporter&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Progress&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">double&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="k">value&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">progressBar&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Value&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">value&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">DoJobAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">reporter&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">CancellationToken&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">None&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>就这样，我们只需要在使用的时候实例化一个新的即可。它除了我们前面提到的泛型，还传入了一个回调函数，表示每次 &lt;code>Report&lt;/code> 时需要执行的逻辑。这里的逻辑非常简单，只需要将传入的 &lt;code>double&lt;/code> 类型的数字赋值给进度条的 &lt;code>Value&lt;/code> 属性即可。&lt;/p>
+&lt;p>那么问题来了：它是如何规避了前面提到的线程问题的呢？我们观察 &lt;code>Progress&lt;/code> 类的&lt;a class="link" href="https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/Progress.cs,d23df0450d3fd0d6" target="_blank" rel="noopener"
+>源代码&lt;/a>，可以发现：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="n">Progress&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// Capture the current synchronization context.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// If there is no current context, we use a default instance targeting the ThreadPool.&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_synchronizationContext&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">SynchronizationContext&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Current&lt;/span> &lt;span class="p">??&lt;/span> &lt;span class="n">ProgressStatics&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">DefaultContext&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Debug&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Assert&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_synchronizationContext&lt;/span> &lt;span class="p">!=&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_invokeHandlers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">SendOrPostCallback&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">InvokeHandlers&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在它的构造函数中，拥有一个 &lt;code>SynchronizationContext&lt;/code> 对象，它持有了当前的同步上下文。当我们在 &lt;code>Button_Click&lt;/code> 方法中声明它时，因为还在 UI 线程，所以它就保存了这个上下文。然后在它的 &lt;code>Report&lt;/code> 方法被调用时，就会在正确的同步上下文（也就是 UI 线程）中执行相关逻辑了。&lt;/p>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">除了给构造函数传回调，&lt;code>Progress&lt;/code> 类还为我们提供了一个 &lt;code>ProgressChanged&lt;/code> 事件。注册这个事件可以实现相同的效果，并且也是在相同的同步上下文执行的。&lt;/div>
+&lt;/div>
+&lt;h2 id="实现自定义-progress-类">
+实现自定义 Progress 类
+&lt;a href="#%e5%ae%9e%e7%8e%b0%e8%87%aa%e5%ae%9a%e4%b9%89-progress-%e7%b1%bb" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>如果我们还有其他额外的需求，那么我们还可以自己实现接口，或者继承 &lt;code>Progress&lt;/code> 类。官方特意没有将这个类设为 &lt;code>sealed&lt;/code>，并且将 &lt;code>OnReport&lt;/code> 方法设为 &lt;code>virtual&lt;/code>，就是为了满足我们的这些需求。&lt;/p>
+&lt;div class="notice note">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-sticky-note" aria-hidden="true">&lt;/i>Note
+&lt;/div>
+&lt;div class="notice-content">但是如果我们去继承这个 &lt;code>Progress&lt;/code> 类，会发现其实我们能自由发挥的空间并不大，因为它其中的很多字段（尤其是同步上下文）都是 &lt;code>private&lt;/code> 的，所以我们能做的事情基本上也只有重写 &lt;code>OnReport&lt;/code> 方法了。&lt;/div>
+&lt;/div>
+&lt;p>比如这里我写了一个子类，从而可以在进度完成后执行一个回调方法。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">MyProgress&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">T&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">Progress&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">T&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="k">where&lt;/span> &lt;span class="n">T&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">notnull&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">Action&lt;/span>&lt;span class="p">?&lt;/span> &lt;span class="n">_complete&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">T&lt;/span> &lt;span class="n">_maximum&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="n">_isCompleted&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">MyProgress&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Action&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">T&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">handler&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Action&lt;/span>&lt;span class="p">?&lt;/span> &lt;span class="n">complete&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">T&lt;/span> &lt;span class="n">maximum&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">:&lt;/span> &lt;span class="k">base&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">handler&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_complete&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">complete&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_maximum&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">maximum&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ProgressChanged&lt;/span> &lt;span class="p">+=&lt;/span> &lt;span class="n">CheckCompletion&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">protected&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">OnReport&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">T&lt;/span> &lt;span class="k">value&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">_isCompleted&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">base&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnReport&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">value&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">CheckCompletion&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">object?&lt;/span> &lt;span class="n">sender&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">T&lt;/span> &lt;span class="n">e&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">e&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Equals&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">_maximum&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">&amp;amp;&amp;amp;&lt;/span> &lt;span class="p">!&lt;/span>&lt;span class="n">_isCompleted&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_isCompleted&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kc">true&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_complete&lt;/span>&lt;span class="p">?.&lt;/span>&lt;span class="n">Invoke&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>然后我们就可以这样使用了：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">private&lt;/span> &lt;span class="kd">async&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">Button_Click&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">object&lt;/span> &lt;span class="n">sender&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">RoutedEventArgs&lt;/span> &lt;span class="n">e&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">reporter&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">MyProgress&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">double&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">value&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">progressBar&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Value&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">value&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">()&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">progressBar&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Visibility&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Visibility&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Hidden&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="m">100&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">await&lt;/span> &lt;span class="n">DoJobAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">reporter&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">CancellationToken&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">None&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这里实现的效果是，当异步任务完成后，将会隐藏进度条。&lt;/p>
+&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>不知道大家看完这篇文章的感受如何。其实我在最开始了解文中提到的 &lt;code>IProgress&lt;/code> 接口以及 &lt;code>Progress&lt;/code> 类时，最大的感受是：微软究竟为我们提前准备好了多少接口和类啊🤣！&lt;/p>
+&lt;p>.NET 类中有太多这样的标准库了，但我们也没有什么办法去系统地挖掘与总结。所以只能仰仗大家今后持续不断的交流与学习了。&lt;/p>
+&lt;h2 id="参考">
+参考
+&lt;a href="#%e5%8f%82%e8%80%83" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>&lt;a class="link" href="https://www.youtube.com/watch?v=zQMNFEz5IVU" target="_blank" rel="noopener"
+>How to Report Progress with Async/Await in .NET Core 3 - YouTube&lt;/a>&lt;/p>
+&lt;p>&lt;a class="link" href="https://www.youtube.com/watch?v=ZTKGRJy5P2M" target="_blank" rel="noopener"
+>C# Advanced Async - Getting progress reports, cancelling tasks, and more - YouTube&lt;/a>&lt;/p></description></item><item><title>为什么我们需要 ValueTask？</title><link>https://blog.coldwind.top/posts/why-we-need-valuetask/</link><pubDate>Fri, 12 Apr 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/why-we-need-valuetask/</guid><description>&lt;img src="https://s2.loli.net/2024/04/14/P4HJMlIpSxY6CDn.jpg" alt="Featured image of post 为什么我们需要 ValueTask？" />&lt;blockquote>
+&lt;p>本文有对应的视频教程：&lt;a class="link" href="https://www.bilibili.com/video/BV1dm421j72Y/" target="_blank" rel="noopener"
+>哔哩哔哩&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>自从 C# 5.0 引入了 &lt;code>async&lt;/code> 和 &lt;code>await&lt;/code> 语法以后，异步编程变得非常简单，而 Task 类型也在开发中扮演着相当重要的角色，存在感极高。但是在 .NET Core 2.0 这个版本，微软引入了一个新的类型 &lt;code>ValueTask&lt;/code>，那么这个类型是什么？为什么我们需要它？什么情况下应该使用它？我们今天就来探讨一下。&lt;/p>
+&lt;h2 id="简单回顾-task-类型">
+简单回顾 &lt;code>Task&lt;/code> 类型
+&lt;a href="#%e7%ae%80%e5%8d%95%e5%9b%9e%e9%a1%be-task-%e7%b1%bb%e5%9e%8b" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在异步编程中，我们经常会使用 &lt;code>Task&lt;/code> 类型来表示一个异步操作或者说异步任务。相较于其他一些主流编程语言，C# 中的异步任务其实开销很小。比如知乎上的大佬 hez2010 在他的&lt;a class="link" href="https://www.zhihu.com/question/509501955/answer/3225113571" target="_blank" rel="noopener"
+>这个回答&lt;/a>中提到，C# 的 Task 类型通常只占用 64~136 B 的内存，而 Go 语言的一个 goroutine 至少占用 2 KB 的内存。&lt;/p>
+&lt;p>不仅如此，Task 还有许多优化技巧，比如：&lt;/p>
+&lt;ol>
+&lt;li>如果想直接返回一个结果，可以使用 &lt;code>Task.FromResult&lt;/code> 方法&lt;/li>
+&lt;li>如果想直接返回一个已经完成的任务，可以使用 &lt;code>Task.CompletedTask&lt;/code>&lt;/li>
+&lt;li>如果想直接返回一个已经取消的任务，可以使用 &lt;code>Task.FromCanceled&lt;/code>&lt;/li>
+&lt;li>如果想直接返回一个已经失败的任务，可以使用 &lt;code>Task.FromException&lt;/code>&lt;/li>
+&lt;/ol>
+&lt;p>等等。所以从 C# 5.0（大概是 .NET Framework 4 时代）开始，直到 .NET Core 2.0 之前，一直相安无事。&lt;/p>
+&lt;h2 id="传统-task-类型的问题">
+传统 &lt;code>Task&lt;/code> 类型的问题
+&lt;a href="#%e4%bc%a0%e7%bb%9f-task-%e7%b1%bb%e5%9e%8b%e7%9a%84%e9%97%ae%e9%a2%98" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>但是，随着 .NET 开始跨平台，能使用 C# 的场景越来越多，微软的“野心”也越来越大，开始从各种角度优化 C# 的性能，从而使 .NET 能够胜任各种任务场景。除了引入 &lt;code>Span&lt;/code>、&lt;code>Memory&lt;/code>、&lt;code>ref struct&lt;/code> 等新特性外，还引入了 &lt;code>ValueTask&lt;/code>。那么，传统的 &lt;code>Task&lt;/code> 类型有什么问题呢？&lt;/p>
+&lt;p>首先我们要知道，&lt;code>Task&lt;/code> 包含泛型版本和非泛型版本，分别对应有无返回值的异步任务。而 &lt;code>ValueTask&lt;/code> 在诞生之初，只有一个泛型版本。换句话说，设计者认为，&lt;code>ValueTask&lt;/code> 应当只适用于有返回值的异步任务。所以这里我们来看一个典型的例子：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">ConcurrentDictionary&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">_cache&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kd">async&lt;/span> &lt;span class="n">Task&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">GetMessageAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">id&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">_cache&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">TryGetValue&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">id&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">out&lt;/span> &lt;span class="kt">var&lt;/span> &lt;span class="n">message&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">message&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">message&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">await&lt;/span> &lt;span class="n">GetMessageFromDatabaseAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">id&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_cache&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">TryAdd&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">id&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">message&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">message&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在上面的 &lt;code>GetMessageAsync&lt;/code> 方法中，我们首先尝试从缓存中获取消息，如果没有找到，就再尝试从数据库中获取。但这里有一个问题，如果缓存中有数据，那么虽然我们好像会直接返回一个值。但是，由于 &lt;code>GetMessageAsync&lt;/code> 方法是一个异步方法，所以实际上会返回一个 &lt;code>Task&amp;lt;string&amp;gt;&lt;/code> 类型的对象。这就意味着，即便我们本可以只返回一个值，我们依旧会多创建一个 &lt;code>Task&lt;/code> 对象，这就导致了无端的内存开销。&lt;/p>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">这种在异步任务中直接返回一个值的情况，我们称之为“同步完成”，或者“返回同步结果”。线程进入这个异步任务后，并没有碰到 &lt;code>await&lt;/code> 关键字，而是直接返回。也就是说，这个异步任务自始至终都是在同一个线程上执行的。&lt;/div>
+&lt;/div>
+&lt;h2 id="valuetask-简介">
+&lt;code>ValueTask&lt;/code> 简介
+&lt;a href="#valuetask-%e7%ae%80%e4%bb%8b" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>所以，&lt;code>ValueTask&lt;/code> 的主要作用就是解决这个问题。它在 .NET Core 2.0 被正式引入，并在 .NET Core 2.1 得到了增强（新增了 &lt;code>IValueTaskSource&amp;lt;T&amp;gt;&lt;/code> 接口，从而使它可以拥有诸如 &lt;code>IsCompleted&lt;/code> 等属性），并且还添加了非泛型的 &lt;code>ValueTask&lt;/code> 类型（这个我们稍后再说）。&lt;/p>
+&lt;p>&lt;code>ValueTask&lt;/code> 我们先不要去思考它是否为值类型，而是可以这么理解：&lt;strong>它适用于可能返回一个 &lt;code>Value&lt;/code>，也可能返回一个 &lt;code>Task&lt;/code> 的情形&lt;/strong>。也就是说，它非常适合上面的“缓存命中”的典型场景。我们可以把上面的代码修改为：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kd">async&lt;/span> &lt;span class="n">ValueTask&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">GetMessageAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">id&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">_cache&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">TryGetValue&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">id&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">out&lt;/span> &lt;span class="kt">var&lt;/span> &lt;span class="n">message&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">message&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">message&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">await&lt;/span> &lt;span class="n">GetMessageFromDatabaseAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">id&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_cache&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">TryAdd&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">id&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">message&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">message&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>此时，如果缓存中有数据，那么我们可以直接返回一个 &lt;code>ValueTask&amp;lt;T&amp;gt;&lt;/code> 对象，而不需要再创建一个 &lt;code>Task&amp;lt;T&amp;gt;&lt;/code> 对象。这样就避免了无端的堆内存开销；否则，我们才会创建 &lt;code>Task&amp;lt;T&amp;gt;&lt;/code> 对象。或者说，在这种情况下，&lt;code>ValueTask&lt;/code> 的性能会退化为 &lt;code>Task&lt;/code>（甚至可能还稍微低一丁点，因为涉及到更多的字段，以及值拷贝等）。&lt;/p>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">至于非泛型版本的 &lt;code>ValueTask&lt;/code>，它的使用情形就更少了。它只有在即使异步完成也可以无需分配内存的情况下才会派上用场。&lt;code>ValueTask&lt;/code> 的“发明者”Stephen Toub 在&lt;a class="link" href="https://devblogs.microsoft.com/dotnet/understanding-the-whys-whats-and-whens-of-valuetask/" target="_blank" rel="noopener"
+>他的文章&lt;/a>中提到，除非你借助 profiling 工具确认 &lt;code>Task&lt;/code> 的这一丁点开销会成为瓶颈，否则不需要考虑使用 &lt;code>ValueTask&lt;/code>。&lt;/div>
+&lt;/div>
+&lt;p>这时候我们再来思考它的性能究竟如何：&lt;/p>
+&lt;p>顾名思义，&lt;code>ValueTask&lt;/code> 是一个值类型，可以在栈上分配，而不需要在堆上分配。不仅如此，它因为实现了一些接口，从而使它可以像 &lt;code>Task&lt;/code> 一样被用于异步编程。所以，照理说，&lt;code>ValueTask&lt;/code> 的性能要比 &lt;code>Task&lt;/code> 更好很多（就如同 &lt;code>ValueTuple&lt;/code> 之于 &lt;code>Tuple&lt;/code>、&lt;code>Span&lt;/code> 之于 &lt;code>Array&lt;/code> 一样）。&lt;/p>
+&lt;p>但是，&lt;code>ValueTask&lt;/code> 真的这么美好吗？它是不是可以完全替代 &lt;code>Task&lt;/code> 呢？事情恐怕并没有这么简单。&lt;/p>
+&lt;h2 id="valuetask-的注意事项">
+&lt;code>ValueTask&lt;/code> 的注意事项
+&lt;a href="#valuetask-%e7%9a%84%e6%b3%a8%e6%84%8f%e4%ba%8b%e9%a1%b9" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>现在，我们该谈一谈 &lt;code>ValueTask&lt;/code> 在使用时需要注意的地方了。&lt;/p>
+&lt;h3 id="valuetask-不能被多次等待await">
+&lt;code>ValueTask&lt;/code> 不能被多次等待（&lt;code>await&lt;/code>）
+&lt;a href="#valuetask-%e4%b8%8d%e8%83%bd%e8%a2%ab%e5%a4%9a%e6%ac%a1%e7%ad%89%e5%be%85await" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>&lt;code>ValueTask&lt;/code> 底层会使用一个对象存储异步操作的状态，而它在被 &lt;code>await&lt;/code> 后（可以认为此时异步操作已经结束），这个对象可能已经被回收，甚至有可能已经被用在别处（或者说，&lt;code>ValueTask&lt;/code> 可能会从已完成状态变成未完成状态）。而 &lt;code>Task&lt;/code> 是绝对不可能发生这种情况的，所以可以被多次等待。&lt;/p>
+&lt;h3 id="不要阻塞-valuetask">
+不要阻塞 &lt;code>ValueTask&lt;/code>
+&lt;a href="#%e4%b8%8d%e8%a6%81%e9%98%bb%e5%a1%9e-valuetask" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>&lt;code>ValueTask&lt;/code> 所对应的 &lt;code>IValueTaskSource&lt;/code> 并不需要支持在任务未完成时阻塞的功能，并且通常也不会这样做。这意味着，你无法像使用 &lt;code>Task&lt;/code> 那样在 &lt;code>ValueTask&lt;/code> 上调用 &lt;code>Wait&lt;/code>、&lt;code>Result&lt;/code>、&lt;code>GetAwaiter().GetResult()&lt;/code> 等方法。&lt;/p>
+&lt;p>但换句话说，如果你可以确定一个 &lt;code>ValueTask&lt;/code> 已经完成（通过判断 &lt;code>IsCompleted&lt;/code> 等属性的值），那么你可以通过 &lt;code>Result&lt;/code> 属性来安全地获取 &lt;code>ValueTask&lt;/code> 的结果。&lt;/p>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">微软专门添加了一个与这个有关的警告：&lt;a class="link" href="https://learn.microsoft.com/zh-cn/dotnet/fundamentals/code-analysis/quality-rules/ca2012" target="_blank" rel="noopener"
+>CA2012&lt;/a>&lt;/div>
+&lt;/div>
+&lt;h3 id="不要在多个线程上同时等待一个-valuetask">
+不要在多个线程上同时等待一个 &lt;code>ValueTask&lt;/code>
+&lt;a href="#%e4%b8%8d%e8%a6%81%e5%9c%a8%e5%a4%9a%e4%b8%aa%e7%ba%bf%e7%a8%8b%e4%b8%8a%e5%90%8c%e6%97%b6%e7%ad%89%e5%be%85%e4%b8%80%e4%b8%aa-valuetask" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>&lt;code>ValueTask&lt;/code> 在设计之初就只是用来解决 &lt;code>Task&lt;/code> 在个别情况下的开销问题，而不是打算全面取代 &lt;code>Task&lt;/code>。因此，&lt;code>Task&lt;/code> 的很多优秀且便捷的特性它都不用有。其中一个就是线程安全的等待。&lt;/p>
+&lt;p>也就是说，&lt;code>ValueTask&lt;/code> 底层的对象被设计为只希望被一个消费者（或线程）等待，因此并没有引入线程安全等机制。尝试同时等待它可能很容易引入竞态条件和微妙的程序错误。而 &lt;code>Task&lt;/code> 支持任意数量的并发等待。&lt;/p>
+&lt;h2 id="如何克服-valuetask-的局限性">
+如何克服 &lt;code>ValueTask&lt;/code> 的局限性
+&lt;a href="#%e5%a6%82%e4%bd%95%e5%85%8b%e6%9c%8d-valuetask-%e7%9a%84%e5%b1%80%e9%99%90%e6%80%a7" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在实际使用过程中，难免遇到需要突破它的上述限制的情况。那么我们该怎么办呢？这里给出几种常见情况的对应方式：&lt;/p>
+&lt;ol>
+&lt;li>如果希望用阻塞的方式（&lt;code>Result&lt;/code> 与 &lt;code>.GetAwaiter().GetResult()&lt;/code>）获取 &lt;code>ValueTask&amp;lt;T&amp;gt;&lt;/code> 的结果，可以先判断 &lt;code>IsCompleted&lt;/code> 或 &lt;code>IsCompletedSuccessfully&lt;/code> 等属性的值，确认它已经完成，然后再获取结果&lt;/li>
+&lt;li>如果希望等待多次，或在多个线程中等待等，那么可以使用 &lt;code>AsTask()&lt;/code> 方法将其转为一个普通的 &lt;code>Task&lt;/code>，进而再进行各种 &lt;code>Task&lt;/code> 的常用操作&lt;/li>
+&lt;/ol>
+&lt;p>基于 &lt;code>ValueTask&lt;/code> 的原理及限制，一个普遍认同的推荐用法是：&lt;/p>
+&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">绝大多数情况下，都推荐直接使用 &lt;code>await&lt;/code> 关键字来等待一个返回值为 &lt;code>ValueTask&amp;lt;T&amp;gt;&lt;/code> 的异步任务并获取结果，&lt;strong>而不是试图将其返回值赋值给一个变量&lt;/strong>（最多是搭配 &lt;code>ConfigureAwait()&lt;/code> 进行使用）；否则，建议使用 &lt;code>AsTask()&lt;/code> 方法将其转为传统的 &lt;code>Task&lt;/code>，再进行常规操作。&lt;/div>
+&lt;/div>
+&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>总的来说，&lt;code>ValueTask&lt;/code> 确实有很多闪光点，比如在栈上分配来避免堆分配的性能开销，但它也有一些让人头疼的限制，比如不能被多次等待。使用它就像是在走钢丝，一不小心就可能掉进性能优化的陷阱里。但别担心，大多数情况下，我们还是可以安全地使用 &lt;code>await&lt;/code> 来等待 &lt;code>ValueTask&amp;lt;T&amp;gt;&lt;/code> 的，只要我们不试图把它当作 &lt;code>Task&lt;/code> 的替代品来用就好。&lt;/p>
+&lt;p>希望看了这篇文章之后，大家能够正确使用 &lt;code>ValueTask&lt;/code>。&lt;/p>
+&lt;h2 id="参考链接">
+参考链接
+&lt;a href="#%e5%8f%82%e8%80%83%e9%93%be%e6%8e%a5" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;ul>
+&lt;li>&lt;a class="link" href="https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/Threading/Tasks/ValueTask.cs,77a292425839ae85" target="_blank" rel="noopener"
+>ValueTask Source Code&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://devblogs.microsoft.com/dotnet/understanding-the-whys-whats-and-whens-of-valuetask/" target="_blank" rel="noopener"
+>Understanding the Whys, Whats, and Whens of ValueTask | .NET Blog&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://www.codeguru.com/csharp/c-sharp-valuetask/" target="_blank" rel="noopener"
+>Working with ValueTask in C# | CodeGuru.com&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://www.youtube.com/watch?v=dCj7-KvaIJ0" target="_blank" rel="noopener"
+>Task vs ValueTask: When Should I use ValueTask? | YouTube.com&lt;/a>&lt;/li>
+&lt;li>&lt;a class="link" href="https://www.youtube.com/watch?v=fj-LVS8hqIE" target="_blank" rel="noopener"
+>Understanding how to use Task and ValueTask | YouTube.com&lt;/a>&lt;/li>
+&lt;/ul></description></item></channel></rss>
