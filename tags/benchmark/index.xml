@@ -1,0 +1,586 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>benchmark on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/benchmark/</link><description>Recent content in benchmark on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Fri, 27 Sep 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/benchmark/index.xml" rel="self" type="application/rss+xml"/><item><title>如何高效读取 XML 中所需的内容（其二）</title><link>https://blog.coldwind.top/posts/xml-read-benchmarks-2/</link><pubDate>Fri, 27 Sep 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/xml-read-benchmarks-2/</guid><description>&lt;img src="https://s2.loli.net/2024/10/11/XEIhj5DuRS6Wa4n.png" alt="Featured image of post 如何高效读取 XML 中所需的内容（其二）" />&lt;p>我们继续&lt;a class="link" href="https://blog.coldwind.top/posts/xml-read-benchmarks" >上一次的内容&lt;/a>，再来看一看关于 XML 内容读取有哪些意想不到的性能差别。这次我们用于演示的 XML 文本依旧是来自 W3Schools 的&lt;a class="link" href="https://www.w3schools.com/xml/simple.xml" target="_blank" rel="noopener"
+>一个样例&lt;/a>，大致内容如下：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="cp">&amp;lt;?xml version=&amp;#34;1.0&amp;#34; encoding=&amp;#34;UTF-8&amp;#34;?&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;breakfast_menu&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;food&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;name&amp;gt;&lt;/span>Belgian Waffles&lt;span class="nt">&amp;lt;/name&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;price&amp;gt;&lt;/span>$5.95&lt;span class="nt">&amp;lt;/price&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;description&amp;gt;&lt;/span>Two of our famous Belgian Waffles with plenty of real maple syrup&lt;span class="nt">&amp;lt;/description&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;calories&amp;gt;&lt;/span>650&lt;span class="nt">&amp;lt;/calories&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/food&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c">&amp;lt;!-- 省略中间的三个 food --&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;food&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;name&amp;gt;&lt;/span>Homestyle Breakfast&lt;span class="nt">&amp;lt;/name&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;price&amp;gt;&lt;/span>$6.95&lt;span class="nt">&amp;lt;/price&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;description&amp;gt;&lt;/span>Two eggs, bacon or sausage, toast, and our ever-popular hash browns&lt;span class="nt">&amp;lt;/description&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;calories&amp;gt;&lt;/span>950&lt;span class="nt">&amp;lt;/calories&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/food&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/breakfast_menu&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>我们这次的任务是：获取最后一个 &lt;code>food&lt;/code> 的 &lt;code>calories&lt;/code> 的值（即 &lt;code>950&lt;/code>）。这次我们的选手有：LINQ to XML、&lt;code>XPath&lt;/code> 以及正则表达式。对于 &lt;code>XPath&lt;/code>，我们同样在 &lt;code>XDocument&lt;/code> 上进行操作（只需要引入 &lt;code>System.Xml.XPath&lt;/code> 命名空间即可）。&lt;/p>
+&lt;h2 id="linq-to-xml">
+LINQ to XML
+&lt;a href="#linq-to-xml" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>我们先来看一看 LINQ to XML（即 &lt;code>System.Xml.Linq&lt;/code> 命名空间）该如何实现吧。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">Elements&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">foods&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">doc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Root&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Elements&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;food&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">lastFood&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">foods&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Last&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">lastFood&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Element&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;calories&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>其实，这里因为我们很清楚 XML 文档的结构，所以上面的内容可以简化为：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">Elements&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">doc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Root&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Elements&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">Last&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">Elements&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">Last&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这样是可以提高一点性能的，因为我们不需要检查每个节点的名字。&lt;/p>
+&lt;p>另外，我们还可以使用 &lt;code>Descendants&lt;/code> 这个方法，从而减少一些 &lt;code>Elements&lt;/code> 的调用。最极端的情况下，因为我们要获取的元素正好是最后一个，所以我们甚至别的什么都不用做，直接调用 &lt;code>Descendants&lt;/code> 就可以了：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">Descendants&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">doc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Root&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Descendants&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">Last&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="xpath">
+XPath
+&lt;a href="#xpath" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>接下来我们看一看使用 XPath 表达式该如何实现：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">XPath&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">doc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">XPathSelectElement&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;//food[last()]/calories&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这里我们借助 XPath 表达式的特殊语法，直接选取了最后一个 &lt;code>food&lt;/code> 节点的 &lt;code>calories&lt;/code> 子节点。或者，因为我们知道总共五个 &lt;code>food&lt;/code> 节点，所以我们也可以将上面的 &lt;code>last()&lt;/code> 替换为 &lt;code>5&lt;/code>。这样确实会换来一点点提升，但是非常不明显，而且有耍赖的嫌疑，所以我们就不这么做了。&lt;/p>
+&lt;p>上面的方式其实效率并不是最高的，因为 &lt;code>//food&lt;/code> 会搜索整个 XML 文档，寻找所有名称为 &lt;code>food&lt;/code> 的节点。如果我们能够将 XPath 表达式写得更加精确，是能够提升一些性能的：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">XPathOptimized&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">doc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">XPathSelectElement&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;/breakfast_menu/food[last()]/calories&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这样，我们就只需要搜索 &lt;code>breakfast_menu&lt;/code> 节点下的 &lt;code>food&lt;/code> 节点，而不是整个文档了。这个不经意的小改动，就能够带来显著的性能提升（约 4~5 倍！）。&lt;/p>
+&lt;h2 id="正则表达式">
+正则表达式
+&lt;a href="#%e6%ad%a3%e5%88%99%e8%a1%a8%e8%be%be%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>最后，我们再来看一看正则表达式的实现。这个实现方式就非常简单粗暴了。我们只需要匹配 &lt;code>calories&lt;/code> 节点，并拿到最后一个的值即可：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">Regex&lt;/span> &lt;span class="n">regex&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Regex&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">@&amp;#34;&amp;lt;calories&amp;gt;(\d+)&amp;lt;/calories&amp;gt;&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">Regex&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">matches&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">regex&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Matches&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">xml&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="kt">int&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Parse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">matches&lt;/span>&lt;span class="p">[^&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="n">Groups&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="n">Value&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>但其实我们仍然有相当大的优化空间。因为我们这里需要的是最后一个 &lt;code>calories&lt;/code> 节点，所以我们不需要匹配全部的 &lt;code>calories&lt;/code> 节点，只需要匹配到最后一个即可。实现这一操作的方式，除了修改表达式本身以外，我们还可以借助 &lt;code>RegexOptions.RightToLeft&lt;/code> 这个选项：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">Regex&lt;/span> &lt;span class="n">regex&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Regex&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">@&amp;#34;&amp;lt;calories&amp;gt;(\d+)&amp;lt;/calories&amp;gt;&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">RegexOptions&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">RightToLeft&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">RegexOptimized&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">match&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">regex&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Match&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">xml&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="kt">int&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Parse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">match&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Groups&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="n">Value&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>通过这样的一个简单操作，我们再次可以换来约 4~5 倍的性能提升。&lt;/p>
+&lt;h2 id="性能对比">
+性能对比
+&lt;a href="#%e6%80%a7%e8%83%bd%e5%af%b9%e6%af%94" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>现在，我们可以来看一看比赛的结果了：&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Method&lt;/th>
+&lt;th style="text-align: right">Mean&lt;/th>
+&lt;th style="text-align: right">Error&lt;/th>
+&lt;th style="text-align: right">StdDev&lt;/th>
+&lt;th style="text-align: right">Gen0&lt;/th>
+&lt;th style="text-align: right">Gen1&lt;/th>
+&lt;th style="text-align: right">Allocated&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>Elements&lt;/td>
+&lt;td style="text-align: right">101.3 ns&lt;/td>
+&lt;td style="text-align: right">10.07 ns&lt;/td>
+&lt;td style="text-align: right">0.55 ns&lt;/td>
+&lt;td style="text-align: right">0.0101&lt;/td>
+&lt;td style="text-align: right">0.0001&lt;/td>
+&lt;td style="text-align: right">128 B&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>Descendants&lt;/td>
+&lt;td style="text-align: right">243.4 ns&lt;/td>
+&lt;td style="text-align: right">26.84 ns&lt;/td>
+&lt;td style="text-align: right">1.47 ns&lt;/td>
+&lt;td style="text-align: right">0.0062&lt;/td>
+&lt;td style="text-align: right">0.0005&lt;/td>
+&lt;td style="text-align: right">80 B&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>RegexMatch&lt;/td>
+&lt;td style="text-align: right">605.7 ns&lt;/td>
+&lt;td style="text-align: right">158.79 ns&lt;/td>
+&lt;td style="text-align: right">8.70 ns&lt;/td>
+&lt;td style="text-align: right">0.1278&lt;/td>
+&lt;td style="text-align: right">0.0010&lt;/td>
+&lt;td style="text-align: right">1608 B&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>RegexMatchOptimized&lt;/td>
+&lt;td style="text-align: right">128.1 ns&lt;/td>
+&lt;td style="text-align: right">59.86 ns&lt;/td>
+&lt;td style="text-align: right">3.28 ns&lt;/td>
+&lt;td style="text-align: right">0.0305&lt;/td>
+&lt;td style="text-align: right">0.0002&lt;/td>
+&lt;td style="text-align: right">384 B&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>XPathOptimized&lt;/td>
+&lt;td style="text-align: right">1,297.4 ns&lt;/td>
+&lt;td style="text-align: right">927.55 ns&lt;/td>
+&lt;td style="text-align: right">50.84 ns&lt;/td>
+&lt;td style="text-align: right">0.3681&lt;/td>
+&lt;td style="text-align: right">0.0038&lt;/td>
+&lt;td style="text-align: right">4624 B&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>XPath&lt;/td>
+&lt;td style="text-align: right">5,099.2 ns&lt;/td>
+&lt;td style="text-align: right">1,591.05 ns&lt;/td>
+&lt;td style="text-align: right">87.21 ns&lt;/td>
+&lt;td style="text-align: right">0.8087&lt;/td>
+&lt;td style="text-align: right">0.0076&lt;/td>
+&lt;td style="text-align: right">10208 B&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>不知道这样的结果有没有出乎大家的意料呢？不难发现，看似不起眼的 LINQ to SQL 方法，居然能轻易击败了优化过的正则表达式以及 XPath，尤其是 XPath 的速度居然会这么慢，进入了微秒级别。&lt;/p>
+&lt;p>另一方面，在上一次比赛中胜出的正则表达式，这次居然也不敌 LINQ to XML，尤其是如果不优化，那么正则表达式的性能还要再差上不少。&lt;/p>
+&lt;p>所以，这次的跑分再次向我们证明，对于 XML 文档的读取，LINQ to XML 是最好的选择，可以说是不仅好用，而且高效。&lt;/p>
+&lt;h2 id="one-more-thing">
+One More Thing
+&lt;a href="#one-more-thing" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>说到跑分，这种时候怎么少得了 &lt;code>Span&lt;/code> 呢？&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">Span&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">xml&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Xml&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AsSpan&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="kt">int&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Parse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">xml&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Slice&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">xml&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">LastIndexOf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;&amp;lt;calories&amp;gt;&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">10&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">xml&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">LastIndexOf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;&amp;lt;/calories&amp;gt;&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">-&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">xml&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">LastIndexOf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;&amp;lt;calories&amp;gt;&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">10&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>至于结果嘛：&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Method&lt;/th>
+&lt;th style="text-align: right">Mean&lt;/th>
+&lt;th style="text-align: right">Error&lt;/th>
+&lt;th style="text-align: right">StdDev&lt;/th>
+&lt;th style="text-align: right">Ratio&lt;/th>
+&lt;th style="text-align: right">RatioSD&lt;/th>
+&lt;th style="text-align: right">Allocated&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>Span&lt;/td>
+&lt;td style="text-align: right">22.30 ns&lt;/td>
+&lt;td style="text-align: right">0.435 ns&lt;/td>
+&lt;td style="text-align: right">0.024 ns&lt;/td>
+&lt;td style="text-align: right">0.22&lt;/td>
+&lt;td style="text-align: right">0.00&lt;/td>
+&lt;td style="text-align: right">-&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table></description></item><item><title>如何高效读取 XML 中所需的内容（其一）</title><link>https://blog.coldwind.top/posts/xml-read-benchmarks/</link><pubDate>Sun, 18 Aug 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/xml-read-benchmarks/</guid><description>&lt;img src="https://s2.loli.net/2024/08/18/d1TnRLiG4kOu6j8.jpg" alt="Featured image of post 如何高效读取 XML 中所需的内容（其一）" />&lt;p>这次我们用于演示的 XML 文本来自 W3Schools 的&lt;a class="link" href="https://www.w3schools.com/xml/simple.xml" target="_blank" rel="noopener"
+>一个样例&lt;/a>，内容如下：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="cp">&amp;lt;?xml version=&amp;#34;1.0&amp;#34; encoding=&amp;#34;UTF-8&amp;#34;?&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;breakfast_menu&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;food&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;name&amp;gt;&lt;/span>Belgian Waffles&lt;span class="nt">&amp;lt;/name&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;price&amp;gt;&lt;/span>$5.95&lt;span class="nt">&amp;lt;/price&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;description&amp;gt;&lt;/span>Two of our famous Belgian Waffles with plenty of real maple syrup&lt;span class="nt">&amp;lt;/description&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;calories&amp;gt;&lt;/span>650&lt;span class="nt">&amp;lt;/calories&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/food&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c">&amp;lt;!-- 省略中间的三个 food --&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;food&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;name&amp;gt;&lt;/span>Homestyle Breakfast&lt;span class="nt">&amp;lt;/name&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;price&amp;gt;&lt;/span>$6.95&lt;span class="nt">&amp;lt;/price&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;description&amp;gt;&lt;/span>Two eggs, bacon or sausage, toast, and our ever-popular hash browns&lt;span class="nt">&amp;lt;/description&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;calories&amp;gt;&lt;/span>950&lt;span class="nt">&amp;lt;/calories&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/food&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/breakfast_menu&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>假定我们的任务是读取所有 &lt;code>food&lt;/code> 节点的 &lt;code>name&lt;/code> 属性的值，然后将它们存储到一个 &lt;code>List&amp;lt;string&amp;gt;&lt;/code> 中。首先我们来用几种方式来实现这个需求。&lt;/p>
+&lt;h2 id="使用-xmldocument">
+使用 XmlDocument
+&lt;a href="#%e4%bd%bf%e7%94%a8-xmldocument" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>&lt;code>XmlDocument&lt;/code> 算是一种“传统”的方式。它有两种“玩法”，一种是使用诸如 &lt;code>GetElementsByTagName&lt;/code> 这样的方法，一点一点地找到我们需要的节点及其属性和内容；另一种是使用 XPath 表达式，一次性找到所有符合条件的节点。我们先来看看第一种方式：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">XmlDocument&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">doc&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">XmlDocument&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">doc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">LoadXml&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">testXml&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">doc&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">GetElementsByTagName&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;food&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">OfType&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">XmlNode&lt;/span>&lt;span class="p">&amp;gt;()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Select&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">node&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">node&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">]!.&lt;/span>&lt;span class="n">InnerText&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">ToList&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// var names = new List&amp;lt;string&amp;gt;();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// foreach (XmlNode node in doc.GetElementsByTagName(&amp;#34;food&amp;#34;))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// {&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// names.Add(node[&amp;#34;name&amp;#34;]!.InnerText);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// }&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// return names;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">上面注释掉的代码是使用传统的 &lt;code>foreach&lt;/code> 循环来实现的，这样写在旧版本的 .NET 中可能会更快一些，但是在 .NET 7 以来的新版本中，LINQ 的性能已经得到了很大的提升。对于常见的集合类型，LINQ 的性能已经和传统的 &lt;code>foreach&lt;/code> 循环相差无几，甚至有时还更快，而且完全不会产生额外的 GC 压力。&lt;/div>
+&lt;/div>
+&lt;p>然后我们还可以用 XPath 表达式来实现：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">XmlDocumentXPath&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">doc&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">XmlDocument&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">doc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">LoadXml&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">testXml&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">doc&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">SelectNodes&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;//food/name&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">OfType&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">XmlNode&lt;/span>&lt;span class="p">&amp;gt;()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Select&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">node&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">node&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">InnerText&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">ToList&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="使用-xmllinq">
+使用 Xml.Linq
+&lt;a href="#%e4%bd%bf%e7%94%a8-xmllinq" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>&lt;code>Xml.Linq&lt;/code> 是一种更加现代的方式，它的 API 设计更加友好，使用起来也更加方便。我们可以这样来实现：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">XDocument&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">doc&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">XDocument&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Parse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">testXml&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">doc&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Root&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Elements&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;food&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Select&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">node&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">node&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Element&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">)!.&lt;/span>&lt;span class="n">Value&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">ToList&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>XDocument&lt;/code> 同样可以使用 XPath 表达式来实现，但是这里我们就不演示了，因为 &lt;code>XDocument&lt;/code> 的 API 设计已经足够友好，不像是 &lt;code>XmlDocument&lt;/code> 那样使用 XPath 表达式会显得更加简洁。&lt;/p>
+&lt;h2 id="使用-xmlreader">
+使用 XmlReader
+&lt;a href="#%e4%bd%bf%e7%94%a8-xmlreader" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>&lt;code>XmlReader&lt;/code> 是一种基于流的方式，它的操作并不简单，但是效率极高。我们可以这样来实现：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">XmlReader&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">stringReader&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">StringReader&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">testXml&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">xmlReader&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">System&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Xml&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">XmlReader&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Create&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">stringReader&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">res&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="m">8&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">xmlReader&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Read&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">xmlReader&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IsStartElement&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">&amp;amp;&amp;amp;&lt;/span> &lt;span class="n">xmlReader&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Name&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="s">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">res&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">xmlReader&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ReadElementContentAsString&lt;/span>&lt;span class="p">());&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">res&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="使用-regex">
+使用 Regex
+&lt;a href="#%e4%bd%bf%e7%94%a8-regex" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>因为我们的任务过于简单，要解析的 XML 文本内容也很纯粹，所以我们还可以使用正则表达式来实现：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">Regex&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">matches&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Regex&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Matches&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">testXml&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">@&amp;#34;&amp;lt;name&amp;gt;(.*?)&amp;lt;/name&amp;gt;&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">matches&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Select&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">match&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">match&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Groups&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="n">Value&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">ToList&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="使用传统的字符串方法">
+使用传统的字符串方法
+&lt;a href="#%e4%bd%bf%e7%94%a8%e4%bc%a0%e7%bb%9f%e7%9a%84%e5%ad%97%e7%ac%a6%e4%b8%b2%e6%96%b9%e6%b3%95" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>最后，我们还可以使用传统的字符串方法来实现：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">StringOps&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">res&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="m">8&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">cur&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 找到下一个 &amp;lt;name&amp;gt; 节点&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">idx&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">testXml&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IndexOf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;&amp;lt;name&amp;gt;&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">cur&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 如果找不到，说明已经找完了&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">idx&lt;/span> &lt;span class="p">&amp;lt;&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">break&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 找到对应的 &amp;lt;/name&amp;gt; 节点&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">end&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">testXml&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IndexOf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;&amp;lt;/name&amp;gt;&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">idx&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">6&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">res&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">testXml&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Substring&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">idx&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">6&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">end&lt;/span> &lt;span class="p">-&lt;/span> &lt;span class="n">idx&lt;/span> &lt;span class="p">-&lt;/span> &lt;span class="m">6&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 从下一个节点开始继续找&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">cur&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">end&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">7&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>提前剧透一下，这个方式的效率非常低，远低于其他几种方式。因此，我们还有一个杀手锏：&lt;code>Span&amp;lt;T&amp;gt;&lt;/code>。&lt;/p>
+&lt;h2 id="使用-spant">
+使用 Span&lt;T>
+&lt;a href="#%e4%bd%bf%e7%94%a8-spant" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>&lt;code>Span&amp;lt;T&amp;gt;&lt;/code> 是 C# 7.2 引入的一个新特性，它可以让我们更加高效地操作内存。我们可以这样来实现：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">SpanOps&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">res&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="m">8&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">span&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">testXml&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AsSpan&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">while&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kc">true&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">idx&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">span&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IndexOf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;&amp;lt;name&amp;gt;&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">idx&lt;/span> &lt;span class="p">&amp;lt;&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">break&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">end&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">span&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Slice&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">idx&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">6&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">IndexOf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;&amp;lt;/name&amp;gt;&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="n">idx&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">6&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">res&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">span&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Slice&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">idx&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">6&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">end&lt;/span> &lt;span class="p">-&lt;/span> &lt;span class="n">idx&lt;/span> &lt;span class="p">-&lt;/span> &lt;span class="m">6&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">ToString&lt;/span>&lt;span class="p">());&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">span&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">span&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Slice&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">end&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">7&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">res&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="性能测试">
+性能测试
+&lt;a href="#%e6%80%a7%e8%83%bd%e6%b5%8b%e8%af%95" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>现在我们就可以来测试一下这几种方式的性能了。我们使用 BenchmarkDotNet 来进行测试。结果如下：&lt;/p>
+&lt;p>&lt;img src="https://s2.loli.net/2024/07/29/Cg3vUj1eVIFuA9z.png"
+loading="lazy"
+alt="Benchmark 结果"
+>&lt;/p>
+&lt;p>怎么样，大家领教了 &lt;code>Span&lt;/code> 的威力了吗？它一骑绝尘，已经进入纳秒的境界了。所以我们可以得出结论：&lt;/p>
+&lt;ol>
+&lt;li>如果我们要获取的内容并不复杂，我们完全可以使用正则表达式来抓取想要的内容，而不是死板地解析 XML 文档&lt;/li>
+&lt;li>当较为复杂时，我们还是需要借助传统的方式进行读取。它们的性能关系为：&lt;code>XmlReader&lt;/code> &amp;gt; &lt;code>XDocument&lt;/code> &amp;gt; &lt;code>XmlDocument&lt;/code>&lt;/li>
+&lt;li>从实用性的角度考虑， &lt;code>XDocument&lt;/code> 比 &lt;code>XmlReader&lt;/code> 及 &lt;code>XmlDocument&lt;/code> 都更加实用，速度比传统的 &lt;code>XmlDocument&lt;/code> 快，又并不显著逊于 &lt;code>XmlReader&lt;/code>，所以应该是我们在大多数情况下的最优选项&lt;/li>
+&lt;li>使用 &lt;code>Span&lt;/code> 可以显著优化性能，尤其是我们需要频繁对字符串进行 &lt;code>IndexOf&lt;/code>、&lt;code>SubString&lt;/code> 等操作时&lt;/li>
+&lt;/ol></description></item></channel></rss>
