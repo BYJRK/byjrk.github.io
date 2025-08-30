@@ -15,3 +15,8 @@ This blog also borrows the admonition feature from the theme [Coder](https://git
 
 - `hugo server -D`: Run the development server
 - `hugo new [content] post/<post-name>.md`: Create a new post
+
+If you have installed the [Taskfile](https://taskfile.dev) CLI, you can also use the following commands:
+
+- `task new -- [post-name]`: Create a new post
+- `task`: Serve the blog on http://localhost:1313

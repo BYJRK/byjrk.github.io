@@ -1,0 +1,13 @@
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - hugo serve -D
+    silent: true
+
+  new:
+    cmds:
+      - hugo new content post/{{.CLI_ARGS}}.md
+    silent: true
+    desc: Create a new post.
