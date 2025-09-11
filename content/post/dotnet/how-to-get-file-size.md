@@ -1,7 +1,7 @@
 ---
 title: "C# 获取文件大小的几种方式及它们的性能比较"
 slug: "how-to-get-file-size"
-description: "本文介绍了在 C# 中获取文件大小的几种方式，包括使用 FileInfo、RandomAccess、P/Invoke 调用 Windows API等，并对它们的性能进行了比较。"
+description: "本文介绍了在 C# 中获取文件大小的几种方式，包括使用 FileInfo、RandomAccess、P/Invoke 调用 Windows API 等，并对它们的性能进行了比较。"
 image: https://s2.loli.net/2025/09/06/WBHdw1K6rio2hxP.jpg
 date: 2025-09-06
 tags:
@@ -36,7 +36,7 @@ string humanizedSize = fileInfo.Length.Bytes().Humanize("0.00"); // e.g. "1.23 M
 
 ## 使用 RandomAccess
 
-`RandomAccess` 是一个在.NET 6中引入的静态类，旨在提供高性能、线程安全的文件随机访问I/O操作。它提供的 `GetLength` 方法可以直接获取文件的大小。但稍微有些可惜的是，虽然它的 `GetLength` 方法是静态且不需要创建对象的，但它需要传入一个文件句柄（file handle），而后者是一个 `SafeFileHandle` 对象，这就不可避免地引入了 `FileStream` 对象的创建开销。
+`RandomAccess` 是一个在。NET 6 中引入的静态类，旨在提供高性能、线程安全的文件随机访问 I/O 操作。它提供的 `GetLength` 方法可以直接获取文件的大小。但稍微有些可惜的是，虽然它的 `GetLength` 方法是静态且不需要创建对象的，但它需要传入一个文件句柄（file handle），而后者是一个 `SafeFileHandle` 对象，这就不可避免地引入了 `FileStream` 对象的创建开销。
 
 ```csharp
 using System.IO;
