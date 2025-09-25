@@ -39,7 +39,7 @@ class MyService
 
     private void Worker()
     {
-        while (_shouldStop)
+        while (!_shouldStop)
         {
             // 执行一些工作
             Thread.Sleep(50); // 模拟工作
@@ -94,7 +94,7 @@ class MyService
 
     private void Worker()
     {
-        while (_shouldStop)
+        while (!_shouldStop)
         {
             if (_isRunning)
             {
@@ -152,7 +152,7 @@ class MyService
 
     private void Worker()
     {
-        while (_shouldStop)
+        while (!_shouldStop)
         {
             _isRunningEvent.WaitOne(); // 等待信号量放行
 
