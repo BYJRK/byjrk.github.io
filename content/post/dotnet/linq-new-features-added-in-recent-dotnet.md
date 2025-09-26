@@ -100,7 +100,7 @@ var distinctByName = people.DistinctBy(p => p.Name);
 
 ### 4. FirstOrDefault 等方法的重载
 
-在这个版本中，这些方法允许传入一个自定义的默认值，而不是返回类型的默认值（例如 `null` 或 `0`）。这在某些情况下可以减少代码量，提高可读性。
+在这个版本中，`FirstOrDefault`、`LastOrDefault`、`SingleOrDefault` 这些方法允许传入一个自定义的默认值，而不是返回类型的默认值（例如 `null` 或 `0`）。这在某些情况下可以减少代码量，提高可读性。
 
 ```csharp
 var num = numbers.FirstOrDefault(n => n > 10, -1); // 如果没有找到符合条件的元素，返回 -1
