@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>ef on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/ef/</link><description>Recent content in ef on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Wed, 13 Mar 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/ef/index.xml" rel="self" type="application/rss+xml"/><item><title>EntityFrameworkCore 最小入门指南</title><link>https://blog.coldwind.top/posts/efcore-minimal-example/</link><pubDate>Wed, 13 Mar 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/efcore-minimal-example/</guid><description>&lt;h2 id="安装-entityframeworkcore">
+安装 EntityFrameworkCore
+&lt;a href="#%e5%ae%89%e8%a3%85-entityframeworkcore" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>以 Sql Server 为例，可以在 NuGet 包管理器中搜索并安装以下包：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>Microsoft.EntityFrameworkCore&lt;/code>&lt;/li>
+&lt;li>&lt;code>Microsoft.EntityFrameworkCore.SqlServer&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;h2 id="实现-model">
+实现 Model
+&lt;a href="#%e5%ae%9e%e7%8e%b0-model" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>假定现在有这样一张表：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-sql" data-lang="sql">&lt;span class="line">&lt;span class="cl">&lt;span class="k">CREATE&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">TABLE&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">dbo&lt;/span>&lt;span class="p">].[&lt;/span>&lt;span class="n">Blog&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">BlogId&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="nb">INT&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">IDENTITY&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="mi">1&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">NOT&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">NULL&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">Title&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">NVARCHAR&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">100&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">NULL&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">Author&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">NVARCHAR&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="mi">50&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">NULL&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w"> &lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="n">Content&lt;/span>&lt;span class="p">]&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="n">NVARCHAR&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">MAX&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="w"> &lt;/span>&lt;span class="k">NULL&lt;/span>&lt;span class="p">,&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="w">&lt;/span>&lt;span class="p">);&lt;/span>&lt;span class="w">
+&lt;/span>&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>可以创建一个对应的 Model：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">Blog&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">BlogId&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Title&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Author&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Content&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="创建-dbcontext">
+创建 DbContext
+&lt;a href="#%e5%88%9b%e5%bb%ba-dbcontext" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>创建一个继承自 &lt;code>DbContext&lt;/code> 的类：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">BloggingContext&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">DbContext&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">DbSet&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Blog&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">Blogs&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这里其实幕后发生了一些基于 EF 命名习惯的自动配置，比如：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>Blog&lt;/code> 类对应的表名为其复数形式 &lt;code>Blogs&lt;/code>&lt;/li>
+&lt;li>&lt;code>BlogId&lt;/code> 字段会被自动识别为主键&lt;/li>
+&lt;/ul>
+&lt;h2 id="配置连接字符串">
+配置连接字符串
+&lt;a href="#%e9%85%8d%e7%bd%ae%e8%bf%9e%e6%8e%a5%e5%ad%97%e7%ac%a6%e4%b8%b2" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>最简单的方法是直接重写 &lt;code>OnConfiguring&lt;/code> 方法：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">class&lt;/span> &lt;span class="nc">BloggingContext&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">DbContext&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">protected&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">OnConfiguring&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">DbContextOptionsBuilder&lt;/span> &lt;span class="n">optionsBuilder&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">optionsBuilder&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">UseSqlServer&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">@&amp;#34;Data Source=(localdb)\MSSQLLocalDB;Initial Catalog=Blogging;&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="使用-dbcontext">
+使用 DbContext
+&lt;a href="#%e4%bd%bf%e7%94%a8-dbcontext" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>获取 &lt;code>Blog&lt;/code> 数据：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="n">db&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">BloggingContext&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">blogs&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">db&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Blogs&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToList&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>添加新的 &lt;code>Blog&lt;/code>：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="n">db&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">BloggingContext&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">db&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Blogs&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span> &lt;span class="n">Blog&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Title&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Hello World&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Author&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Content&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Hello World!&amp;#34;&lt;/span> &lt;span class="p">});&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">db&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SaveChanges&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在本文中，我们通过一个最小化的示例介绍了如何使用 Entity Framework Core 进行数据访问。我们创建了一个 &lt;code>BloggingContext&lt;/code> 类来表示数据库上下文，并定义了一个 &lt;code>DbSet&amp;lt;Blog&amp;gt;&lt;/code> 来操作 &lt;code>Blog&lt;/code> 实体。我们还展示了如何配置连接字符串，以及如何使用 &lt;code>DbContext&lt;/code> 来添加和获取数据。&lt;/p>
+&lt;p>这个简单的例子虽然只涉及到了基本的操作，但它为理解 EF Core 的工作原理和进一步探索其功能提供了基础。&lt;/p>
+&lt;p>感谢阅读，欢迎在评论区分享你的想法和问题。&lt;/p></description></item></channel></rss>
