@@ -276,7 +276,9 @@ var results = orders.AggregateBy(
 );
 ```
 
+{{< notice info >}}
 这个例子看似可以用 `GroupBy` 和 `Select` 来实现，但实际上 `AggregateBy` 的性能会更好一些，因为它避免了中间集合的创建。`GroupBy` 会创建一个中间的分组集合，而 `AggregateBy` 则直接在遍历时进行聚合操作。
+{{< /notice >}}
 
 ## 关于 By 的思考
 
