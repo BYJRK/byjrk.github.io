@@ -1,7 +1,7 @@
 ---
 title: "如何在类外移除类的事件订阅？"
 slug: "how-to-remove-event-handler-outside-a-class.md"
-description: "某些时候，我们出于对第三方类库的定制需求，可能需要在类外移除该类的事件订阅。然而，事件本身就是一个封装良好的成员，直接访问和修改事件的订阅列表并不容易。不仅如此，为事件注册的方法可能还是私有的，这更是增加了难度。我们这次就来探讨如何通过反射机制实现这一目标。"
+description: "某些时候，我们可能需要在类外移除该类的事件订阅。然而事件本身只对外暴露了增加和移除方法，并且注册的方法可能也不是公共的，这些因素都会增加实现的难度。我们这次就来探讨如何通过反射机制实现这一目标。"
 date: 2026-01-22
 tags:
     - dotnet
@@ -97,10 +97,6 @@ eventField.SetValue(demo, null);
 
 上面的方法都会移除所有的事件订阅。如果我们只想移除特定的方法怎么办？此时我们有两种方式。首先我们可以尝试获取事件的委托实例，然后从中移除特定的方法：
 
-{{< notice info>}}
-C# 中事件是基于委托实现的。每个事件在底层都有一个与之关联的委托字段，这个字段保存了所有注册到该事件的处理方法。当事件被触发时，实际上是调用这个委托，从而依次调用所有注册的方法。具体来说，这个委托通常是一个多播委托（Multicast Delegate），它上面有一个方法列表，包含了所有注册的事件处理器。
-{{< /notice >}}
-
 ```c#
 var eventField = typeof(Demo).GetField("MyEvent", BindingFlags.Instance | BindingFlags.NonPublic);
 var eventDelegate = (MulticastDelegate?)eventField.GetValue(demo);
@@ -116,6 +112,10 @@ if (eventDelegate != null)
     eventField.SetValue(demo, eventDelegate);
 }
 ```
+
+{{< notice info>}}
+C# 中事件是基于委托实现的。每个事件在底层都有一个与之关联的委托字段，这个字段保存了所有注册到该事件的处理方法。当事件被触发时，实际上是调用这个委托，从而依次调用所有注册的方法。具体来说，这个委托通常是一个多播委托（Multicast Delegate），它上面有一个方法列表，包含了所有注册的事件处理器。
+{{< /notice >}}
 
 另一种方式是直接通过反射获取特定的方法，然后借助 `Delegate` 创造这个方法的委托实例，再从事件中移除：
 
