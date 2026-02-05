@@ -1,0 +1,174 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="这篇文章是凑数的"><title>Benchmark.NET 简易指南</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/benchmark-dotnet/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="Benchmark.NET 简易指南"><meta property='og:description' content="这篇文章是凑数的"><meta property='og:url' content='https://blog.coldwind.top/posts/benchmark-dotnet/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='csharp'><meta property='article:tag' content='dotnet'><meta property='article:published_time' content='2024-03-05T10:52:37+08:00'><meta property='article:modified_time' content='2024-03-05T10:52:37+08:00'><meta name=twitter:title content="Benchmark.NET 简易指南"><meta name=twitter:description content="这篇文章是凑数的"><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#常用特性>常用特性</a></li><li><a href=#实际例子>实际例子</a><ol><li><a href=#测试排序的效率>测试排序的效率</a></li><li><a href=#测试初始化数组的效率>测试初始化数组的效率</a></li><li><a href=#net-6-vs-net-7>.NET 6 vs. .NET 7</a></li></ol></li><li><a href=#注意事项>注意事项</a></li><li><a href=#参考链接>参考链接</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/benchmark-dotnet/>Benchmark.NET 简易指南</a></h2><h3 class=article-subtitle>这篇文章是凑数的</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2024-03-05T10:52:37+08:00>Mar 05, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 2 分钟</time></div></footer></div></header><section class=article-content><p><a class=link href=https://benchmarkdotnet.org/ target=_blank rel=noopener>Benchmark.NET</a> 是一个用于 .NET 应用程序的强大的基准测试库。它可以帮助开发人员评估他们的代码的性能，找出潜在的性能问题，并且比较不同的实现方式。Benchmark.NET 提供了丰富的特性，包括内存诊断、全局初始化、迭代初始化等，可以满足各种性能测试的需求。</p><p>这篇文章将介绍 Benchmark.NET 的基础知识和一些常用的特性。你也可以观看<a class=link href=https://b23.tv/9rMsBmF target=_blank rel=noopener>我的 B 站教学视频</a>进行学习。</p><h2 id=常用特性>常用特性
+<a href=#%e5%b8%b8%e7%94%a8%e7%89%b9%e6%80%a7 class=anchor>&para;</a></h2><p>一些常用的特性：</p><ul><li>Class<ul><li><code>MemoryDiagnoser</code>：查看内存分配情况（有一个 bool 参数，表示是否显示 GC 的情况）</li><li><code>SimpleJob</code>：可以设置 .NET 版本，如 <code>RuntimeMoniker.Net60</code></li><li><code>Orderer(SummaryOrderPolicy.SlowestToFastest)</code>：输出结果的排序</li><li><code>RankColumn</code>：为结果表格添加一列 Rank，表示当前行的方法的排名</li></ul></li><li>Method<ul><li><code>Benchmark</code>：表示这个方法需要被测试（另有一个 <code>Baseline</code> 参数，同时会给结果添加一列 Ratio，表示和 Baseline 的比率）</li><li><code>Arguments</code>：类似于 <code>Params</code>，表示该方法的传参，可以有多个，并且会和 <code>Params</code> 联动，充分考虑各种组合</li><li><code>GlobalSetup</code>：全局初始化，常用于初始化一个要用来测试的变量、集合等。可以和 <code>Params</code> 联动，比如数组的容量由某个字段决定</li><li><code>IterationSetup</code>：用于在每次迭代前的初始化，每次迭代都会调用一次</li></ul></li><li>Field<ul><li><code>Params</code>：某个字段可能有不同的值（如果多个字段被标记该特性，则会充分考虑所有参数的组合）</li></ul></li></ul><h2 id=实际例子>实际例子
+<a href=#%e5%ae%9e%e9%99%85%e4%be%8b%e5%ad%90 class=anchor>&para;</a></h2><h3 id=测试排序的效率>测试排序的效率
+<a href=#%e6%b5%8b%e8%af%95%e6%8e%92%e5%ba%8f%e7%9a%84%e6%95%88%e7%8e%87 class=anchor>&para;</a></h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-C# data-lang=C#><span class=line><span class=cl><span class=na>[MemoryDiagnoser]</span>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>SortTester</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>List</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;</span> <span class=n>testList</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>    [GlobalSetup]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Setup</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>testList</span> <span class=p>=</span> <span class=n>Enumerable</span><span class=p>.</span><span class=n>Range</span><span class=p>(</span><span class=m>1</span><span class=p>,</span> <span class=m>100</span><span class=p>).</span><span class=n>Shuffle</span><span class=p>(</span><span class=k>new</span> <span class=n>Random</span><span class=p>(</span><span class=m>1334</span><span class=p>)).</span><span class=n>ToList</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>    [Benchmark]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>List</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;</span> <span class=n>ListSort</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>var</span> <span class=n>lst</span> <span class=p>=</span> <span class=k>new</span> <span class=n>List</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;(</span><span class=n>testList</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>lst</span><span class=p>.</span><span class=n>Sort</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>lst</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>    [Benchmark]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>List</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;</span> <span class=n>LinqOrder</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>testList</span><span class=p>.</span><span class=n>Order</span><span class=p>().</span><span class=n>ToList</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=测试初始化数组的效率>测试初始化数组的效率
+<a href=#%e6%b5%8b%e8%af%95%e5%88%9d%e5%a7%8b%e5%8c%96%e6%95%b0%e7%bb%84%e7%9a%84%e6%95%88%e7%8e%87 class=anchor>&para;</a></h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-C# data-lang=C#><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>ListInit</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl><span class=na>    [Params(16, 128, 1060)]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kt>int</span> <span class=n>count</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>    [Benchmark(Baseline = true)]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>List</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;</span> <span class=n>WithoutInit</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>var</span> <span class=n>res</span> <span class=p>=</span> <span class=k>new</span> <span class=n>List</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;();</span>
+</span></span><span class=line><span class=cl>        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=p>=</span> <span class=m>0</span><span class=p>;</span> <span class=n>i</span> <span class=p>&lt;</span> <span class=n>count</span><span class=p>;</span> <span class=n>i</span><span class=p>++)</span>
+</span></span><span class=line><span class=cl>            <span class=n>res</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=n>i</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>res</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>    [Benchmark]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>List</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;</span> <span class=n>WithInit</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>var</span> <span class=n>res</span> <span class=p>=</span> <span class=k>new</span> <span class=n>List</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;(</span><span class=n>count</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=p>=</span> <span class=m>0</span><span class=p>;</span> <span class=n>i</span> <span class=p>&lt;</span> <span class=n>count</span><span class=p>;</span> <span class=n>i</span><span class=p>++)</span>
+</span></span><span class=line><span class=cl>            <span class=n>res</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=n>i</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>res</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>    [Benchmark]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>List</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;</span> <span class=n>WithLinq</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>Enumerable</span><span class=p>.</span><span class=n>Range</span><span class=p>(</span><span class=m>0</span><span class=p>,</span> <span class=n>count</span><span class=p>).</span><span class=n>ToList</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=net-6-vs-net-7>.NET 6 vs. .NET 7
+<a href=#net-6-vs-net-7 class=anchor>&para;</a></h3><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-C# data-lang=C#><span class=line><span class=cl><span class=na>[MemoryDiagnoser(false)]</span>
+</span></span><span class=line><span class=cl><span class=na>[SimpleJob(RuntimeMoniker.Net60)]</span>
+</span></span><span class=line><span class=cl><span class=na>[SimpleJob(RuntimeMoniker.Net70)]</span>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>SortTester</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>IEnumerable</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;</span> <span class=n>testList</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>    [GlobalSetup]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Setup</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>testList</span> <span class=p>=</span> <span class=n>Enumerable</span><span class=p>.</span><span class=n>Range</span><span class=p>(</span><span class=m>1</span><span class=p>,</span> <span class=m>10</span><span class=p>).</span><span class=n>ToArray</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>    [Benchmark]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kt>int</span> <span class=n>CalcMin</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>testList</span><span class=p>.</span><span class=n>Min</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=注意事项>注意事项
+<a href=#%e6%b3%a8%e6%84%8f%e4%ba%8b%e9%a1%b9 class=anchor>&para;</a></h2><ol><li>要使用有编译器优化的 Release 模式</li><li>被测试的类、使用了特性的方法与字段均需要为 <code>public</code></li><li>在要测试的方法中尽量避免会被 JIT 优化掉的情况，比如有一个不会被使用的变量等</li><li>除非还想要测试内存读取的速度等，否则一般没有必要创建过大的数组</li></ol><h2 id=参考链接>参考链接
+<a href=#%e5%8f%82%e8%80%83%e9%93%be%e6%8e%a5 class=anchor>&para;</a></h2><p><a class=link href=https://fransbouma.github.io/BenchmarkDotNet/RulesOfBenchmarking.htm target=_blank rel=noopener>Rules of benchmarking - BenchmarkDotNet Documentation</a></p></section><footer class=article-footer><section class=article-tags><a href=/tags/csharp/>csharp</a>
+<a href=/tags/dotnet/>dotnet</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/dont-easily-use-comprehensive-extension-libraries/><div class=article-details><h2 class=article-title>不要轻易使用大而全的扩展库</h2></div></a></article><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article><article><a href=/posts/how-to-remove-event-handler-outside-a-class.md/><div class=article-details><h2 class=article-title>如何在类外移除类的事件订阅？</h2></div></a></article><article><a href=/posts/how-to-get-real-local-ip-address/><div class=article-details><h2 class=article-title>如何在 C# 中获取本机真实 IP 地址？</h2></div></a></article><article><a href=/posts/customize-order-with-icomparer/><div class=article-details><h2 class=article-title>在 C# 中使用 IComparer 实现自定义排序</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

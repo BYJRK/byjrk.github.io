@@ -1,0 +1,238 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="在多线程情形下，有时候我们会希望有办法汇报进度，却常常会遇到线程不安全之类的问题。那么官方给出的实践方式是什么呢？"><title>如何在异步任务中汇报进度</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/how-to-report-progress/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="如何在异步任务中汇报进度"><meta property='og:description' content="在多线程情形下，有时候我们会希望有办法汇报进度，却常常会遇到线程不安全之类的问题。那么官方给出的实践方式是什么呢？"><meta property='og:url' content='https://blog.coldwind.top/posts/how-to-report-progress/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='csharp'><meta property='article:tag' content='dotnet'><meta property='article:tag' content='async'><meta property='article:tag' content='wpf'><meta property='article:published_time' content='2024-05-09T00:00:00+00:00'><meta property='article:modified_time' content='2024-05-09T00:00:00+00:00'><meta property='og:image' content='https://s2.loli.net/2024/05/09/RJYeMSKs5q6UdQn.jpg'><meta name=twitter:title content="如何在异步任务中汇报进度"><meta name=twitter:description content="在多线程情形下，有时候我们会希望有办法汇报进度，却常常会遇到线程不安全之类的问题。那么官方给出的实践方式是什么呢？"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://s2.loli.net/2024/05/09/RJYeMSKs5q6UdQn.jpg'><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#搭建项目>搭建项目</a></li><li><a href=#使用-progress-类>使用 Progress 类</a></li><li><a href=#实现自定义-progress-类>实现自定义 Progress 类</a></li><li><a href=#总结>总结</a></li><li><a href=#参考>参考</a></li></ol></nav></div></section></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/posts/how-to-report-progress/><img src=https://s2.loli.net/2024/05/09/RJYeMSKs5q6UdQn.jpg loading=lazy alt="Featured image of post 如何在异步任务中汇报进度"></a></div><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/how-to-report-progress/>如何在异步任务中汇报进度</a></h2><h3 class=article-subtitle>在多线程情形下，有时候我们会希望有办法汇报进度，却常常会遇到线程不安全之类的问题。那么官方给出的实践方式是什么呢？</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2024-05-09T00:00:00Z>May 09, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 4 分钟</time></div></footer></div></header><section class=article-content><blockquote><p>本文有对应的视频教程：<a class=link href=https://www.bilibili.com/video/BV1SD421P76s/ target=_blank rel=noopener>哔哩哔哩</a></p></blockquote><p>在执行异步任务时，有时候我们会希望有办法汇报进度。比如在一个 WPF 程序中，我们在界面上放了一个进度条，从而展示当前任务的进度。那么该如何汇报异步任务的进度呢？</p><p>其实 .NET 标准库就为我们提供了实现这一功能的接口和类：<code>IProgress&lt;T></code> 与 <code>Progress&lt;T></code>，其中 <code>T</code> 是一个泛型类型，表示要汇报的内容。如果我们希望汇报一个百分比进度，那么使用 <code>double</code> 类型即可；类似地，如果我们希望汇报一些更加复杂的内容，还可以使用 <code>string</code> 甚至一些自定义类与结构体。</p><p>下面我们就来看看该如何使用吧。</p><h2 id=搭建项目>搭建项目
+<a href=#%e6%90%ad%e5%bb%ba%e9%a1%b9%e7%9b%ae class=anchor>&para;</a></h2><p>首先我们创建一个简易的 WPF 项目。因为这次的任务比较简单，所以我们就不遵循 MVVM 模式了，而是使用最传统的 WPF 事件注册的方式。</p><p>它的 <code>MainWindow</code> 形如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;Window</span> <span class=err>...</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;StackPanel</span> <span class=na>VerticalAlignment=</span><span class=s>&#34;Center&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;Button</span> <span class=na>Width=</span><span class=s>&#34;100&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=na>Margin=</span><span class=s>&#34;0,0,0,10&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=na>Content=</span><span class=s>&#34;Run&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=na>Click=</span><span class=s>&#34;Button_Click&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;ProgressBar</span> <span class=na>Height=</span><span class=s>&#34;20&#34;</span>
+</span></span><span class=line><span class=cl>                     <span class=na>d:Value=</span><span class=s>&#34;10&#34;</span>
+</span></span><span class=line><span class=cl>                     <span class=na>Name=</span><span class=s>&#34;progressBar&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/StackPanel&gt;</span>
+</span></span><span class=line><span class=cl><span class=nt>&lt;/Window&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>然后在 <code>MainWindow.xaml.cs</code> 中实现一些简单的逻辑：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kd>public</span> <span class=kd>partial</span> <span class=k>class</span> <span class=nc>MainWindow</span> <span class=p>:</span> <span class=n>Window</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MainWindow</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>InitializeComponent</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kd>async</span> <span class=k>void</span> <span class=n>Button_Click</span><span class=p>(</span><span class=kt>object</span> <span class=n>sender</span><span class=p>,</span> <span class=n>RoutedEventArgs</span> <span class=n>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>await</span> <span class=n>DoJobAsync</span><span class=p>(</span><span class=n>CancellationToken</span><span class=p>.</span><span class=n>None</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>async</span> <span class=n>Task</span> <span class=n>DoJobAsync</span><span class=p>(</span><span class=n>CancellationToken</span> <span class=n>token</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>token</span><span class=p>.</span><span class=n>IsCancellationRequested</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=k>return</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=p>=</span> <span class=m>0</span><span class=p>;</span> <span class=n>i</span> <span class=p>&lt;</span> <span class=m>100</span><span class=p>;</span> <span class=n>i</span><span class=p>++)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>await</span> <span class=n>Task</span><span class=p>.</span><span class=n>Delay</span><span class=p>(</span><span class=m>50</span><span class=p>,</span> <span class=n>token</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=n>progressBar</span><span class=p>.</span><span class=n>Value</span> <span class=p>=</span> <span class=n>i</span> <span class=p>+</span> <span class=m>1</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>token</span><span class=p>.</span><span class=n>IsCancellationRequested</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=k>break</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>我们将按钮注册的 <code>Button_Click</code> 方法修改为 <code>async void</code>，这样我们就可以在里面等待一个异步任务了。</p><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content>虽然 <code>async void</code> 是一种非常危险的方式，但因为 <code>Button</code> 控件的 <code>Click</code> 事件对应委托对于函数传参及返回值的限制，这里我们不得不这样做。</div></div><p>然后，我们在 <code>DoJobAsync</code> 中实现后台的异步任务。这里我们简单地使用一个 <code>for</code> 循环，并在其中使用 <code>Task.Delay</code>，从而实现一个拥有进度的异步任务。然后，我们在每次循环中直接修改 <code>progressBar</code> 控件的值。运行程序，就可以直接看到效果了：</p><p><img src=https://s2.loli.net/2024/05/09/F6o97PzSaO4kiDc.gif loading=lazy alt=动画></p><p>这个问题难道就这么轻松地就解决了吗？其实不是的，因为在异步任务中，很可能会出现在别的线程中操作 UI 线程的资源（也就是控件及其属性），这种情况下程序会报错。所以如果使用这样的方式，通常我们还需要使用老套的 <code>Dispatcher.Invoke</code> 的方式来规避这个问题。但这样就显得不够优雅了。</p><p>那么同样的功能，我们该如何使用 <code>Progress</code> 类来实现呢？</p><h2 id=使用-progress-类>使用 Progress 类
+<a href=#%e4%bd%bf%e7%94%a8-progress-%e7%b1%bb class=anchor>&para;</a></h2><p>首先我们需要稍稍修改一下 <code>DoJobAsync</code> 方法：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kd>async</span> <span class=n>Task</span> <span class=n>DoJobAsync</span><span class=p>(</span><span class=n>IProgress</span><span class=p>&lt;</span><span class=kt>double</span><span class=p>&gt;</span> <span class=n>reporter</span><span class=p>,</span> <span class=n>CancellationToken</span> <span class=n>token</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>   <span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=p>=</span> <span class=m>0</span><span class=p>;</span> <span class=n>i</span> <span class=p>&lt;</span> <span class=m>100</span><span class=p>;</span> <span class=n>i</span><span class=p>++)</span>
+</span></span><span class=line><span class=cl>   <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>token</span><span class=p>.</span><span class=n>IsCancellationRequested</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=k>return</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>       <span class=k>await</span> <span class=n>Task</span><span class=p>.</span><span class=n>Delay</span><span class=p>(</span><span class=m>50</span><span class=p>,</span> <span class=n>token</span><span class=p>).</span><span class=n>ConfigureAwait</span><span class=p>(</span><span class=kc>false</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>       <span class=n>reporter</span><span class=p>.</span><span class=n>Report</span><span class=p>(</span><span class=n>i</span> <span class=p>+</span> <span class=m>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>       <span class=k>if</span> <span class=p>(</span><span class=n>token</span><span class=p>.</span><span class=n>IsCancellationRequested</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>       <span class=p>{</span>
+</span></span><span class=line><span class=cl>           <span class=k>break</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>       <span class=p>}</span>
+</span></span><span class=line><span class=cl>   <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>然后，这个 <code>Progress</code> 类的实例来自哪儿呢？我们再修改一下 <code>Button_Click</code> 方法：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kd>private</span> <span class=kd>async</span> <span class=k>void</span> <span class=n>Button_Click</span><span class=p>(</span><span class=kt>object</span> <span class=n>sender</span><span class=p>,</span> <span class=n>RoutedEventArgs</span> <span class=n>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>reporter</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Progress</span><span class=p>&lt;</span><span class=kt>double</span><span class=p>&gt;(</span><span class=k>value</span> <span class=p>=&gt;</span> <span class=n>progressBar</span><span class=p>.</span><span class=n>Value</span> <span class=p>=</span> <span class=k>value</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=k>await</span> <span class=n>DoJobAsync</span><span class=p>(</span><span class=n>reporter</span><span class=p>,</span> <span class=n>CancellationToken</span><span class=p>.</span><span class=n>None</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>就这样，我们只需要在使用的时候实例化一个新的即可。它除了我们前面提到的泛型，还传入了一个回调函数，表示每次 <code>Report</code> 时需要执行的逻辑。这里的逻辑非常简单，只需要将传入的 <code>double</code> 类型的数字赋值给进度条的 <code>Value</code> 属性即可。</p><p>那么问题来了：它是如何规避了前面提到的线程问题的呢？我们观察 <code>Progress</code> 类的<a class=link href=https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/Progress.cs,d23df0450d3fd0d6 target=_blank rel=noopener>源代码</a>，可以发现：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kd>public</span> <span class=n>Progress</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// Capture the current synchronization context.</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// If there is no current context, we use a default instance targeting the ThreadPool.</span>
+</span></span><span class=line><span class=cl>    <span class=n>_synchronizationContext</span> <span class=p>=</span> <span class=n>SynchronizationContext</span><span class=p>.</span><span class=n>Current</span> <span class=p>??</span> <span class=n>ProgressStatics</span><span class=p>.</span><span class=n>DefaultContext</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=n>Debug</span><span class=p>.</span><span class=n>Assert</span><span class=p>(</span><span class=n>_synchronizationContext</span> <span class=p>!=</span> <span class=kc>null</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=n>_invokeHandlers</span> <span class=p>=</span> <span class=k>new</span> <span class=n>SendOrPostCallback</span><span class=p>(</span><span class=n>InvokeHandlers</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>在它的构造函数中，拥有一个 <code>SynchronizationContext</code> 对象，它持有了当前的同步上下文。当我们在 <code>Button_Click</code> 方法中声明它时，因为还在 UI 线程，所以它就保存了这个上下文。然后在它的 <code>Report</code> 方法被调用时，就会在正确的同步上下文（也就是 UI 线程）中执行相关逻辑了。</p><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content>除了给构造函数传回调，<code>Progress</code> 类还为我们提供了一个 <code>ProgressChanged</code> 事件。注册这个事件可以实现相同的效果，并且也是在相同的同步上下文执行的。</div></div><h2 id=实现自定义-progress-类>实现自定义 Progress 类
+<a href=#%e5%ae%9e%e7%8e%b0%e8%87%aa%e5%ae%9a%e4%b9%89-progress-%e7%b1%bb class=anchor>&para;</a></h2><p>如果我们还有其他额外的需求，那么我们还可以自己实现接口，或者继承 <code>Progress</code> 类。官方特意没有将这个类设为 <code>sealed</code>，并且将 <code>OnReport</code> 方法设为 <code>virtual</code>，就是为了满足我们的这些需求。</p><div class="notice note"><div class=notice-title><i class="fa-solid fa-sticky-note" aria-hidden=true></i>Note</div><div class=notice-content>但是如果我们去继承这个 <code>Progress</code> 类，会发现其实我们能自由发挥的空间并不大，因为它其中的很多字段（尤其是同步上下文）都是 <code>private</code> 的，所以我们能做的事情基本上也只有重写 <code>OnReport</code> 方法了。</div></div><p>比如这里我写了一个子类，从而可以在进度完成后执行一个回调方法。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=k>class</span> <span class=nc>MyProgress</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=p>:</span> <span class=n>Progress</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=k>where</span> <span class=n>T</span> <span class=p>:</span> <span class=n>notnull</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>Action</span><span class=p>?</span> <span class=n>_complete</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>T</span> <span class=n>_maximum</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kt>bool</span> <span class=n>_isCompleted</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MyProgress</span><span class=p>(</span><span class=n>Action</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=n>handler</span><span class=p>,</span> <span class=n>Action</span><span class=p>?</span> <span class=n>complete</span><span class=p>,</span> <span class=n>T</span> <span class=n>maximum</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>:</span> <span class=k>base</span><span class=p>(</span><span class=n>handler</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_complete</span> <span class=p>=</span> <span class=n>complete</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_maximum</span> <span class=p>=</span> <span class=n>maximum</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>ProgressChanged</span> <span class=p>+=</span> <span class=n>CheckCompletion</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>protected</span> <span class=kd>override</span> <span class=k>void</span> <span class=n>OnReport</span><span class=p>(</span><span class=n>T</span> <span class=k>value</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>_isCompleted</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=k>return</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>base</span><span class=p>.</span><span class=n>OnReport</span><span class=p>(</span><span class=k>value</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>void</span> <span class=n>CheckCompletion</span><span class=p>(</span><span class=kt>object?</span> <span class=n>sender</span><span class=p>,</span> <span class=n>T</span> <span class=n>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>e</span><span class=p>.</span><span class=n>Equals</span><span class=p>(</span><span class=n>_maximum</span><span class=p>)</span> <span class=p>&amp;&amp;</span> <span class=p>!</span><span class=n>_isCompleted</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_isCompleted</span> <span class=p>=</span> <span class=kc>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>_complete</span><span class=p>?.</span><span class=n>Invoke</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>然后我们就可以这样使用了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kd>private</span> <span class=kd>async</span> <span class=k>void</span> <span class=n>Button_Click</span><span class=p>(</span><span class=kt>object</span> <span class=n>sender</span><span class=p>,</span> <span class=n>RoutedEventArgs</span> <span class=n>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>reporter</span> <span class=p>=</span> <span class=k>new</span> <span class=n>MyProgress</span><span class=p>&lt;</span><span class=kt>double</span><span class=p>&gt;(</span>
+</span></span><span class=line><span class=cl>        <span class=k>value</span> <span class=p>=&gt;</span> <span class=n>progressBar</span><span class=p>.</span><span class=n>Value</span> <span class=p>=</span> <span class=k>value</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=p>()</span> <span class=p>=&gt;</span> <span class=n>progressBar</span><span class=p>.</span><span class=n>Visibility</span> <span class=p>=</span> <span class=n>Visibility</span><span class=p>.</span><span class=n>Hidden</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>        <span class=m>100</span>
+</span></span><span class=line><span class=cl>    <span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=k>await</span> <span class=n>DoJobAsync</span><span class=p>(</span><span class=n>reporter</span><span class=p>,</span> <span class=n>CancellationToken</span><span class=p>.</span><span class=n>None</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这里实现的效果是，当异步任务完成后，将会隐藏进度条。</p><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p>不知道大家看完这篇文章的感受如何。其实我在最开始了解文中提到的 <code>IProgress</code> 接口以及 <code>Progress</code> 类时，最大的感受是：微软究竟为我们提前准备好了多少接口和类啊🤣！</p><p>.NET 类中有太多这样的标准库了，但我们也没有什么办法去系统地挖掘与总结。所以只能仰仗大家今后持续不断的交流与学习了。</p><h2 id=参考>参考
+<a href=#%e5%8f%82%e8%80%83 class=anchor>&para;</a></h2><p><a class=link href="https://www.youtube.com/watch?v=zQMNFEz5IVU" target=_blank rel=noopener>How to Report Progress with Async/Await in .NET Core 3 - YouTube</a></p><p><a class=link href="https://www.youtube.com/watch?v=ZTKGRJy5P2M" target=_blank rel=noopener>C# Advanced Async - Getting progress reports, cancelling tasks, and more - YouTube</a></p></section><footer class=article-footer><section class=article-tags><a href=/tags/csharp/>csharp</a>
+<a href=/tags/dotnet/>dotnet</a>
+<a href=/tags/async/>async</a>
+<a href=/tags/wpf/>wpf</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article><article><a href=/posts/built-in-design-patterns-in-wpf/><div class=article-details><h2 class=article-title>原生 WPF 框架中体现出的设计模式</h2></div></a></article><article><a href=/posts/more-observable-collections/><div class=article-details><h2 class=article-title>借助 ObservableCollections 获得更多具有通知功能的集合类型</h2></div></a></article><article><a href=/posts/how-many-timers-are-there/><div class=article-details><h2 class=article-title>.NET 原生有哪些 Timer 以及它们分别是怎么用的？</h2></div></a></article><article><a href=/posts/contentcontrol-vs-contentpresenter/><div class=article-details><h2 class=article-title>WPF 中的 ContentControl 及 ContentPresenter 有何异同？</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

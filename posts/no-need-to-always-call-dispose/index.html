@@ -1,0 +1,355 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="在 C# 中，是否所有实现了 IDisposable 接口的类都需要在用后立刻调用 Dispose 方法？本文将通过几个典型的例子，来看看在什么情况下可以不调用 Dispose 方法，并从底层的原理出发，给大家提供一个判断是否有必要调用 Dispose 方法的思路。"><title>是不是所有 C# 中实现了 Dispose 方法的类我们都要用完即释放？</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/no-need-to-always-call-dispose/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="是不是所有 C# 中实现了 Dispose 方法的类我们都要用完即释放？"><meta property='og:description' content="在 C# 中，是否所有实现了 IDisposable 接口的类都需要在用后立刻调用 Dispose 方法？本文将通过几个典型的例子，来看看在什么情况下可以不调用 Dispose 方法，并从底层的原理出发，给大家提供一个判断是否有必要调用 Dispose 方法的思路。"><meta property='og:url' content='https://blog.coldwind.top/posts/no-need-to-always-call-dispose/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='dotnet'><meta property='article:tag' content='csharp'><meta property='article:tag' content='gc'><meta property='article:published_time' content='2025-04-21T00:00:00+00:00'><meta property='article:modified_time' content='2025-04-21T00:00:00+00:00'><meta name=twitter:title content="是不是所有 C# 中实现了 Dispose 方法的类我们都要用完即释放？"><meta name=twitter:description content="在 C# 中，是否所有实现了 IDisposable 接口的类都需要在用后立刻调用 Dispose 方法？本文将通过几个典型的例子，来看看在什么情况下可以不调用 Dispose 方法，并从底层的原理出发，给大家提供一个判断是否有必要调用 Dispose 方法的思路。"><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#实现-idisposable-接口但不涉及资源释放的类>实现 IDisposable 接口但不涉及资源释放的类</a></li><li><a href=#因为基类或接口的约束而实现-idisposable-接口的类>因为基类或接口的约束而实现 IDisposable 接口的类</a></li><li><a href=#在特定情况下可以不调用-dispose-方法的类>在特定情况下可以不调用 Dispose 方法的类</a></li><li><a href=#虽然提供了-dispose-方法但不应该用完立即释放的类>虽然提供了 Dispose 方法，但不应该用完立即释放的类</a></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/no-need-to-always-call-dispose/>是不是所有 C# 中实现了 Dispose 方法的类我们都要用完即释放？</a></h2><h3 class=article-subtitle>在 C# 中，是否所有实现了 IDisposable 接口的类都需要在用后立刻调用 Dispose 方法？本文将通过几个典型的例子，来看看在什么情况下可以不调用 Dispose 方法，并从底层的原理出发，给大家提供一个判断是否有必要调用 Dispose 方法的思路。</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2025-04-21T00:00:00Z>Apr 21, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 8 分钟</time></div></footer></div></header><section class=article-content><p>C# 作为一个有 GC（垃圾回收）的语言，在使用托管资源时，通常不需要开发者关注资源的释放问题。但如果使用了非托管资源（常见的如文件句柄、数据库连接等），就需要手动释放资源了。为了方便管理资源，并形成一种统一的规范，C# 提供了 <code>IDisposable</code> 接口（后来还提供了 <code>IAsyncDisposable</code> 接口），开发者可以通过这个接口提供的 <code>Dispose</code> 方法来释放资源，还可以借助 C# 的 <code>using</code> 语句来简化资源的释放过程。</p><p>那么问题来了：是否所有实现了 <code>IDisposable</code> 接口的类都需要在用后立刻调用 <code>Dispose</code> 方法？答案是：不一定。</p><p>这篇文章我们就借助几个典型的例子，来看看在什么情况下可以不调用 <code>Dispose</code> 方法，并从底层的原理出发，给大家提供一个判断是否有必要调用 <code>Dispose</code> 方法的思路。</p><h2 id=实现-idisposable-接口但不涉及资源释放的类>实现 IDisposable 接口但不涉及资源释放的类
+<a href=#%e5%ae%9e%e7%8e%b0-idisposable-%e6%8e%a5%e5%8f%a3%e4%bd%86%e4%b8%8d%e6%b6%89%e5%8f%8a%e8%b5%84%e6%ba%90%e9%87%8a%e6%94%be%e7%9a%84%e7%b1%bb class=anchor>&para;</a></h2><p>首先我们看第一种情况：有些类实现了 <code>IDisposable</code> 接口，但并不涉及资源的释放。这时候相信有的读者就会问了：这种情况有点太强行凑数了吧？而且这难道不是在滥用 <code>IDisposable</code> 吗，毕竟它本来是用来释放资源的啊？</p><p>其实未必。因为 C# 的 <code>using</code> 关键字提供了一个非常方便的语法糖，可以让我们在使用完一个对象后，自动调用它的 <code>Dispose</code> 方法中的逻辑（即便它可能与资源释放无关）。这样我们就可以实现延迟执行，以及在任何情况下（包括抛异常）都能够确保会执行的逻辑了。</p><p>首先我们简单回顾一下 <code>using</code> 关键字在幕后做的事情。我们这里看一个简单例子：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>using</span> <span class=nn>var</span> <span class=n>fs</span> <span class=p>=</span> <span class=k>new</span> <span class=n>FileStream</span><span class=p>(</span><span class=s>&#34;test.txt&#34;</span><span class=p>,</span> <span class=n>FileMode</span><span class=p>.</span><span class=n>Open</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=c1>// 其他逻辑</span>
+</span></span></code></pre></td></tr></table></div></div><p>上面的代码在编译后会变成下面的代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kt>var</span> <span class=n>fs</span> <span class=p>=</span> <span class=k>new</span> <span class=n>FileStream</span><span class=p>(</span><span class=s>&#34;test.txt&#34;</span><span class=p>,</span> <span class=n>FileMode</span><span class=p>.</span><span class=n>Open</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=k>try</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// 其他逻辑</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=k>finally</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>fs</span> <span class=p>!=</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=p>((</span><span class=n>IDisposable</span><span class=p>)</span><span class=n>fs</span><span class=p>).</span><span class=n>Dispose</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><div class="notice tip"><div class=notice-title><i class="fa-solid fa-lightbulb" aria-hidden=true></i>Tip</div><div class=notice-content>在上面的例子中，<code>using</code> 关键字并没有搭配花括号进行使用。这是 C# 8.0 中新增的语法糖，可以让我们减少一层缩进。它相当于花括号涵盖了从 <code>using</code> 关键字到作用域的结束这个范围。</div></div><p>我们可以看到，<code>using</code> 语句在编译后会变成一个 <code>try...finally</code> 语句块，确保了在 <code>try</code> 块中的代码执行完后，无论是否出现异常，最终都会执行 <code>finally</code> 块中的代码。</p><p>于是我们就可以借助这个语法来实现一些延迟执行的逻辑了，尤其是类似 Go 语言中的 <code>defer</code> 语句。Go 语言中，<code>defer</code> 语句会在函数返回时执行，比如下面这个例子：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>func</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>defer</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=s>&#34;defer&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=s>&#34;hello&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>于是我们可以仿照这个思路，在 C# 中实现一个类似的功能：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>Defer</span> <span class=p>:</span> <span class=n>IDisposable</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>Action</span> <span class=n>_action</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>Defer</span><span class=p>(</span><span class=n>Action</span> <span class=n>action</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_action</span> <span class=p>=</span> <span class=n>action</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Dispose</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_action</span><span class=p>?.</span><span class=n>Invoke</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>它在构建时会传入一个 <code>Action</code> 委托，表示需要延迟执行的逻辑。然后我们就可以像下面这样使用它了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>using</span> <span class=nn>var</span> <span class=n>defer</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Defer</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>&#34;defer&#34;</span><span class=p>));</span>
+</span></span><span class=line><span class=cl><span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>&#34;hello&#34;</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><p>所以对于这样的一个类，即便它实现了 <code>IDisposable</code> 接口，我们也不必须在使用完后，手动调用它的 <code>Dispose</code> 方法。因为它的 <code>Dispose</code> 方法并不涉及资源的释放，而只是执行一些延迟逻辑而已。</p><h2 id=因为基类或接口的约束而实现-idisposable-接口的类>因为基类或接口的约束而实现 IDisposable 接口的类
+<a href=#%e5%9b%a0%e4%b8%ba%e5%9f%ba%e7%b1%bb%e6%88%96%e6%8e%a5%e5%8f%a3%e7%9a%84%e7%ba%a6%e6%9d%9f%e8%80%8c%e5%ae%9e%e7%8e%b0-idisposable-%e6%8e%a5%e5%8f%a3%e7%9a%84%e7%b1%bb class=anchor>&para;</a></h2><p>除了上面提到的为了借助 <code>using</code> 语句来实现延迟执行的逻辑外，还有一些类实现了 <code>IDisposable</code> 接口，但并不涉及资源的释放。</p><p>我们都知道，C# 中有一些原生的数据流，比如 <code>FileStream</code>、<code>MemoryStream</code>、<code>GZipStream</code> 等等。它们的基类 <code>Stream</code> 实现了 <code>IDisposable</code> 接口，并且它们根据自己的实际情况，也各自提供了具体的 <code>Dispose</code> 方法的实现，比如 <code>FileStream</code> 会关闭文件句柄，从而释放文件资源，避免文件被占用。</p><p>但这其中的 <code>MemoryStream</code> 就有些非同寻常了。它虽然是一个数据流，但它并不涉及资源的释放。因为它的底层数据是存储在内存中的一个字节数组（<code>byte[]</code>）中，而这个字节数组是一个托管资源。在它的源代码中我们可以看到：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>MemoryStream</span> <span class=p>:</span> <span class=n>Stream</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kt>byte</span><span class=p>[]</span> <span class=n>_buffer</span><span class=p>;</span>    <span class=c1>// Either allocated internally or externally.</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=kt>int</span> <span class=n>_origin</span><span class=p>;</span>       <span class=c1>// For user-provided arrays, start at this origin</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kt>int</span> <span class=n>_position</span><span class=p>;</span>     <span class=c1>// read/write head.</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kt>int</span> <span class=n>_length</span><span class=p>;</span>       <span class=c1>// Number of bytes within the memory stream</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kt>int</span> <span class=n>_capacity</span><span class=p>;</span>     <span class=c1>// length of usable portion of buffer for stream</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kt>bool</span> <span class=n>_expandable</span><span class=p>;</span>  <span class=c1>// User-provided buffers aren&#39;t expandable.</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kt>bool</span> <span class=n>_writable</span><span class=p>;</span>    <span class=c1>// Can user write to this stream?</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=kt>bool</span> <span class=n>_exposable</span><span class=p>;</span>   <span class=c1>// Whether the array can be returned to the user.</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kt>bool</span> <span class=n>_isOpen</span><span class=p>;</span>      <span class=c1>// Is this stream open or closed?</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// ...</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>protected</span> <span class=kd>override</span> <span class=k>void</span> <span class=n>Dispose</span><span class=p>(</span><span class=kt>bool</span> <span class=n>disposing</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>disposing</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_isOpen</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>_writable</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>_expandable</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=c1>// Don&#39;t set buffer to null - allow TryGetBuffer, GetBuffer &amp; ToArray to work.</span>
+</span></span><span class=line><span class=cl>            <span class=n>_lastReadTask</span> <span class=p>=</span> <span class=k>default</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>所以对于 <code>MemoryStream</code> 这样的 <code>Dispose</code> 方法并不涉及资源释放的类型，即便我们不调用它的 <code>Dispose</code> 方法，也不会造成资源泄漏。当然了，这并不意味着我们就不需要甚至不应该去做这件事情，因为规范的开发习惯仍旧是可以为我们的代码带来更好的可读性和可维护性的。</p><h2 id=在特定情况下可以不调用-dispose-方法的类>在特定情况下可以不调用 Dispose 方法的类
+<a href=#%e5%9c%a8%e7%89%b9%e5%ae%9a%e6%83%85%e5%86%b5%e4%b8%8b%e5%8f%af%e4%bb%a5%e4%b8%8d%e8%b0%83%e7%94%a8-dispose-%e6%96%b9%e6%b3%95%e7%9a%84%e7%b1%bb class=anchor>&para;</a></h2><p>有些类提供了 <code>Dispose</code> 方法，但是在某些情况下，对这一方法的调用并不是至关重要的。这里有一个典型的例子就是我们在异步编程中常见的 <code>CancellationTokenSource</code>（下面简称为 CTS）。</p><p>首先我们来写一个简单的代码，并观察它在运行时的内存占用：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=p>=</span> <span class=m>0</span><span class=p>;</span> <span class=n>i</span> <span class=p>&lt;</span> <span class=m>100000000</span><span class=p>;</span> <span class=n>i</span><span class=p>++)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>cts</span> <span class=p>=</span> <span class=k>new</span> <span class=n>CancellationTokenSource</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>运行后我们会发现，内存几乎没有任何变化。这是否意味着，CTS 的 <code>Dispose</code> 方法并不重要呢？其实并不是，但是在上面的这个用法中，调用与否确实没有太大的区别。这是怎么回事呢？</p><p>我们来观察 CTS 的 <code>Dispose</code> 方法的实现：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>protected</span> <span class=k>virtual</span> <span class=k>void</span> <span class=n>Dispose</span><span class=p>(</span><span class=kt>bool</span> <span class=n>disposing</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>disposing</span> <span class=p>&amp;&amp;</span> <span class=p>!</span><span class=n>_disposed</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>ITimer</span><span class=p>?</span> <span class=n>timer</span> <span class=p>=</span> <span class=n>_timer</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>timer</span> <span class=p>!=</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_timer</span> <span class=p>=</span> <span class=kc>null</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>timer</span><span class=p>.</span><span class=n>Dispose</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>_registrations</span> <span class=p>=</span> <span class=kc>null</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>_kernelEvent</span> <span class=p>!=</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>ManualResetEvent</span><span class=p>?</span> <span class=n>mre</span> <span class=p>=</span> <span class=n>Interlocked</span><span class=p>.</span><span class=n>Exchange</span><span class=p>&lt;</span><span class=n>ManualResetEvent</span><span class=p>?&gt;(</span><span class=k>ref</span> <span class=n>_kernelEvent</span><span class=p>!,</span> <span class=kc>null</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>mre</span> <span class=p>!=</span> <span class=kc>null</span> <span class=p>&amp;&amp;</span> <span class=n>_state</span> <span class=p>!=</span> <span class=n>States</span><span class=p>.</span><span class=n>NotifyingState</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>mre</span><span class=p>.</span><span class=n>Dispose</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>_disposed</span> <span class=p>=</span> <span class=kc>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>可以发现，这里它对两个“可有可无”的对象进行了回收，分别是：</p><ul><li><code>_timer</code>：一个 <code>ITimer</code> 对象，表示一个定时器</li><li><code>_kernelEvent</code>：一个 <code>ManualResetEvent</code> 对象，是一个信号量</li></ul><p>它们分别是做什么用的呢？首先我们来看定时器。我们知道，CTS 提供了延时自动取消的功能。比如我们希望在 5 秒后自动取消，那么实现方法可以是：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kt>var</span> <span class=n>delay</span> <span class=p>=</span> <span class=n>TimeSpan</span><span class=p>.</span><span class=n>FromSeconds</span><span class=p>(</span><span class=m>5</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>cts</span> <span class=p>=</span> <span class=k>new</span> <span class=n>CancellationTokenSource</span><span class=p>(</span><span class=n>delay</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=c1>// 或者也可以在创建后调用 CancelAfter 方法</span>
+</span></span></code></pre></td></tr></table></div></div><p>此时，CTS 内部就会创建这个定时器，从而实现这个功能。在这一情况下，就会产生需要我们去释放的资源了。</p><p>另外一个信号量又是怎么回事呢？</p><p>我们都知道，CTS 现在常用于异步编程。它的 <code>CancellationToken</code> 可以传给标准库提供的 <code>Async</code> 结尾的方法，从而实现任务的取消。但是一些老的库函数可能并不支持 <code>CancellationToken</code>，这时候我们就可以借助 <code>token</code> 上的这个 <code>WaitHandle</code> 来实现任务的取消了。下面是 CTS 中关于 <code>WaitHandle</code> 属性的实现：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>internal</span> <span class=n>WaitHandle</span> <span class=n>WaitHandle</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>get</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>ThrowIfDisposed</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// Return the handle if it was already allocated.</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>_kernelEvent</span> <span class=p>!=</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>return</span> <span class=n>_kernelEvent</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// Lazily-initialize the handle.</span>
+</span></span><span class=line><span class=cl>        <span class=kt>var</span> <span class=n>mre</span> <span class=p>=</span> <span class=k>new</span> <span class=n>ManualResetEvent</span><span class=p>(</span><span class=kc>false</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>Interlocked</span><span class=p>.</span><span class=n>CompareExchange</span><span class=p>(</span><span class=k>ref</span> <span class=n>_kernelEvent</span><span class=p>,</span> <span class=n>mre</span><span class=p>,</span> <span class=kc>null</span><span class=p>)</span> <span class=p>!=</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>mre</span><span class=p>.</span><span class=n>Dispose</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>IsCancellationRequested</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_kernelEvent</span><span class=p>.</span><span class=n>Set</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>_kernelEvent</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>可以发现，它默认是没有值的；当我们第一次访问它时，它便会创建一个新的，并返回它。这样的操作就会产生一个需要我们去释放资源的对象。我们可以做这样的一个实验：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>for</span> <span class=p>(</span><span class=kt>int</span> <span class=n>i</span> <span class=p>=</span> <span class=m>0</span><span class=p>;</span> <span class=n>i</span> <span class=p>&lt;</span> <span class=m>100000000</span><span class=p>;</span> <span class=n>i</span><span class=p>++)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>cts</span> <span class=p>=</span> <span class=k>new</span> <span class=n>CancellationTokenSource</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>handle</span> <span class=p>=</span> <span class=n>cts</span><span class=p>.</span><span class=n>Token</span><span class=p>.</span><span class=n>WaitHandle</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><div class="notice tip"><div class=notice-title><i class="fa-solid fa-lightbulb" aria-hidden=true></i>Tip</div><div class=notice-content><code>WaitHandle</code> 在 CTS 上是 <code>internal</code> 的，我们只能也应当在 <code>CancellationToken</code> 上去访问，因为通常情况下，我们传给方法的参数并不是 CTS 对象本身，而是它的 <code>Token</code>。</div></div><p>然后运行程序，就会发现内存在不断增加。只要我们调用了 <code>CTS</code> 的 <code>Dispose</code> 方法，内存便会不再上升。</p><p>所以我们可以得出结论：如果我们在使用 CTS 时，既不使用延时自动取消的功能，也不使用 <code>WaitHandle</code> 属性，那么我们不调用 <code>Dispose</code> 方法也不会造成资源的泄漏。</p><h2 id=虽然提供了-dispose-方法但不应该用完立即释放的类>虽然提供了 Dispose 方法，但不应该用完立即释放的类
+<a href=#%e8%99%bd%e7%84%b6%e6%8f%90%e4%be%9b%e4%ba%86-dispose-%e6%96%b9%e6%b3%95%e4%bd%86%e4%b8%8d%e5%ba%94%e8%af%a5%e7%94%a8%e5%ae%8c%e7%ab%8b%e5%8d%b3%e9%87%8a%e6%94%be%e7%9a%84%e7%b1%bb class=anchor>&para;</a></h2><p>还有一种情况是，虽然类实现了 <code>IDisposable</code> 接口，但我们并不应该在用完后立即释放它。它被设计出来就是希望我们能够复用的。典型的例子就是 <code>HttpClient</code>。</p><p>比如下面这个错误例子：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=n>List</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>urls</span> <span class=p>=</span> <span class=k>new</span> <span class=n>List</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;()</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=s>&#34;https://www.baidu.com&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s>&#34;https://www.sogou.com&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s>&#34;https://www.sohu.com&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>foreach</span> <span class=p>(</span><span class=kt>var</span> <span class=n>url</span> <span class=k>in</span> <span class=n>urls</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>using</span> <span class=nn>var</span> <span class=n>client</span> <span class=p>=</span> <span class=k>new</span> <span class=n>HttpClient</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=k>await</span> <span class=n>client</span><span class=p>.</span><span class=n>GetAsync</span><span class=p>(</span><span class=n>url</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这个例子就是一个错误的用法。正确的做法应该是将 <code>HttpClient</code> 的声明移动到循环外部，或者还可以声明为一个静态对象等。这是为什么呢？</p><p>简单来说，<code>HttpClient</code> 底层会使用 <code>HttpClientHandler</code> 去处理涉及到连接池、Socket、TCP 连接等资源的管理。TCP 连接因为比较昂贵（比如有三次握手、四次挥手等），所以它通常会被复用。当我们使用 <code>HttpClient</code> 去访问一个链接时，访问结束后这个 TCP 连接并不会立即关闭，而是会被放入连接池中，等待下次的复用。</p><p>但是，如果我们在每次请求时都创建一个新的 <code>HttpClient</code> 对象，那么这个 TCP 连接就会占据连接池中的一个位置，还有本地端口等资源，最终可能会导致连接池或本地端口的耗尽，进而抛出 <code>SocketException</code> 等异常。</p><p>因为 <code>HttpClient</code> 是一个包装好的功能相当灵活的类，因此我们完全可以只创建一个，并且多次使用。不管我们访问的链接是否可以复用，怎么复用，保持连接状态多久，都会被它妥善处理。所以对于一个本地项目（如控制台应用、WPF 应用等），我们完全可以创建一个单例并处处使用它。</p><p>如果我们在项目中还使用了 DI 容器（比如微软官方提供的 <code>Microsoft.Extensions.DependencyInjection</code>），那么我们可以将 <code>HttpClient</code> 注册为一个单例的服务。这样我们就可以在整个项目中复用它了。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kt>var</span> <span class=n>services</span> <span class=p>=</span> <span class=k>new</span> <span class=n>ServiceCollection</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=n>services</span><span class=p>.</span><span class=n>AddSingleton</span><span class=p>&lt;</span><span class=n>HttpClient</span><span class=p>&gt;();</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>serviceProvider</span> <span class=p>=</span> <span class=n>services</span><span class=p>.</span><span class=n>BuildServiceProvider</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>client</span> <span class=p>=</span> <span class=n>serviceProvider</span><span class=p>.</span><span class=n>GetService</span><span class=p>&lt;</span><span class=n>HttpClient</span><span class=p>&gt;();</span>
+</span></span></code></pre></td></tr></table></div></div><p>当然了，这个方式并不是最推荐的方式（不过对于简单的本地项目来说是可取的）。对于复杂些的项目，我们更应该考虑的方式是使用 <code>HttpClientFactory</code>。要使用它，我们还要引入一个包：<code>Microsoft.Extentions.Http</code>（控制台或 WPF 等本地程序通常需要，而 <code>ASP.NET Core</code> 项目会自动引入它，因此就不需要额外安装包了），然后就可以使用了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kt>var</span> <span class=n>services</span> <span class=p>=</span> <span class=k>new</span> <span class=n>ServiceCollection</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=n>services</span><span class=p>.</span><span class=n>AddHttpClient</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>serviceProvider</span> <span class=p>=</span> <span class=n>services</span><span class=p>.</span><span class=n>BuildServiceProvider</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>factory</span> <span class=p>=</span> <span class=n>serviceProvider</span><span class=p>.</span><span class=n>GetService</span><span class=p>&lt;</span><span class=n>IHttpClientFactory</span><span class=p>&gt;();</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>client</span> <span class=p>=</span> <span class=n>factory</span><span class=p>.</span><span class=n>CreateClient</span><span class=p>();</span>
+</span></span></code></pre></td></tr></table></div></div><p>对于更加复杂的情况，比如我们希望为不同的服务类注入配置不同的 <code>HttpClient</code>（比如不同的 BaseAddress、Header、Timeout 等），我们可以使用 <code>AddHttpClient</code> 的“命名客户端”的方法来实现：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kt>var</span> <span class=n>services</span> <span class=p>=</span> <span class=k>new</span> <span class=n>ServiceCollection</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=n>services</span><span class=p>.</span><span class=n>AddHttpClient</span><span class=p>(</span><span class=s>&#34;baidu&#34;</span><span class=p>,</span> <span class=n>c</span> <span class=p>=&gt;</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>c</span><span class=p>.</span><span class=n>BaseAddress</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Uri</span><span class=p>(</span><span class=s>&#34;https://www.baidu.com&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=n>c</span><span class=p>.</span><span class=n>Timeout</span> <span class=p>=</span> <span class=n>TimeSpan</span><span class=p>.</span><span class=n>FromSeconds</span><span class=p>(</span><span class=m>30</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>});</span>
+</span></span><span class=line><span class=cl><span class=n>services</span><span class=p>.</span><span class=n>AddHttpClient</span><span class=p>(</span><span class=s>&#34;sogou&#34;</span><span class=p>,</span> <span class=n>c</span> <span class=p>=&gt;</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>c</span><span class=p>.</span><span class=n>BaseAddress</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Uri</span><span class=p>(</span><span class=s>&#34;https://www.sogou.com&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=n>c</span><span class=p>.</span><span class=n>DefaultRequestHeaders</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;User-Agent&#34;</span><span class=p>,</span> <span class=s>&#34;Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>});</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>serviceProvider</span> <span class=p>=</span> <span class=n>services</span><span class=p>.</span><span class=n>BuildServiceProvider</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>factory</span> <span class=p>=</span> <span class=n>serviceProvider</span><span class=p>.</span><span class=n>GetService</span><span class=p>&lt;</span><span class=n>IHttpClientFactory</span><span class=p>&gt;();</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>baiduClient</span> <span class=p>=</span> <span class=n>factory</span><span class=p>.</span><span class=n>CreateClient</span><span class=p>(</span><span class=s>&#34;baidu&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>sogouClient</span> <span class=p>=</span> <span class=n>factory</span><span class=p>.</span><span class=n>CreateClient</span><span class=p>(</span><span class=s>&#34;sogou&#34;</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样我们就可以为不同的服务类注入不同的 <code>HttpClient</code> 了。关于 <code>HttpClientFactory</code> 的更多用法，可以参考<a class=link href="https://learn.microsoft.com/zh-cn/aspnet/core/fundamentals/http-requests?view=aspnetcore-9.0" target=_blank rel=noopener>官方的教程</a>。</p><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p>在这篇文章中，我们讨论了在 C# 中是否需要总是调用 <code>Dispose</code> 方法的问题。我们通过几个典型的例子，来看看在什么情况下可以不调用 <code>Dispose</code> 方法，并从底层的原理出发，给大家提供一个判断是否有必要调用 <code>Dispose</code> 方法的思路。</p><p>在实际的开发中，与其说我们需要分辨出哪些对象是可以不用释放的，不如说我们应当明白如何对这一操作的必要性进行正确的判断，并养成统一且规范的开发习惯。这样不管是对团队的其他开发者，还是未来的自己，都是有好处的。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/dotnet/>dotnet</a>
+<a href=/tags/csharp/>csharp</a>
+<a href=/tags/gc/>gc</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/dont-easily-use-comprehensive-extension-libraries/><div class=article-details><h2 class=article-title>不要轻易使用大而全的扩展库</h2></div></a></article><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article><article><a href=/posts/how-to-remove-event-handler-outside-a-class.md/><div class=article-details><h2 class=article-title>如何在类外移除类的事件订阅？</h2></div></a></article><article><a href=/posts/how-to-get-real-local-ip-address/><div class=article-details><h2 class=article-title>如何在 C# 中获取本机真实 IP 地址？</h2></div></a></article><article><a href=/posts/customize-order-with-icomparer/><div class=article-details><h2 class=article-title>在 C# 中使用 IComparer 实现自定义排序</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

@@ -1,0 +1,161 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content=".NET 为什么要在某个版本引入某个新特性？这背后的思考和逻辑是什么？或许我们可以借助逆向思考的方式来理解。"><title>逆向思考 .NET 一些版本的新特性</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/reverse-thinking-of-dotnet-new-features/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="逆向思考 .NET 一些版本的新特性"><meta property='og:description' content=".NET 为什么要在某个版本引入某个新特性？这背后的思考和逻辑是什么？或许我们可以借助逆向思考的方式来理解。"><meta property='og:url' content='https://blog.coldwind.top/posts/reverse-thinking-of-dotnet-new-features/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='dotnet'><meta property='article:tag' content='csharp'><meta property='article:published_time' content='2025-06-03T00:00:00+00:00'><meta property='article:modified_time' content='2025-06-03T00:00:00+00:00'><meta name=twitter:title content="逆向思考 .NET 一些版本的新特性"><meta name=twitter:description content=".NET 为什么要在某个版本引入某个新特性？这背后的思考和逻辑是什么？或许我们可以借助逆向思考的方式来理解。"><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#匿名类型lambda-表达式和扩展方法>匿名类型、lambda 表达式和扩展方法</a></li><li><a href=#丢弃运算符>丢弃运算符</a></li><li><a href=#init-访问器与记录类><code>init</code> 访问器与记录类</a></li><li><a href=#顶级语句与隐式引入>顶级语句与隐式引入</a></li><li><a href=#接口的抽象静态成员>接口的抽象静态成员</a></li><li><a href=#结论>结论</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/reverse-thinking-of-dotnet-new-features/>逆向思考 .NET 一些版本的新特性</a></h2><h3 class=article-subtitle>.NET 为什么要在某个版本引入某个新特性？这背后的思考和逻辑是什么？或许我们可以借助逆向思考的方式来理解。</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2025-06-03T00:00:00Z>Jun 03, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 5 分钟</time></div></footer></div></header><section class=article-content><p>.NET 作为一个近年来更新频率稳定的平台，每个版本都会引入一些新的特性和改进。这些新特性往往是为了提高开发效率、增强性能或改善用户体验。然而，很多时候我们可能会对某些新特性的引入感到疑惑，甚至认为它们并不是那么必要。</p><p>在这篇文章中，我想借助几个例子来分享我的思考，并给大家提供一个有意思的视角：逆向思考 .NET 新特性背后的逻辑和思考方式。</p><h2 id=匿名类型lambda-表达式和扩展方法>匿名类型、lambda 表达式和扩展方法
+<a href=#%e5%8c%bf%e5%90%8d%e7%b1%bb%e5%9e%8blambda-%e8%a1%a8%e8%be%be%e5%bc%8f%e5%92%8c%e6%89%a9%e5%b1%95%e6%96%b9%e6%b3%95 class=anchor>&para;</a></h2><p>在 C# 3 中，.NET 引入了匿名类型、lambda 表达式和扩展方法等特性。我们先来简单回顾一下这些特性都是什么。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=c1>// 匿名类型</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>mapped</span> <span class=p>=</span> <span class=n>people</span><span class=p>.</span><span class=n>Select</span><span class=p>(</span><span class=n>p</span> <span class=p>=&gt;</span> <span class=k>new</span> <span class=p>{</span> <span class=n>p</span><span class=p>.</span><span class=n>Name</span><span class=p>,</span> <span class=n>p</span><span class=p>.</span><span class=n>Age</span> <span class=p>});</span>
+</span></span><span class=line><span class=cl><span class=c1>// Lambda 表达式</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>filtered</span> <span class=p>=</span> <span class=n>people</span><span class=p>.</span><span class=n>Where</span><span class=p>(</span><span class=n>p</span> <span class=p>=&gt;</span> <span class=n>p</span><span class=p>.</span><span class=n>Age</span> <span class=p>&gt;</span> <span class=m>18</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=c1>// 扩展方法</span>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=kd>static</span> <span class=k>class</span> <span class=nc>StringExtensions</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kd>static</span> <span class=n>IEnumerable</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=n>Where</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;(</span><span class=k>this</span> <span class=n>IEnumerable</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=n>source</span><span class=p>,</span> <span class=n>Func</span><span class=p>&lt;</span><span class=n>T</span><span class=p>,</span> <span class=kt>bool</span><span class=p>&gt;</span> <span class=n>predicate</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>foreach</span> <span class=p>(</span><span class=kt>var</span> <span class=n>item</span> <span class=k>in</span> <span class=n>source</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>predicate</span><span class=p>(</span><span class=n>item</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=k>yield</span> <span class=k>return</span> <span class=n>item</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>相信大家看了上面我“别有用心”的实例之后，一定不难发现：这些新特性似乎都与 LINQ 有关，而 LINQ 正是在 C# 3.0 中引入的。</p><p>因此，我们不难得出结论：这些新特性都是为了支持 LINQ 的语法而添加的。它们使得我们可以更简洁地编写查询代码，提升了代码的可读性和可维护性。</p><p>当然了，这三个特性绝不仅仅是为了支持 LINQ 而存在的。它们在其他场景下也有着广泛的应用。例如，匿名类型可以用于快速创建临时数据结构，lambda 表达式可以用于方便地声明事件处理和回调，而扩展方法则可以让我们为现有类型添加新的功能。它们都是相当强大的功能。</p><h2 id=丢弃运算符>丢弃运算符
+<a href=#%e4%b8%a2%e5%bc%83%e8%bf%90%e7%ae%97%e7%ac%a6 class=anchor>&para;</a></h2><p>我们再来看一个例子。C# 7 引入了丢弃运算符（<code>_</code>），它可以用于忽略不需要的值。这看起来似乎是一个小特性，但如果我们再去看这个版本引入的其他几个特性，就不难发现它们之间的关系了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=c1>// C# 7.0-</span>
+</span></span><span class=line><span class=cl><span class=kt>int</span> <span class=k>value</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=p>(</span><span class=kt>int</span><span class=p>.</span><span class=n>TryParse</span><span class=p>(</span><span class=n>input</span><span class=p>,</span> <span class=k>out</span> <span class=k>value</span><span class=p>))</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// ...</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>Tuple</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>,</span> <span class=kt>string</span><span class=p>&gt;</span> <span class=n>GetResults</span><span class=p>()</span> <span class=p>{</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>results</span> <span class=p>=</span> <span class=n>GetResults</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=k>value</span> <span class=p>=</span> <span class=n>results</span><span class=p>.</span><span class=n>Item1</span><span class=p>;</span> <span class=c1>// 忽略 Item2</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// C# 7.0+</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=p>(</span><span class=kt>int</span><span class=p>.</span><span class=n>TryParse</span><span class=p>(</span><span class=n>input</span><span class=p>,</span> <span class=k>out</span> <span class=kt>var</span> <span class=n>_</span><span class=p>))</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// ...</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=p>(</span><span class=kt>int</span><span class=p>,</span> <span class=kt>string</span><span class=p>)</span> <span class=n>GetResults</span><span class=p>()</span> <span class=p>{</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=p>(</span><span class=k>value</span><span class=p>,</span> <span class=n>_</span><span class=p>)</span> <span class=p>=</span> <span class=n>GetResults</span><span class=p>();</span> <span class=c1>// 使用元组解构</span>
+</span></span></code></pre></td></tr></table></div></div><p>不难发现，C# 7 还引入了新的 <code>out</code> 变量声明和元组解构语法。而在这些语法中，丢弃运算符都可以起到便捷的作用。因此，我们可以说，这几个新的特性是密不可分的，所以它们也得以在这个版本中同时出现。</p><h2 id=init-访问器与记录类><code>init</code> 访问器与记录类
+<a href=#init-%e8%ae%bf%e9%97%ae%e5%99%a8%e4%b8%8e%e8%ae%b0%e5%bd%95%e7%b1%bb class=anchor>&para;</a></h2><p>C# 9 引入了 <code>init</code> 访问器和记录类（record class）。记录类为我们提供了相当便捷的声明不可变数据类型的方式，并且重写了 <code>Equals</code>、<code>GetHashCode</code> 和 <code>ToString</code> 等方法，来提供更好的语义。</p><p>默认情况下，一个记录类中的属性都是只读的，即：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>public</span> <span class=k>record</span> <span class=nc>Person</span><span class=p>(</span><span class=kt>string</span> <span class=n>Name</span><span class=p>,</span> <span class=kt>int</span> <span class=n>Age</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 相当于</span>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>Person</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kt>string</span> <span class=n>Name</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=k>init</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kt>int</span> <span class=n>Age</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=k>init</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kd>override</span> <span class=kt>bool</span> <span class=n>Equals</span><span class=p>(</span><span class=kt>object?</span> <span class=n>obj</span><span class=p>)</span> <span class=p>{</span> <span class=cm>/* ... */</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kd>override</span> <span class=kt>int</span> <span class=n>GetHashCode</span><span class=p>()</span> <span class=p>{</span> <span class=cm>/* ... */</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kd>override</span> <span class=kt>string</span> <span class=n>ToString</span><span class=p>()</span> <span class=p>{</span> <span class=cm>/* ... */</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>因此，<code>init</code> 访问器与记录类一起出现是很自然的。它们共同提供了一种声明不可变数据类型的方式，使得我们可以更方便地创建和使用不可变对象。</p><h2 id=顶级语句与隐式引入>顶级语句与隐式引入
+<a href=#%e9%a1%b6%e7%ba%a7%e8%af%ad%e5%8f%a5%e4%b8%8e%e9%9a%90%e5%bc%8f%e5%bc%95%e5%85%a5 class=anchor>&para;</a></h2><p>C# 9 引入了顶级语句，而 C# 10 引入了隐式引入。这样我们既不用再写 <code>Program</code> 及 <code>Main</code> 方法，也不用再写很多常见的 <code>using</code> 语句了。然后，在那段时间，我们还得到了什么呢？我们得到了 ASP.NET Core Minimal APIs。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kt>var</span> <span class=n>builder</span> <span class=p>=</span> <span class=n>WebApplication</span><span class=p>.</span><span class=n>CreateBuilder</span><span class=p>(</span><span class=n>args</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>app</span> <span class=p>=</span> <span class=n>builder</span><span class=p>.</span><span class=n>Build</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=n>app</span><span class=p>.</span><span class=n>MapGet</span><span class=p>(</span><span class=s>&#34;/&#34;</span><span class=p>,</span> <span class=p>()</span> <span class=p>=&gt;</span> <span class=s>&#34;Hello World!&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=n>app</span><span class=p>.</span><span class=n>Run</span><span class=p>();</span>
+</span></span></code></pre></td></tr></table></div></div><p>这些代码就很大程度上借助了顶级语句和隐式引入的特性。它们使得我们可以更简洁地编写 ASP.NET Core 应用程序。C# 用这层简洁的伪装，让更多的人认为用它开发 Web 应用程序是件很简单的事情（笑）。</p><p>另外，从此，C# 也可以用 1 行代码实现 Hello World 了。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>&#34;Hello World!&#34;</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=接口的抽象静态成员>接口的抽象静态成员
+<a href=#%e6%8e%a5%e5%8f%a3%e7%9a%84%e6%8a%bd%e8%b1%a1%e9%9d%99%e6%80%81%e6%88%90%e5%91%98 class=anchor>&para;</a></h2><p>在以前的 C# 版本中，接口只能包含方法、属性、事件和索引器等成员，而不能包含静态成员。相信这是绝大多数 .NET 开发者的共识，也是绝大多数开发者在入门时的认知，以及在其他编程语言中的经验。</p><p>然而，在 C# 11 中，我们可以在接口中声明抽象静态成员了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>public</span> <span class=k>interface</span> <span class=nc>IShape</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>double</span> <span class=n>Area</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=kd>static</span> <span class=kd>abstract</span> <span class=n>IShape</span> <span class=n>Create</span><span class=p>(</span><span class=kt>double</span> <span class=n>size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>Circle</span> <span class=p>:</span> <span class=n>IShape</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kt>double</span> <span class=n>Radius</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kt>double</span> <span class=n>Area</span> <span class=p>=&gt;</span> <span class=n>Math</span><span class=p>.</span><span class=n>PI</span> <span class=p>*</span> <span class=n>Radius</span> <span class=p>*</span> <span class=n>Radius</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kd>static</span> <span class=n>Circle</span> <span class=n>Create</span><span class=p>(</span><span class=kt>double</span> <span class=n>size</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=k>new</span> <span class=n>Circle</span><span class=p>(</span><span class=n>size</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样的声明会要求实现该接口的类必须提供这个静态方法。那么这个新特性有什么用呢？</p><p>很快，我们在 C# 12 中就看到了它的应用：<code>INumber</code> 接口的引入。这个接口定义了数字类型的通用行为，其中就包含了不少静态的成员，比如 <code>Parse</code>、<code>Zero</code> 等等。</p><p>不难想象，如果没有这个新的接口特性，这个接口的实现肯定是做不到的。</p><h2 id=结论>结论
+<a href=#%e7%bb%93%e8%ae%ba class=anchor>&para;</a></h2><p>其实其他类似的例子还有很多，比如 <code>ref struct</code>、<code>readonly struct</code> 等与 <code>Span</code> 及 <code>Memory</code> 相关的特性，<code>IAsyncEnumerable</code> 与 <code>Channel</code> 等等。</p><p>通过这些例子，我们可以看到，.NET 的新特性往往是为了支持某个特定的功能或语法而引入的。它们之间有着密切的关系。有的是为了支持某个功能的实现，有的是为了优化某个语法的使用体验，有的则是为了提供更好的性能或可读性。</p><p>至于为什么有的特性并不是完全在同一个版本出现，这也是有一些原因的。其中一个原因是，.NET 的新特性往往需要经过多次迭代和完善才能最终稳定下来。有可能直到某个版本要发布时，想要添加的新特性仍然不够成熟，因此为了辅助它而诞生的特性可能会提前在该版本上线，而它所辅助的特性则会在下一个版本中引入。</p><p>希望通过这篇文章，大家能够对 .NET 的新特性有一个更深入的理解。逆向思考这些特性背后的逻辑和思考方式，可以帮助我们更好地理解它们的设计初衷和应用场景，也能让我们在使用这些特性时更加得心应手。这样的例子见得多了，可能会有一种“微软在开发某功能时引入的新特性因为太好用了，所以顺便下放给我们使用”的感觉吧😂。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/dotnet/>dotnet</a>
+<a href=/tags/csharp/>csharp</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/dont-easily-use-comprehensive-extension-libraries/><div class=article-details><h2 class=article-title>不要轻易使用大而全的扩展库</h2></div></a></article><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article><article><a href=/posts/how-to-remove-event-handler-outside-a-class.md/><div class=article-details><h2 class=article-title>如何在类外移除类的事件订阅？</h2></div></a></article><article><a href=/posts/how-to-get-real-local-ip-address/><div class=article-details><h2 class=article-title>如何在 C# 中获取本机真实 IP 地址？</h2></div></a></article><article><a href=/posts/customize-order-with-icomparer/><div class=article-details><h2 class=article-title>在 C# 中使用 IComparer 实现自定义排序</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

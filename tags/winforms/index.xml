@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>winforms on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/winforms/</link><description>Recent content in winforms on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Tue, 19 Nov 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/winforms/index.xml" rel="self" type="application/rss+xml"/><item><title>常见图片相关的数据类型之间的转换</title><link>https://blog.coldwind.top/posts/image-datatypes-conversion/</link><pubDate>Tue, 19 Nov 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/image-datatypes-conversion/</guid><description>&lt;img src="https://s2.loli.net/2024/11/19/bqvEn9ipfu7DPem.jpg" alt="Featured image of post 常见图片相关的数据类型之间的转换" />&lt;p>我们在做 .NET 开发时，经常要和各种图片的数据类型打交道。&lt;strong>这里指的“类型”并不是图片的文件类型，比如 jpg、png、bmp 等，而是图片数据在内存中的表示方式&lt;/strong>。这些类型之间的转换，有时候会让人感到困惑。本文总结了常见的图片数据类型之间的转换方法，希望能帮助大家理清思路。&lt;/p>
+&lt;p>常见的图片数据类型有：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>byte[]&lt;/code> 字节数组：可能有两种情况：
+&lt;ul>
+&lt;li>将图片文件读取到内存后得到的字节数组，包括图片文件的文件头等&lt;/li>
+&lt;li>图片的像素数据，比如 RGB 数据&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;code>Stream&lt;/code>：数据流，比如 &lt;code>MemoryStream&lt;/code>、&lt;code>FileStream&lt;/code> 等，一般和字节数组可以轻易地相互转换&lt;/li>
+&lt;li>&lt;code>Bitmap&lt;/code>：WinForms 中的图片数据类型（基于 GDI+），命名空间是 &lt;code>System.Drawing&lt;/code>&lt;/li>
+&lt;li>&lt;code>BitmapImage&lt;/code>：WPF 中的图片数据类型，命名空间是 &lt;code>System.Windows.Media.Imaging&lt;/code>，常用于 &lt;code>Image&lt;/code> 控件的 &lt;code>Source&lt;/code> 属性（是 &lt;code>ImageSource&lt;/code> 类型）&lt;/li>
+&lt;li>&lt;code>BitmapSource&lt;/code>：WPF 中的图片数据类型，命名空间是 &lt;code>System.Windows.Media&lt;/code>，是 &lt;code>BitmapImage&lt;/code> 的基类&lt;/li>
+&lt;li>其他一些来自第三方库的图片类型&lt;/li>
+&lt;/ul>
+&lt;h2 id="将图片文件路径转为-bitmapimage">
+将图片文件路径转为 BitmapImage
+&lt;a href="#%e5%b0%86%e5%9b%be%e7%89%87%e6%96%87%e4%bb%b6%e8%b7%af%e5%be%84%e8%bd%ac%e4%b8%ba-bitmapimage" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>如果我们知道图片的链接（可以是本地链接或网址），并且想让 &lt;code>Image&lt;/code> 控件显示这个图片，最简单的方式如下：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">image&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Image&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">image&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Source&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">BitmapImage&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span> &lt;span class="n">Uri&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">@&amp;#34;path\to\image.jpg&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">UriKind&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">RelativeOrAbsolute&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>上述方式甚至都不需要指定图片的格式，因为 &lt;code>BitmapImage&lt;/code> 和 &lt;code>BitmapDecoder&lt;/code> 都会自动进行处理。&lt;strong>对于大多数常见的图片格式（如 JPG、PNG、BMP、GIF、TIFF、WebP、HEIC、AVIF 等），这几种方式都能正常工作&lt;/strong>。但如果是一些不太常见的图片格式，则可能需要借助一些第三方库才行了。&lt;/p>
+&lt;p>另外，如果我们并没有图片的路径，只有它被读进内存后的数据类型，那么就需要下面的几种方式了。&lt;/p>
+&lt;h2 id="bitmap-转为-bitmapimage">
+Bitmap 转为 BitmapImage
+&lt;a href="#bitmap-%e8%bd%ac%e4%b8%ba-bitmapimage" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>&lt;code>System.Drawing.Bitmap&lt;/code> 和 &lt;code>System.Windows.Media.Imaging.BitmapImage&lt;/code> 是两个常见的图片数据类型。前者是 WinForms 中的类型（GDI+），后者是 WPF 的类型。它们之间的转换方法如下：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.Drawing&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.Windows.Media.Imaging&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="n">BitmapImage&lt;/span> &lt;span class="n">ConvertBitmapToBitmapImage&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Bitmap&lt;/span> &lt;span class="n">bitmap&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">stream&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">MemoryStream&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmap&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Save&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">stream&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">ImageFormat&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Png&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">stream&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Position&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">bitmapImage&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">BitmapImage&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">BeginInit&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CacheOption&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">BitmapCacheOption&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnLoad&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">StreamSource&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">stream&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">EndInit&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Freeze&lt;/span>&lt;span class="p">();&lt;/span> &lt;span class="c1">// （可选）冻结图片，提高性能和线程安全性&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="字节数组转为-imagesource">
+字节数组转为 ImageSource
+&lt;a href="#%e5%ad%97%e8%8a%82%e6%95%b0%e7%bb%84%e8%bd%ac%e4%b8%ba-imagesource" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>这里有两种情况。如果字节数组只是读进内存的图片文件数据，比如一个本地的 JPG、PNG、BMP 等格式的文件，那么非常简单：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.IO&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.Windows.Media.Imaging&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="n">ImageSource&lt;/span> &lt;span class="n">ConvertByteArrayToImageSource&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">byte&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="n">bytes&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">stream&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">MemoryStream&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">bytes&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">bitmapImage&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">BitmapImage&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">BeginInit&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CacheOption&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">BitmapCacheOption&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnLoad&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">StreamSource&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">stream&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">EndInit&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Freeze&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>还有一种更简单的方式，直接使用 &lt;code>BitmapDecoder&lt;/code> 类：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.Windows.Media.Imaging&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="n">ImageSource&lt;/span> &lt;span class="n">ConvertByteArrayToImageSource&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">byte&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="n">bytes&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">stream&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">MemoryStream&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">bytes&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">BitmapDecoder&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Create&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">stream&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">BitmapCreateOptions&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">PreservePixelFormat&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">BitmapCacheOption&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnLoad&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Frames&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">];&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果字节数组是图片的像素数据，比如从左上到右下的逐行 RGB 数据，那么会麻烦一些，而且我们需要有办法知道图片的宽高等信息：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.Windows.Media&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.Windows.Media.Imaging&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="n">ImageSource&lt;/span> &lt;span class="n">BgrByteArrayToImageSource&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">byte&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="n">array&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">width&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">height&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">channel&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int?&lt;/span> &lt;span class="n">stride&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">bmp&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">WriteableBitmap&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">width&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">height&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">96&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">96&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">PixelFormats&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Bgr24&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">stride&lt;/span> &lt;span class="p">??=&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="n">width&lt;/span> &lt;span class="p">*&lt;/span> &lt;span class="n">channel&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="m">3&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">/&lt;/span> &lt;span class="m">4&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">*&lt;/span> &lt;span class="m">4&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bmp&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WritePixels&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">new&lt;/span> &lt;span class="n">Int32Rect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">width&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">height&lt;/span>&lt;span class="p">),&lt;/span> &lt;span class="n">array&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">stride&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Value&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bmp&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Freeze&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">bmp&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="bitmapsource-转为-bitmapimage">
+BitmapSource 转为 BitmapImage
+&lt;a href="#bitmapsource-%e8%bd%ac%e4%b8%ba-bitmapimage" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>这两个类其实是有继承关系的，&lt;code>BitmapImage&lt;/code> 继承自 &lt;code>BitmapSource&lt;/code>。但一般我们仍然需要进行一个“转换”，因为通常的使用场景是，我们从 WPF 提供的剪贴板 API 中获取到一个 &lt;code>BitmapSource&lt;/code>，但我们经过简单的处理，将它转为 &lt;code>BitmapImage&lt;/code> 从而添加给 &lt;code>Image&lt;/code> 控件。这时候可以这样转换：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.Windows.Media.Imaging&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="n">BitmapImage&lt;/span> &lt;span class="n">ConvertBitmapSourceToBitmapImage&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">BitmapSource&lt;/span> &lt;span class="n">bitmapSource&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">bitmapImage&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">BitmapImage&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">stream&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">MemoryStream&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">BitmapEncoder&lt;/span> &lt;span class="n">encoder&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">BmpBitmapEncoder&lt;/span>&lt;span class="p">();&lt;/span> &lt;span class="c1">// 一般情况下，剪贴板中的图片数据是 BMP 格式的，而非 PNG 格式&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">encoder&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Frames&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">BitmapFrame&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Create&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">bitmapSource&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">encoder&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Save&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">stream&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">stream&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Position&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">BeginInit&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CacheOption&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">BitmapCacheOption&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnLoad&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">StreamSource&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">stream&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">EndInit&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Freeze&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">bitmapImage&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="emgucvimage-转为-bitmapimage">
+Emgu.CV.Image 转为 BitmapImage
+&lt;a href="#emgucvimage-%e8%bd%ac%e4%b8%ba-bitmapimage" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>前面我们提到，&lt;code>BitmapImage&lt;/code> 支持绝大多数常见的图片格式。但如果现在我们有一个不常见的格式，比如 JP2（JPEG 2000）格式，那么 &lt;code>BitmapImage&lt;/code> 就无法直接处理了。这时候我们可以使用 Emgu.CV 库，它是 OpenCV 的 .NET 封装，支持更多的图片格式。下面给出一种方式：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">filename&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">@&amp;#34;path\to\image.jp2&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">mat&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Image&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Bgr&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Byte&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="n">filename&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">bytes&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">mat&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToJpegData&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">stream&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">MemoryStream&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">bytes&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">bitmap&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">BitmapImage&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">bitmap&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">BeginInit&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">bitmap&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CacheOption&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">BitmapCacheOption&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnLoad&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">bitmap&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">StreamSource&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">stream&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">bitmap&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">EndInit&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">bitmap&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Freeze&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">control&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Image&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">control&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Source&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">bitmap&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">control&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Dump&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>看了这么多，大家相信已经看出规律了吧？是的，对于大多数情况，我们都要先将数据转为持有常见图像类型的 &lt;code>Stream&lt;/code>，然后再创建 &lt;code>BitmapImage&lt;/code>，最后将其赋给 &lt;code>Image&lt;/code> 控件。这样的方式，可以保证我们的代码在大多数情况下都能正常工作。&lt;/p></description></item></channel></rss>

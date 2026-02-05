@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>efcore on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/efcore/</link><description>Recent content in efcore on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Mon, 02 Feb 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/efcore/index.xml" rel="self" type="application/rss+xml"/><item><title>如何在本地客户端使用 EF Core</title><link>https://blog.coldwind.top/posts/use-efcore-in-client-app/</link><pubDate>Mon, 02 Feb 2026 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/use-efcore-in-client-app/</guid><description>&lt;p>Entity Framework Core (EF Core) 是一个强大的对象关系映射（ORM）框架，通常用于服务器端应用程序中与数据库交互。通常我们会将它用于 ASP.NET Core 应用程序，并且它的配置方式也绝对可以说是相当成熟了。但有时候我们在做本地客户端应用程序（例如 WPF、WinForms 或 Avalonia 应用程序）时，也希望利用 EF Core 来简化数据访问层的开发。那么我们需要注意些什么？最佳实践是怎样的？这篇文章我们就来探讨这个问题。&lt;/p>
+&lt;h2 id="回顾-ef-core-在-aspnet-core-中的使用">
+回顾 EF Core 在 ASP.NET Core 中的使用
+&lt;a href="#%e5%9b%9e%e9%a1%be-ef-core-%e5%9c%a8-aspnet-core-%e4%b8%ad%e7%9a%84%e4%bd%bf%e7%94%a8" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>首先我们来快速回顾一下在 ASP.NET Core 应用程序中使用 EF Core 的典型方式。以一个比较新（.NET 6+）的项目为例，通常我们会在程序入口进行如下的配置：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">builder&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">WebApplication&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CreateBuilder&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">args&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 配置 DbContext&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">builder&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Services&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AddDbContext&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">AppDbContext&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="n">options&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">options&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">UseSqlServer&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">builder&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Configuration&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetConnectionString&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;DefaultConnection&amp;#34;&lt;/span>&lt;span class="p">)));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 其他服务配置&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// ...&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这里其实有一个隐式的配置，就是我们将 &lt;code>DbContext&lt;/code> 的生命周期设置为了作用域（Scoped）。在 ASP.NET Core 中，每个 HTTP 请求都会创建一个新的作用域，因此每个请求都会有一个独立的 &lt;code>DbContext&lt;/code> 实例。这种方式有助于确保数据的一致性和隔离性。&lt;/p>
+&lt;p>这个方案在服务器端应用程序中可以说是非常标准且正确的，但是这个问题到了本地客户端，情况就不太相同了。对于客户端程序来说，通常并没有作用域这么一个概念。客户端程序一般是单用户的，整个应用程序的生命周期就是一个大的作用域。如果我们直接将 &lt;code>DbContext&lt;/code> 注册为作用域生命周期，那么实际上它就会变成单例生命周期，这样就会带来一些问题：&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>线程安全问题&lt;/strong>：&lt;code>DbContext&lt;/code> 不是线程安全的，如果在多线程环境下（例如 UI 线程和后台线程）共享同一个实例，可能会导致数据损坏或异常。&lt;/li>
+&lt;li>&lt;strong>内存泄漏&lt;/strong>：长时间持有 &lt;code>DbContext&lt;/code> 实例可能会导致内存泄漏，因为它会跟踪所有的实体状态，随着时间的推移，这些状态会不断累积。&lt;/li>
+&lt;/ol>
+&lt;p>因此，如何解决这两个问题就成了我们在客户端使用 EF Core 时需要重点考虑的内容。&lt;/p>
+&lt;h2 id="方法一注册为瞬态transient生命周期">
+方法一：注册为瞬态（Transient）生命周期
+&lt;a href="#%e6%96%b9%e6%b3%95%e4%b8%80%e6%b3%a8%e5%86%8c%e4%b8%ba%e7%9e%ac%e6%80%81transient%e7%94%9f%e5%91%bd%e5%91%a8%e6%9c%9f" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>首先我们来看一种相对来说比较简单的方式。既然注册为作用域，实际上就相当于单例，那么我们可以直接将 &lt;code>DbContext&lt;/code> 注册为瞬态生命周期。这样在每个被注入服务的类中，它都会获得一个新的 &lt;code>DbContext&lt;/code> 实例，从而一定程度上避免了一些问题。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 注册 DbContext 服务&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">builder&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Services&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AddDbContext&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">AppDbContext&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="n">options&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">options&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">UseSqlServer&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">builder&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Configuration&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetConnectionString&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;DefaultConnection&amp;#34;&lt;/span>&lt;span class="p">)),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ServiceLifetime&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Transient&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 使用 DbContext 的服务&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">MyViewModel&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">AppDbContext&lt;/span> &lt;span class="n">_dbContext&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">MyViewModel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">AppDbContext&lt;/span> &lt;span class="n">dbContext&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_dbContext&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">dbContext&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">LoadData&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">items&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">_dbContext&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Items&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToList&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 处理数据&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">对于一个客户端程序，尤其是 MVVM 模式，一个典型的情况是我们将 &lt;code>DbContext&lt;/code> 注入到 ViewModel 中使用。当然对于更复杂的场景，我们可能会将数据访问逻辑封装到一个 Repository 或 Service 层中，然后再将这些服务注入到 ViewModel 中。至于没有使用 MVVM 模式的情形，我们基本上也不会搞 DI 容器，所以也就不考虑这些问题了。&lt;/div>
+&lt;/div>
+&lt;p>那么这有没有问题呢？答案是有的，而且这个方案并不理想。比如我们看下面这个例子。在这个例子中，我们使用了 CommunityToolkit.Mvvm 来简化 ViewModel 的编写：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kd">partial&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">MainViewModel&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">ViewModelBase&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">AppDbContext&lt;/span> &lt;span class="n">_dbContext&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [ObservableProperty]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="n">ObservableCollection&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Item&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">_loadedItems&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">MainViewModel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">AppDbContext&lt;/span> &lt;span class="n">dbContext&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_dbContext&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">dbContext&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [RelayCommand(AllowConcurrent = true)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="kd">async&lt;/span> &lt;span class="n">Task&lt;/span> &lt;span class="n">LoadDataAsync&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">items&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">await&lt;/span> &lt;span class="n">_dbContext&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Items&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToListAsync&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">LoadedItems&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">items&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在这个例子中，我们将 &lt;code>DbContext&lt;/code> 注入到了 &lt;code>MainViewModel&lt;/code> 中，并且在 &lt;code>LoadDataAsync&lt;/code> 方法中使用它来加载数据。这里其实就已经出现不少问题了：&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>MainViewModel&lt;/code> 的实例通常生命周期非常长（可能与整个应用程序相同），而 &lt;code>DbContext&lt;/code> 被注册为瞬态生命周期，这就意味着每次调用 &lt;code>LoadDataAsync&lt;/code> 方法时，实际上都是在使用同一个 &lt;code>DbContext&lt;/code> 实例。那这其实并没有比单例强多少，最多就是不用和其他服务共用同一个实例而已。长时间使用下去，&lt;code>DbContext&lt;/code> 仍然会积累大量的状态，导致内存泄漏的问题。&lt;/li>
+&lt;li>这里我故意将 &lt;code>LoadDataAsync&lt;/code> 方法设置为允许并发执行（&lt;code>AllowConcurrent = true&lt;/code>）。这就意味着如果用户快速多次点击加载按钮，就会导致多个线程同时访问同一个 &lt;code>DbContext&lt;/code> 实例，从而引发线程安全问题。&lt;/li>
+&lt;/ol>
+&lt;p>所以说，虽然将 &lt;code>DbContext&lt;/code> 注册为瞬态生命周期在某些情况下可以工作，但它并不是一个理想的解决方案。除非我们能保证使用它的代码绝对不会并发执行，并且生命周期比较短（比如一个表单的视图模型），否则我们还是需要寻找更好的方法。&lt;/p>
+&lt;h2 id="方法二为服务注入作用域">
+方法二：为服务注入作用域
+&lt;a href="#%e6%96%b9%e6%b3%95%e4%ba%8c%e4%b8%ba%e6%9c%8d%e5%8a%a1%e6%b3%a8%e5%85%a5%e4%bd%9c%e7%94%a8%e5%9f%9f" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>既然上面的思路走不通，我们恐怕就不能简单地给视图模型直接注入 &lt;code>DbContext&lt;/code> 了。为了解决上面的问题，我们应该让视图模型操作数据库的方法有机会每次都创建一个新的实例。顺着这个思路，我们可以让 &lt;code>DbContext&lt;/code> 继续注册为作用域生命周期，然后为视图模型注入一个 &lt;code>IServiceScopeFactory&lt;/code>，每次需要访问数据库时，就创建一个新的作用域，从而获得一个新的 &lt;code>DbContext&lt;/code> 实例。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kd">partial&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">MainViewModel&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">ViewModelBase&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">IServiceScopeFactory&lt;/span> &lt;span class="n">_scopeFactory&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [ObservableProperty]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="n">ObservableCollection&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Item&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">_loadedItems&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">MainViewModel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IServiceScopeFactory&lt;/span> &lt;span class="n">scopeFactory&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_scopeFactory&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">scopeFactory&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [RelayCommand(AllowConcurrent = true)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="kd">async&lt;/span> &lt;span class="n">Task&lt;/span> &lt;span class="n">LoadDataAsync&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">scope&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">_scopeFactory&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CreateScope&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">dbContext&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">scope&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ServiceProvider&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetRequiredService&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">AppDbContext&lt;/span>&lt;span class="p">&amp;gt;();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">items&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">await&lt;/span> &lt;span class="n">dbContext&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Items&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToListAsync&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">LoadedItems&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">items&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>或者我们还可以更简单一些，我们直接将 &lt;code>DbContext&lt;/code> 注册为瞬态生命周期，然后为视图模型注入一个 &lt;code>IDbContextFactory&amp;lt;AppDbContext&amp;gt;&lt;/code>，每次需要访问数据库时，就通过工厂创建一个新的 &lt;code>DbContext&lt;/code> 实例。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kd">partial&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">MainViewModel&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">ViewModelBase&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">IDbContextFactory&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">AppDbContext&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">_dbContextFactory&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [ObservableProperty]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="n">ObservableCollection&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Item&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">_loadedItems&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">MainViewModel&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">IDbContextFactory&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">AppDbContext&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">dbContextFactory&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">_dbContextFactory&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">dbContextFactory&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [RelayCommand(AllowConcurrent = true)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="kd">async&lt;/span> &lt;span class="n">Task&lt;/span> &lt;span class="n">LoadDataAsync&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">dbContext&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">_dbContextFactory&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CreateDbContext&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">items&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">await&lt;/span> &lt;span class="n">dbContext&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Items&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToListAsync&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">LoadedItems&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">items&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>总的来说，在本地客户端应用程序中使用 EF Core 时，我们需要特别注意 &lt;code>DbContext&lt;/code> 的生命周期以及线程安全。只要解决了这两个问题，我们就可以放心地在客户端程序中使用 EF Core 来简化数据访问层的开发。&lt;/p></description></item></channel></rss>

@@ -1,0 +1,201 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="探讨一个 WPF 中的简单而又不简单的布局问题：如何高效地实现多行多列的控件布局？"><title>如何在 WPF 中高效布局多行多列的控件</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/grid-of-controls/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="如何在 WPF 中高效布局多行多列的控件"><meta property='og:description' content="探讨一个 WPF 中的简单而又不简单的布局问题：如何高效地实现多行多列的控件布局？"><meta property='og:url' content='https://blog.coldwind.top/posts/grid-of-controls/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='dotnet'><meta property='article:tag' content='csharp'><meta property='article:tag' content='wpf'><meta property='article:published_time' content='2024-12-26T00:00:00+00:00'><meta property='article:modified_time' content='2024-12-26T00:00:00+00:00'><meta property='og:image' content='https://s2.loli.net/2024/12/26/kgGyXcYIlnMNpSr.jpg'><meta name=twitter:title content="如何在 WPF 中高效布局多行多列的控件"><meta name=twitter:description content="探讨一个 WPF 中的简单而又不简单的布局问题：如何高效地实现多行多列的控件布局？"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://s2.loli.net/2024/12/26/kgGyXcYIlnMNpSr.jpg'><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#最传统的方式grid>最传统的方式：Grid</a></li><li><a href=#外层使用-uniformgrid>外层使用 UniformGrid</a></li><li><a href=#外层使用-stackpanel>外层使用 StackPanel</a></li><li><a href=#使用更高级的-grid>使用更高级的 Grid</a></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/posts/grid-of-controls/><img src=https://s2.loli.net/2024/12/26/kgGyXcYIlnMNpSr.jpg loading=lazy alt="Featured image of post 如何在 WPF 中高效布局多行多列的控件"></a></div><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/grid-of-controls/>如何在 WPF 中高效布局多行多列的控件</a></h2><h3 class=article-subtitle>探讨一个 WPF 中的简单而又不简单的布局问题：如何高效地实现多行多列的控件布局？</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2024-12-26T00:00:00Z>Dec 26, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 6 分钟</time></div></footer></div></header><section class=article-content><p>这次我们来探讨一个 WPF 中的简单而又不简单的布局问题：如何实现下图中的效果？</p><figure><img src=https://s2.loli.net/2024/12/25/qlpQr1DJ4FBskKe.png width=400px></figure><p>为什么说这个问题简单而又不简单呢？是因为单纯只是实现这个效果的话，我们完全可以使用 <code>Grid</code> 控件来实现。<del>甚至如果完全不在乎优雅的话，我们还可以用 <code>Canvas</code> 来实现</del>（当然这几乎在任何情况下都是不推荐的）。但是，实际这样干过的开发者相信都很清楚，使用 <code>Grid</code> 的实现方式几乎可以说是毫无灵活性的。很快就会被后续的界面微调的需求整得焦头烂额。</p><p>那么我们今天就来看一看，这样的需求通常有哪些做法吧。希望这篇文章中提到的某些方式能够帮助到你。</p><h2 id=最传统的方式grid>最传统的方式：Grid
+<a href=#%e6%9c%80%e4%bc%a0%e7%bb%9f%e7%9a%84%e6%96%b9%e5%bc%8fgrid class=anchor>&para;</a></h2><p>在介绍后面的更好的方式之前，我们有必要先来看一看最传统的方式：使用 <code>Grid</code> 控件。这样才能更好地分析这种方式的局限性，以及思考改进的方向。</p><p>这样的方式相信所有具备基本 WPF 基础的开发者都相当熟悉：</p><ol><li>在 XAML 中定义一个 <code>Grid</code> 控件</li><li>在 <code>Grid</code> 中定义多个 <code>RowDefinition</code> 和 <code>ColumnDefinition</code></li><li>在 <code>Grid</code> 中定义多个控件，并通过 <code>Grid.Row</code> 和 <code>Grid.Column</code> 来指定控件的位置</li><li>（可选）通过 <code>Grid.RowSpan</code> 和 <code>Grid.ColumnSpan</code> 来指定控件的跨行和跨列</li></ol><p>好，然后我们就开始写 XAML 吧：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;Grid&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Grid.RowDefinitions&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;RowDefinition</span> <span class=na>Height=</span><span class=s>&#34;Auto&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;RowDefinition</span> <span class=na>Height=</span><span class=s>&#34;Auto&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;RowDefinition</span> <span class=na>Height=</span><span class=s>&#34;Auto&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;RowDefinition</span> <span class=na>Height=</span><span class=s>&#34;Auto&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/Grid.RowDefinitions&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Grid.ColumnDefinitions&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;ColumnDefinition</span> <span class=na>Width=</span><span class=s>&#34;Auto&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;ColumnDefinition</span> <span class=na>Width=</span><span class=s>&#34;Auto&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/Grid.ColumnDefinitions&gt;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Label</span> <span class=na>Grid.Row=</span><span class=s>&#34;0&#34;</span> <span class=na>Grid.Column=</span><span class=s>&#34;0&#34;</span> <span class=na>Content=</span><span class=s>&#34;1&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;TextBox</span> <span class=na>Grid.Row=</span><span class=s>&#34;0&#34;</span> <span class=na>Grid.Column=</span><span class=s>&#34;1&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Label</span> <span class=na>Grid.Row=</span><span class=s>&#34;1&#34;</span> <span class=na>Grid.Column=</span><span class=s>&#34;0&#34;</span> <span class=na>Content=</span><span class=s>&#34;2&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;TextBox</span> <span class=na>Grid.Row=</span><span class=s>&#34;1&#34;</span> <span class=na>Grid.Column=</span><span class=s>&#34;1&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=c>&lt;!-- ... --&gt;</span>
+</span></span><span class=line><span class=cl><span class=nt>&lt;/Grid&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>好的，马上痛苦面具就戴上了：为每个控件写 <code>Grid.Row</code> 和 <code>Grid.Column</code>，简直就是顶级折磨。如果你搞了十几行，结果被告知需要删掉前面某一行，或者在前面添加一行，那就更是欲哭无泪了。</p><div class="notice tip"><div class=notice-title><i class="fa-solid fa-lightbulb" aria-hidden=true></i>Tip</div><div class=notice-content>可能会有聪明的同学想到一些简化这一步骤的方式，比如使用 <code>Style</code> 来统一指定上面的 <code>TextBox</code> 控件的 <code>Grid.Column</code>，并省略 <code>Label</code> 的 <code>Grid.Column="0"</code>。但这样依旧存在相当多的局限性，毕竟它最怕的就是例外情况了。</div></div><p>所以，我们显然是不能满足于使用这样的方式的。那究竟有什么更好的方式呢？</p><h2 id=外层使用-uniformgrid>外层使用 UniformGrid
+<a href=#%e5%a4%96%e5%b1%82%e4%bd%bf%e7%94%a8-uniformgrid class=anchor>&para;</a></h2><p>说起“自动化布局”，相信很多人在使用 <code>Grid</code> 时都垂涎过 <code>UniformGrid</code> 的功能，因为它可以让所有子控件依次填充到每个单元格中。所以，我们或许可以借助它的这一效果。比如我们想要一个两列的网格，可以：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;UniformGrid</span> <span class=na>Columns=</span><span class=s>&#34;2&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;1&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;2&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=c>&lt;!-- ... --&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>但这样的局限性在于，所有子控件的大小（或者它们所处的单元格）都是完全等大的。这可能会失去灵活性，并且看起来有些呆板。那么我们还可以部分借助 <code>UniformGrid</code> 的功能，比如下面这样：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;UniformGrid</span> <span class=na>Columns=</span><span class=s>&#34;1&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;UniformGrid.Resources&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;Style</span> <span class=na>TargetType=</span><span class=s>&#34;StackPanel&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&lt;Setter</span> <span class=na>Property=</span><span class=s>&#34;Orientation&#34;</span> <span class=na>Value=</span><span class=s>&#34;Horizontal&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;/Style&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;Style</span> <span class=na>TargetType=</span><span class=s>&#34;Label&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&lt;Setter</span> <span class=na>Property=</span><span class=s>&#34;Width&#34;</span> <span class=na>Value=</span><span class=s>&#34;50&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;/Style&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/UniformGrid.Resources&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;StackPanel&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;1&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/StackPanel&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;StackPanel&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;2&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/StackPanel&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=c>&lt;!-- ... --&gt;</span>
+</span></span><span class=line><span class=cl><span class=nt>&lt;/UniformGrid&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>这里我们将每一行的内容放在了一个 <code>StackPanel</code> 中，从而让 <code>Label</code> 和 <code>TextBox</code> 出现在同一行（或者说 <code>UniformGrid</code> 的同一个单元格中）。这样我们就不需要再为每个控件指定 <code>Grid.Row</code> 和 <code>Grid.Column</code> 了。</p><p>为了更加简化代码，我们还声明了两个 <code>Style</code>，分别用于设置 <code>StackPanel</code> 的 <code>Orientation</code> 和 <code>Label</code> 的 <code>Width</code>。这样我们就可以在 <code>StackPanel</code> 中直接放置 <code>Label</code> 和 <code>TextBox</code>，而不需要再为 <code>Label</code> 设置宽度了。</p><p>但是这样做有一个明显的局限性：行高是一致的。如果我们需要不同行的高度不一致，那么这种方式就无法满足需求了。</p><h2 id=外层使用-stackpanel>外层使用 StackPanel
+<a href=#%e5%a4%96%e5%b1%82%e4%bd%bf%e7%94%a8-stackpanel class=anchor>&para;</a></h2><p>为了突破上一个方式的局限性，我们可以考虑使用 <code>StackPanel</code> 来替代 <code>UniformGrid</code>。这样我们就可以为每一行的 <code>StackPanel</code> 设置不同的高度了。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;StackPanel</span> <span class=na>Orientation=</span><span class=s>&#34;Vertical&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;StackPanel.Resources&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=c>&lt;!-- Styles --&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/StackPanel.Resources&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;StackPanel</span> <span class=na>Height=</span><span class=s>&#34;40&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;1&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/StackPanel&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;StackPanel</span> <span class=na>Height=</span><span class=s>&#34;50&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;2&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/StackPanel&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=c>&lt;!-- ... --&gt;</span>
+</span></span><span class=line><span class=cl><span class=nt>&lt;/StackPanel&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>但很快，我们又会被别的问题所折磨：如何高效地设置行间距？</p><p>而且可能还有另外一个小折磨：因为内外都使用了 <code>StackPanel</code>，所以写的 <code>Style</code> 可能会被它们共同使用。</p><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content>针对这一问题，可能有同学会将内部的 <code>StackPanel</code> 替换为 <code>WrapPanel</code>，但这样并不是一个好主意，因为 <code>WrapPanel</code> 会让每一行的控件都尽可能地靠左对齐，并且在宽度不够时会自动换行！或许现在看着还好，但调整了窗口或父控件的尺寸，甚至修改了分辨率及缩放后，都有可能让你的界面变得一团糟。</div></div><p>此时，我们可以请个“外援”。其实在 Win UI 3、Avalonia UI 等框架中，<code>StackPanel</code> 天生就比 WPF 多了一个属性：<code>Spacing</code>。这个属性可以让我们很方便地设置行间距。但是在 WPF 中，我们就没有这么幸运了。不过，我们可以借助自定义控件来实现这一功能。</p><p>代码也不用我们自己写，网上可以找到一些开源实现。比如这里我贴两个供大家参考：</p><ul><li><a class=link href=https://github.com/Kinnara/ModernWpf/blob/master/ModernWpf/Controls/SimpleStackPanel.cs target=_blank rel=noopener>Kinnara/ModernWpf - SimpleStackPanel</a></li><li><a class=link href=https://github.com/OrgEleCho/EleCho.WpfSuite/blob/master/EleCho.WpfSuite.Layouts/Layouts/StackPanel.cs target=_blank rel=noopener>OrgEleCho/WpfSuite - StackPanel</a></li></ul><p>假如我们搬运到了 <code>local</code> 命名空间下，那么我们就可以这样使用：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;local:StackPanel</span> <span class=na>Spacing=</span><span class=s>&#34;10&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;local:StackPanel.Resources&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;Style</span> <span class=na>TargetType=</span><span class=s>&#34;StackPanel&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&lt;Setter</span> <span class=na>Property=</span><span class=s>&#34;Orientation&#34;</span> <span class=na>Value=</span><span class=s>&#34;Horizontal&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;/Style&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/local:StackPanel.Resources&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;StackPanel&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;1&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/StackPanel&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;StackPanel&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;2&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/StackPanel&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=c>&lt;!-- ... --&gt;</span>
+</span></span><span class=line><span class=cl><span class=nt>&lt;/local:StackPanel&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样看起来就方便多了。此外，我们还有一些小技巧，来进一步提高布局的效率：</p><ol><li>为 <code>Label</code> 设置一个固定的宽度，这样可以让所有的 <code>Label</code> 对齐</li><li>为 <code>Label</code> 设置 <code>VerticalAlignment</code> 或 <code>VerticalContentAlignment</code> 为 <code>Center</code>，这样可以让 <code>Label</code> 和 <code>TextBox</code> 垂直居中对齐</li><li>为 <code>TextBox</code> 等控件（还比如 <code>CheckBox</code>、<code>ComboBox</code> 等）设置固定的宽度，这样可以让所有的 <code>TextBox</code> 对齐</li></ol><h2 id=使用更高级的-grid>使用更高级的 Grid
+<a href=#%e4%bd%bf%e7%94%a8%e6%9b%b4%e9%ab%98%e7%ba%a7%e7%9a%84-grid class=anchor>&para;</a></h2><p>上面的方式其实已经相当灵活了，尤其是对于可能需要增删、调换顺序之类的情形。但是可能仍然会觉得不够爽，因为里面多出了一层 <code>StackPanel</code>，这写起来就还是会觉得不太爽。</p><p>所以，有没有办法让 <code>Grid</code> 更加智能一点，比如可以像是 <code>WrapPanel</code> 或者 <code>UniformGrid</code> 那样，自动填充控件呢？</p><p>答案当然是有的。这里给大家推荐一个 NuGet 包：<code>WpfAutoGrid</code>。这个 <code>AutoGrid</code> 就正是我们梦寐以求的控件。</p><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content>NuGet 上有好多个叫这个名字的包。这里我贴一个自己试过的：<a class=link href=https://github.com/budul100/WpfAutoGrid.Core target=_blank rel=noopener><code>WpfAutoGrid.Core</code></a></div></div><p>它的使用也非常简单：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;local:AutoGrid</span> <span class=na>Columns=</span><span class=s>&#34;100,150&#34;</span> <span class=na>RowCount=</span><span class=s>&#34;8&#34;</span> <span class=na>RowHeight=</span><span class=s>&#34;30&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;1&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;2&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=c>&lt;!-- ... --&gt;</span>
+</span></span><span class=line><span class=cl><span class=nt>&lt;/local:AutoGrid&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样我们连内部的 <code>StackPanel</code> 都不需要了，直接将 <code>Label</code> 和 <code>TextBox</code> 放在 <code>AutoGrid</code> 中即可。此外，它提供了很多实用的属性，比如上面实用的 <code>Columns</code>、<code>RowCount</code>、<code>RowHeight</code>，还有 <code>ColumnSpacing</code>、<code>RowSpacing</code> 等。不仅如此，<code>AutoGrid</code> 还能正确响应子控件 <code>ColumnSpan</code> 等属性，可以让我们更加灵活地布局控件。</p><p>除此之外，这里我再贴一个我自己写的 <code>GridAssist</code>。它是一个附加属性，可以直接用于原生的 <code>Grid</code> 控件。使用这个附加属性，就能够自动为子控件添加 <code>Grid.Row</code> 和 <code>Grid.Column</code> 属性。</p><p><a class=link href=https://gist.github.com/BYJRK/66aefb80c838634e0642ffed4f58e076 target=_blank rel=noopener>BYJRK/GridAssist</a></p><p>使用方式也非常简单：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;Grid</span> <span class=na>local:GridAssist.AutoRowColumn=</span><span class=s>&#34;_,2&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;1&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Label</span> <span class=na>Content=</span><span class=s>&#34;2&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;TextBox</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=c>&lt;!-- ... --&gt;</span>
+</span></span><span class=line><span class=cl><span class=nt>&lt;/Grid&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>这个附加属性的 <code>AutoRowColumn</code> 填写的 <code>_,2</code> 意思是，行数自动增加，列数固定为 2（还可以写 <code>_,2,Auto</code>，从而将列宽设置为 <code>Auto</code>）。这样我们就不需要为每个控件指定 <code>Grid.Row</code> 和 <code>Grid.Column</code> 了。然后，我们只需要将子控件按照从上到下，从左到右的顺序放置即可，不需要再引入一层 <code>StackPanel</code> 了。此外，它也是可以正确响应 <code>Grid.ColumnSpan</code> 的。</p><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p>在 WPF 中，布局是一个非常重要的问题。而对于多行多列的控件布局，我们可以使用 <code>Grid</code>、<code>UniformGrid</code>、<code>StackPanel</code>、<code>AutoGrid</code> 等控件或者附加属性来实现。每一种方式都有它的优势和局限性，我们可以根据实际情况来选择最适合的方式。</p><p>另外，对于上面提到的几种自定义控件或附加属性，我们完全可以直接将代码复制到自己的项目中，然后根据实际需求进行修改。这样可以更好地适应自己的项目，也可以更好地理解这些控件或属性的实现原理，还可以省去引入第三方库的麻烦。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/dotnet/>dotnet</a>
+<a href=/tags/csharp/>csharp</a>
+<a href=/tags/wpf/>wpf</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article><article><a href=/posts/built-in-design-patterns-in-wpf/><div class=article-details><h2 class=article-title>原生 WPF 框架中体现出的设计模式</h2></div></a></article><article><a href=/posts/more-observable-collections/><div class=article-details><h2 class=article-title>借助 ObservableCollections 获得更多具有通知功能的集合类型</h2></div></a></article><article><a href=/posts/contentcontrol-vs-contentpresenter/><div class=article-details><h2 class=article-title>WPF 中的 ContentControl 及 ContentPresenter 有何异同？</h2></div></a></article><article class=has-image><a href=/posts/objectdataprovider-tips/><div class=article-image><img src=https://s2.loli.net/2025/03/04/6BmTwRWGapOPoIE.webp loading=lazy data-key=objectdataprovider-tips data-hash=https://s2.loli.net/2025/03/04/6BmTwRWGapOPoIE.webp></div><div class=article-details><h2 class=article-title>WPF 中 ObjectDataProvider 的一些有趣用法</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

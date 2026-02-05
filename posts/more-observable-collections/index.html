@@ -1,0 +1,316 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="相信很多人在做 WPF、Avalonia 等开发时，都会遇到 ObservableCollection 没有批量操作的功能、缺少 ObservableDictionary 等集合类型等问题。本文介绍了一个 NuGet 包 ObservableCollections，它提供了多种实用的具有通知功能的集合类型。"><title>借助 ObservableCollections 获得更多具有通知功能的集合类型</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/more-observable-collections/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="借助 ObservableCollections 获得更多具有通知功能的集合类型"><meta property='og:description' content="相信很多人在做 WPF、Avalonia 等开发时，都会遇到 ObservableCollection 没有批量操作的功能、缺少 ObservableDictionary 等集合类型等问题。本文介绍了一个 NuGet 包 ObservableCollections，它提供了多种实用的具有通知功能的集合类型。"><meta property='og:url' content='https://blog.coldwind.top/posts/more-observable-collections/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='dotnet'><meta property='article:tag' content='csharp'><meta property='article:tag' content='wpf'><meta property='article:tag' content='avalonia'><meta property='article:tag' content='collection'><meta property='article:tag' content='observable'><meta property='article:tag' content='notification'><meta property='article:published_time' content='2025-07-11T00:00:00+00:00'><meta property='article:modified_time' content='2025-07-11T00:00:00+00:00'><meta name=twitter:title content="借助 ObservableCollections 获得更多具有通知功能的集合类型"><meta name=twitter:description content="相信很多人在做 WPF、Avalonia 等开发时，都会遇到 ObservableCollection 没有批量操作的功能、缺少 ObservableDictionary 等集合类型等问题。本文介绍了一个 NuGet 包 ObservableCollections，它提供了多种实用的具有通知功能的集合类型。"><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#安装>安装</a></li><li><a href=#支持批量操作的可观测集合>支持批量操作的可观测集合</a></li><li><a href=#创建集合视图>创建集合视图</a></li><li><a href=#可观测的字典>可观测的字典</a></li><li><a href=#可观测的队列>可观测的队列</a></li><li><a href=#可观测的环形缓冲区>可观测的环形缓冲区</a></li><li><a href=#线程安全>线程安全</a></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/more-observable-collections/>借助 ObservableCollections 获得更多具有通知功能的集合类型</a></h2><h3 class=article-subtitle>相信很多人在做 WPF、Avalonia 等开发时，都会遇到 ObservableCollection 没有批量操作的功能、缺少 ObservableDictionary 等集合类型等问题。本文介绍了一个 NuGet 包 ObservableCollections，它提供了多种实用的具有通知功能的集合类型。</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2025-07-11T00:00:00Z>Jul 11, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 8 分钟</time></div></footer></div></header><section class=article-content><p>如果大家在做基于 C# 的 WPF、Avalonia、Win UI 等开发，尤其是遵循 MVVM 模式时，遇到过下面的这些烦恼：</p><ol><li><code>ObservableCollection</code> 没有批量操作的功能（例如 <code>AddRange</code>）</li><li>缺少 <code>ObservableDictionary</code>、<code>ObservableSet</code>、<code>ObservableQueue</code> 等集合类型</li><li>难以实现诸如过滤、映射等功能</li></ol><p>那么，<code>ObservableCollections</code> 这个 NuGet 包一定可以帮到你。没错，它就提供了一系列实用的具有通知功能的集合类型，使我们在 WPF、Avalonia、甚至 Unity 开发中都能够用得上。</p><h2 id=安装>安装
+<a href=#%e5%ae%89%e8%a3%85 class=anchor>&para;</a></h2><p>它的源代码链接在 <a class=link href=https://github.com/Cysharp/ObservableCollections target=_blank rel=noopener>GitHub</a> 上。</p><p>如果想要安装它，我们只需要在 NuGet 包管理器中搜索 <code>ObservableCollections</code>，或者直接在项目中运行以下命令：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>dotnet add package ObservableCollections
+</span></span></code></pre></td></tr></table></div></div><p>安装之后即可使用。注意它还有一个结尾包含 <code>R3</code> 的版本，是为它开发的 R3 库而准备的，通常我们不需要使用。这个 R3 库简单来说，就是一个更加高性能的 Rx.NET。</p><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content>说起它的开发者 <a class=link href=https://github.com/Cysharp target=_blank rel=noopener>Cysharp</a>，那可真的可以说是如雷贯耳。比如他们开发的 <code>Unitask</code>，就是一个非常流行的适用于 Unity 的异步编程库；而他们开发的 <code>ZLinq</code>，最近也是非常有名。油管上的 Nick Chapsas 也 <a class=link href="https://www.youtube.com/watch?v=pUBc9uutSZM" target=_blank rel=noopener>曾经介绍过这个库</a>。</div></div><h2 id=支持批量操作的可观测集合>支持批量操作的可观测集合
+<a href=#%e6%94%af%e6%8c%81%e6%89%b9%e9%87%8f%e6%93%8d%e4%bd%9c%e7%9a%84%e5%8f%af%e8%a7%82%e6%b5%8b%e9%9b%86%e5%90%88 class=anchor>&para;</a></h2><p>我们先来看一看它最简单的 <code>ObservableList</code>。它是一个具有通知功能的列表，并且支持批量操作。我们只需要实例化，然后就可以使用它了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MainViewModel</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>ObservableList</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>_items</span> <span class=p>=</span> <span class=k>new</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MainViewModel</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 添加单个元素</span>
+</span></span><span class=line><span class=cl>        <span class=n>_items</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;Item 1&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        
+</span></span><span class=line><span class=cl>        <span class=c1>// 批量添加元素</span>
+</span></span><span class=line><span class=cl>        <span class=n>_items</span><span class=p>.</span><span class=n>AddRange</span><span class=p>(</span><span class=n>GetItems</span><span class=p>());</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>IEnumerable</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>GetItems</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 假定这个方法可以从某个数据源获取一些数据</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>通过观察可以发现，这个集合类型提供了 <code>CollectionChanged</code> 事件，我们可以通过订阅它来监听集合的变化。但是先不要想当然地认为它和 <code>ObservableCollection</code> 一样。实际上，它的 <code>CollectionChanged</code> 事件并不是来自我们熟悉的那个 <code>INotifyCollectionChanged</code> 接口，而是这个库自带的一个接口。所以我们在上面的代码中，并没有直接将这个集合声明为 <code>public</code> 的属性，从而在 XAML 中绑定。</p><p>那么它为什么要这样做，让我们不能方便地使用呢？其实原因很简单：这个库不单单适用于 WPF，它还可以用于 Avalonia、Unity 等框架。为了兼容更多的框架，它就没有使用 <code>INotifyCollectionChanged</code> 接口，而是提供了一个更通用的接口。</p><p>但不必担心，它并没有止步于此，而是专门提供了方便我们在 WPF、Avalonia 等框架中使用的额外类型。简单来说，我们只需要调用它的下面这个方法，即可将它转为可以用于 XAML 绑定的集合对象：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MainViewModel</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>ObservableList</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>_items</span> <span class=p>=</span> <span class=k>new</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>INotifyCollectionChangedSynchronizedViewList</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>Items</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MainViewModel</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>Items</span> <span class=p>=</span> <span class=n>_items</span><span class=p>.</span><span class=n>ToNotifyCollectionChanged</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这里的 <code>INotifyCollectionChangedSynchronizedViewList</code> 就继承了 <code>INotifyCollectionChanged</code> 接口，因此实现了该接口的对象就可以直接在 XAML 中绑定使用，例如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;ListBox</span> <span class=na>ItemsSource=</span><span class=s>&#34;{Binding Items}&#34;</span> <span class=nt>/&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>接下来，我们只需要在后台操作 <code>_items</code> 集合，它的变化即可同步到 <code>Items</code> 集合中，从而在 UI 上自动更新。</p><h2 id=创建集合视图>创建集合视图
+<a href=#%e5%88%9b%e5%bb%ba%e9%9b%86%e5%90%88%e8%a7%86%e5%9b%be class=anchor>&para;</a></h2><p>实际上，对于 <code>ObservableList</code>，我们除了可以使用 <code>ToNotifyCollectionChanged</code> 方法将其转换为可以用于 XAML 绑定的集合类型外，还可以使用 <code>ToNotifyCollectionChangedSlim</code> 方法，将它转为一个更加轻量级的集合类型。这个类型同样实现了 <code>INotifyCollectionChanged</code> 接口，但它的性能更高，适用于需要频繁更新的场景。代价是，它将不提供 <code>AddRange</code> 等批量操作方法。</p><p>这时候可能有同学就会问了：我用 <code>ObservableList</code> 而不是原生的 <code>ObservableCollection</code>，不就是为了它提供的批量操作方法吗？如果我不需要批量操作，直接用 <code>ObservableCollection</code> 不就行了吗？</p><p>这就引出了我们即将介绍的下一个功能，同时也是这个库相当重要的功能：<code>View</code>。这个 <code>View</code> 不是我们常说的 MVVM 中的视图，而是指对集合的视图。它可以让我们在不改变原始集合的情况下，对集合进行过滤、映射等操作。我们不需要关注视图的实现细节，只需要操作后台的集合，即可将更改同步到界面中。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MainViewModel</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>ObservableList</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>_items</span> <span class=p>=</span> <span class=k>new</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>ISynchronizedView</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>,</span> <span class=kt>string</span><span class=p>&gt;</span> <span class=n>_syncView</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>INotifyCollectionChangedSynchronizedViewList</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>Items</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MainViewModel</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_syncView</span> <span class=p>=</span> <span class=n>_items</span><span class=p>.</span><span class=n>CreateView</span><span class=p>(</span><span class=n>s</span> <span class=p>=&gt;</span> <span class=n>s</span><span class=p>.</span><span class=n>ToUpper</span><span class=p>());</span>
+</span></span><span class=line><span class=cl>        <span class=n>Items</span> <span class=p>=</span> <span class=n>_syncView</span><span class=p>.</span><span class=n>ToNotifyCollectionChanged</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>ToggleFilter</span><span class=p>(</span><span class=kt>bool</span> <span class=n>useFilter</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>useFilter</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_syncView</span><span class=p>.</span><span class=n>AttachFilter</span><span class=p>(</span><span class=n>s</span> <span class=p>=&gt;</span> <span class=n>s</span><span class=p>.</span><span class=n>StartsWith</span><span class=p>(</span><span class=s>&#34;A&#34;</span><span class=p>));</span> <span class=c1>// 过滤以 &#34;A&#34; 开头的元素</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=k>else</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_syncView</span><span class=p>.</span><span class=n>ResetFilter</span><span class=p>();</span> <span class=c1>// 清除过滤器</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><div class="notice tip"><div class=notice-title><i class="fa-solid fa-lightbulb" aria-hidden=true></i>Tip</div><div class=notice-content>如果我们只是想使用映射功能，那么使用 <code>ToNotifyCollectionChanged</code> 方法即可。它有一个重载，可以传入一个表示映射方式的 <code>Func</code>。另外，它还支持传入一个类似 <code>Dispatcher</code> 的参数，用于在 UI 线程上执行映射操作。至于为什么不是 WPF 中的 <code>Dispatcher</code>，而是一个它自己声明的类型，这也是为了兼容更多的框架。</div></div><p>在上面的代码中，我们创建了一个视图 <code>_syncView</code>。在创建时，我们就指定了一个映射函数，将集合中的每个元素转换为大写形式。然后在 <code>ToggleFilter</code> 方法中，我们可以通过 <code>AttachFilter</code> 及 <code>ResetFilter</code> 方法来添加或移除过滤器。就这样，我们轻松地实现了对集合的过滤和映射功能。</p><p>简单想象一下，这些功能在 WPF、Avalonia 等框架中原本实现起来会多么麻烦。对于映射，我们可以借助 <code>DataTemplate</code> 以及 <code>ValueConverter</code> 来实现；而对于过滤，我们可能需要使用 <code>CollectionView</code> 或者 <code>ICollectionView</code> 等。这些都需要我们编写大量的样板代码。</p><h2 id=可观测的字典>可观测的字典
+<a href=#%e5%8f%af%e8%a7%82%e6%b5%8b%e7%9a%84%e5%ad%97%e5%85%b8 class=anchor>&para;</a></h2><p>WPF 中其实有一个 <a class=link href=https://source.dot.net/#PresentationFramework/MS/Internal/Annotations/ObservableDictionary.cs target=_blank rel=noopener><code>ObservableDictionary</code></a>，但它并不是 <code>public</code> 的，只是标准库内部使用。或许我们可以使用一个 <code>ObservableCollection&lt;KeyValuePair&lt;TKey, TValue>></code> 来模拟一个字典，但这效率并不高，因为字典的添加、删除、查找等操作都是 $O(1)$ 的，而 <code>ObservableCollection</code> 的这些操作都是 $O(n)$ 的。</p><p>至于 Avalonia，我们就比较幸运了，它直接提供了 <code>AvaloniaList</code> 和 <code>AvaloniaDictionary</code>，这两个集合类型，前者支持批量操作，后者则是一个可观测的字典。</p><p>下面我们用一个简单的例子来演示如何使用这个 <code>ObservableDictionary</code>。它的使用方式和 <code>ObservableList</code> 类似，我们只需要实例化它，然后就可以使用了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MainViewModel</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>ObservableDictionary</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>,</span> <span class=kt>string</span><span class=p>&gt;</span> <span class=n>_items</span> <span class=p>=</span> <span class=k>new</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>INotifyCollectionChangedSynchronizedViewList</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>Items</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MainViewModel</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>Items</span> <span class=p>=</span> <span class=n>_items</span><span class=p>.</span><span class=n>ToNotifyCollectionChanged</span><span class=p>(</span><span class=n>pair</span> <span class=p>=&gt;</span> <span class=n>pair</span><span class=p>.</span><span class=n>Value</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>_items</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;Key1&#34;</span><span class=p>,</span> <span class=s>&#34;Value1&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=可观测的队列>可观测的队列
+<a href=#%e5%8f%af%e8%a7%82%e6%b5%8b%e7%9a%84%e9%98%9f%e5%88%97 class=anchor>&para;</a></h2><p>队列有时候也是一个我们用得上的集合类型。它的特点是先进先出（FIFO），适用于需要按照顺序处理元素的场景。比如我们希望存储一些实时的消息，并且希望仅展示最新的几十条，而当超过这个数量时，自动删除最旧的消息。这就要求我们需要能够高效地删除队列头部的元素。这对于传统的列表来说是比较麻烦的，因为这会引入 $O(n)$ 的时间复杂度。</p><p><code>ObservableCollections</code> 库提供了一个 <code>ObservableQueue&lt;T></code>，不过我不打算详细介绍它，因为我们上面提到的需求有一个更加合适的集合类型，等下就会介绍到。但这里我们还是用一个简单的例子来演示它的用法：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MainViewModel</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>ObservableQueue</span><span class=p>&lt;</span><span class=n>LogMessage</span><span class=p>&gt;</span> <span class=n>_logQueue</span> <span class=p>=</span> <span class=k>new</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>INotifyCollectionChangedSynchronizedViewList</span><span class=p>&lt;</span><span class=n>LogMessage</span><span class=p>&gt;</span> <span class=n>LogMessages</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MainViewModel</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>LogMessages</span> <span class=p>=</span> <span class=n>_logQueue</span><span class=p>.</span><span class=n>ToNotifyCollectionChanged</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 添加日志消息</span>
+</span></span><span class=line><span class=cl>        <span class=n>AddLogMessage</span><span class=p>(</span><span class=s>&#34;Application started&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>AddLogMessage</span><span class=p>(</span><span class=kt>string</span> <span class=n>content</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>var</span> <span class=n>logMessage</span> <span class=p>=</span> <span class=k>new</span> <span class=n>LogMessage</span><span class=p>(</span><span class=n>DateTime</span><span class=p>.</span><span class=n>Now</span><span class=p>.</span><span class=n>ToString</span><span class=p>(</span><span class=s>&#34;o&#34;</span><span class=p>),</span> <span class=n>content</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 如果队列超过 100 条，则删除最旧的消息</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>_logQueue</span><span class=p>.</span><span class=n>Count</span> <span class=p>&gt;=</span> <span class=m>100</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_logQueue</span><span class=p>.</span><span class=n>Dequeue</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=n>_logQueue</span><span class=p>.</span><span class=n>Enqueue</span><span class=p>(</span><span class=n>logMessage</span><span class=p>);</span>        
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>record</span> <span class=nc>LogMessage</span><span class=p>(</span><span class=kt>string</span> <span class=n>Timestamp</span><span class=p>,</span> <span class=kt>string</span> <span class=n>Content</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><div class="notice tip"><div class=notice-title><i class="fa-solid fa-lightbulb" aria-hidden=true></i>Tip</div><div class=notice-content>事实上，如果我们的需求只是比如说保留最近的几十到一百条消息，那么直接使用传统的 <code>ObservableCollection</code> 也是完全可以接受的。虽然有点性能损失，但对于现在的 CPU 来说，这点复杂度完全是微不足道的。通过简单的 Benchmark，我们可以看到，<code>List</code> 可能只比 <code>Queue</code> 慢 50% 左右；甚至当数据量比较小（例如十几条）时，<code>List</code> 更是能在性能上超过 <code>Queue</code>。另外，<code>List</code> 的使用显然比 <code>Queue</code> 简单了不少。</div></div><h2 id=可观测的环形缓冲区>可观测的环形缓冲区
+<a href=#%e5%8f%af%e8%a7%82%e6%b5%8b%e7%9a%84%e7%8e%af%e5%bd%a2%e7%bc%93%e5%86%b2%e5%8c%ba class=anchor>&para;</a></h2><p>下面我们要介绍的这个集合类型，正是这个包最推荐我们用来实现这个保留最近的一些消息的集合类型：<code>RingBuffer</code>。它是一个环形缓冲区，具有固定的大小。当添加新元素时，如果缓冲区已满，则会覆盖最旧的元素。这使得它非常适合用于存储最近的消息或数据。</p><p>这个包提供了两种环形缓冲区：<code>ObservableRingBuffer</code> 和 <code>ObservableFixedSizeRingBuffer</code>。前者支持动态调整大小，而后者则是一个固定大小的环形缓冲区。借助后者，我们前面的例子可以简化为：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MainViewModel</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>ObservableFixedSizeRingBuffer</span><span class=p>&lt;</span><span class=n>LogMessage</span><span class=p>&gt;</span> <span class=n>_logBuffer</span> <span class=p>=</span> <span class=k>new</span><span class=p>(</span><span class=m>100</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>INotifyCollectionChangedSynchronizedViewList</span><span class=p>&lt;</span><span class=n>LogMessage</span><span class=p>&gt;</span> <span class=n>LogMessages</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MainViewModel</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>LogMessages</span> <span class=p>=</span> <span class=n>_logBuffer</span><span class=p>.</span><span class=n>ToNotifyCollectionChanged</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=c1>// 添加日志消息</span>
+</span></span><span class=line><span class=cl>        <span class=n>AddLogMessage</span><span class=p>(</span><span class=s>&#34;Application started&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>AddLogMessage</span><span class=p>(</span><span class=kt>string</span> <span class=n>content</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>var</span> <span class=n>logMessage</span> <span class=p>=</span> <span class=k>new</span> <span class=n>LogMessage</span><span class=p>(</span><span class=n>DateTime</span><span class=p>.</span><span class=n>Now</span><span class=p>.</span><span class=n>ToString</span><span class=p>(</span><span class=s>&#34;o&#34;</span><span class=p>),</span> <span class=n>content</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>_logBuffer</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=n>logMessage</span><span class=p>);</span> <span class=c1>// 添加新消息，自动覆盖最旧的消息</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>就这样，我们轻松地实现了一个保留最近 100 条日志消息的集合。</p><h2 id=线程安全>线程安全
+<a href=#%e7%ba%bf%e7%a8%8b%e5%ae%89%e5%85%a8 class=anchor>&para;</a></h2><p>接下来这个部分相当重要，也是大家在使用这个包时需要尤其注意的，就是关于线程安全的问题。首先，这个包提供的每个集合都是线程安全的。它们内部会用一个线程锁，保证它的添加、删除等操作是线程安全的。但这并不意味着我们就可以高枕无忧了，因为虽然这些集合线程安全，但是从它们创建出的视图在同步它们的修改时，可能出现线程安全问题。那么，我们该怎么办呢？</p><p>首先，在使用 <code>ToNotifyCollectionChanged</code> 方法时，我们可以传入一个 <code>Dispatcher</code> 参数。前面提到，这个参数是该类库自己声明的类型。但是它提供了一个方便我们使用的单例：<code>SynchronizationContextCollectionEventDispatcher.Current</code>。借助它，我们就可以确保该方法创建出的视图在 UI 线程上执行修改操作，从而避免线程安全问题。</p><p>但是这还不够。实测发现，虽然背后的集合本身线程安全，但是它创建出来的视图在操作时仍面临着线程安全问题。尤其是数据不一致。比如我们在删除元素之后立刻添加了元素，那么这两次动作在同步到视图的过程中就可能会出现问题。对于这个问题，如果我们确实有在多线程上操作背后集合的需求，那么我们可以考虑让这些操作都发生在主线程上。以 WPF 为例，我们可以这样：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MainViewModel</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>ObservableList</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>_items</span> <span class=p>=</span> <span class=k>new</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>INotifyCollectionChangedSynchronizedViewList</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>Items</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MainViewModel</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>Items</span> <span class=p>=</span> <span class=n>_items</span><span class=p>.</span><span class=n>ToNotifyCollectionChanged</span><span class=p>(</span><span class=n>SynchronizationContextCollectionEventDispatcher</span><span class=p>.</span><span class=n>Current</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>AddItem</span><span class=p>(</span><span class=kt>string</span> <span class=n>item</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 确保在 UI 线程上执行添加操作</span>
+</span></span><span class=line><span class=cl>        <span class=n>Application</span><span class=p>.</span><span class=n>Current</span><span class=p>.</span><span class=n>Dispatcher</span><span class=p>.</span><span class=n>InvokeAsync</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=n>_items</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=n>item</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>RemoveItem</span><span class=p>(</span><span class=kt>string</span> <span class=n>item</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 确保在 UI 线程上执行删除操作</span>
+</span></span><span class=line><span class=cl>        <span class=n>Application</span><span class=p>.</span><span class=n>Current</span><span class=p>.</span><span class=n>Dispatcher</span><span class=p>.</span><span class=n>InvokeAsync</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=n>_items</span><span class=p>.</span><span class=n>Remove</span><span class=p>(</span><span class=n>item</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>当然，在 <code>ViewModel</code> 中访问 <code>Application.Current</code> 可能并不是一个十分遵守 MVVM 模式的好习惯。因此在更加严谨的项目中，我们可以考虑将 <code>Dispatcher</code> 作为参数传入 <code>ViewModel</code>，或者使用依赖注入的方式来获取它。这样可以更好地遵循 MVVM 模式，同时也能确保在 UI 线程上执行操作。</p><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p><code>ObservableCollections</code> 是一个非常实用的 NuGet 包，它提供了多种具有通知功能的集合类型，适用于 WPF、Avalonia、Win UI 等框架。它不仅支持批量操作，还提供了过滤、映射等功能，使得我们在开发中可以更加高效地处理集合数据。</p><p>在使用时，我们需要注意线程安全问题，尤其是在多线程环境下操作集合时。通过合理地使用 <code>Dispatcher</code>，我们可以确保集合的操作在 UI 线程上执行，从而避免数据不一致的问题。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/dotnet/>dotnet</a>
+<a href=/tags/csharp/>csharp</a>
+<a href=/tags/wpf/>wpf</a>
+<a href=/tags/avalonia/>avalonia</a>
+<a href=/tags/collection/>collection</a>
+<a href=/tags/observable/>observable</a>
+<a href=/tags/notification/>notification</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css integrity=sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV crossorigin=anonymous><script src=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js integrity=sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8 crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js integrity=sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05 crossorigin=anonymous defer></script><script>window.addEventListener("DOMContentLoaded",()=>{const e=[".main-article",".widget--toc"];e.forEach(e=>{const t=document.querySelector(e);t&&renderMathInElement(t,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1},{left:"\\(",right:"\\)",display:!1},{left:"\\[",right:"\\]",display:!0}],ignoredClasses:["gist"]})})})</script></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article><article><a href=/posts/avalonia-tips-for-wpf-developers/><div class=article-details><h2 class=article-title>分享一些针对 WPF 开发者的 Avalonia 开发技巧</h2></div></a></article><article><a href=/posts/built-in-design-patterns-in-wpf/><div class=article-details><h2 class=article-title>原生 WPF 框架中体现出的设计模式</h2></div></a></article><article><a href=/posts/contentcontrol-vs-contentpresenter/><div class=article-details><h2 class=article-title>WPF 中的 ContentControl 及 ContentPresenter 有何异同？</h2></div></a></article><article class=has-image><a href=/posts/objectdataprovider-tips/><div class=article-image><img src=https://s2.loli.net/2025/03/04/6BmTwRWGapOPoIE.webp loading=lazy data-key=objectdataprovider-tips data-hash=https://s2.loli.net/2025/03/04/6BmTwRWGapOPoIE.webp></div><div class=article-details><h2 class=article-title>WPF 中 ObjectDataProvider 的一些有趣用法</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

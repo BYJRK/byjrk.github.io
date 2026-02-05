@@ -1,0 +1,333 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="在 C# 中获取本机 IP 地址并不是一个简单的问题，因为我们几乎总是会获取到很多 IP 地址，而判断哪一个才是我们想要的真实局域网 IP 地址才是我们真正面对的问题。本文将介绍如何获取本机的真实局域网 IP 地址。"><title>如何在 C# 中获取本机真实 IP 地址？</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/how-to-get-real-local-ip-address/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="如何在 C# 中获取本机真实 IP 地址？"><meta property='og:description' content="在 C# 中获取本机 IP 地址并不是一个简单的问题，因为我们几乎总是会获取到很多 IP 地址，而判断哪一个才是我们想要的真实局域网 IP 地址才是我们真正面对的问题。本文将介绍如何获取本机的真实局域网 IP 地址。"><meta property='og:url' content='https://blog.coldwind.top/posts/how-to-get-real-local-ip-address/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='dotnet'><meta property='article:tag' content='csharp'><meta property='article:tag' content='networking'><meta property='article:published_time' content='2026-01-15T00:00:00+00:00'><meta property='article:modified_time' content='2026-01-15T00:00:00+00:00'><meta name=twitter:title content="如何在 C# 中获取本机真实 IP 地址？"><meta name=twitter:description content="在 C# 中获取本机 IP 地址并不是一个简单的问题，因为我们几乎总是会获取到很多 IP 地址，而判断哪一个才是我们想要的真实局域网 IP 地址才是我们真正面对的问题。本文将介绍如何获取本机的真实局域网 IP 地址。"><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#常见的坑>常见的坑</a><ol><li><a href=#1-获取到一堆-ip-地址>1. 获取到一堆 IP 地址</a></li><li><a href=#2-虚拟网卡的干扰>2. 虚拟网卡的干扰</a></li><li><a href=#3-ipv4-vs-ipv6>3. IPv4 vs IPv6</a></li></ol></li><li><a href=#解决方案>解决方案</a><ol><li><a href=#方法一使用-networkinterface-获取>方法一：使用 NetworkInterface 获取</a></li><li><a href=#方法二使用-socket-连接外部地址>方法二：使用 Socket 连接外部地址</a></li><li><a href=#方法三使用-wmi-查询物理网卡>方法三：使用 WMI 查询物理网卡</a></li><li><a href=#方法四networkinterface-评分机制终极方案>方法四：NetworkInterface 评分机制（终极方案）</a></li></ol></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/how-to-get-real-local-ip-address/>如何在 C# 中获取本机真实 IP 地址？</a></h2><h3 class=article-subtitle>在 C# 中获取本机 IP 地址并不是一个简单的问题，因为我们几乎总是会获取到很多 IP 地址，而判断哪一个才是我们想要的真实局域网 IP 地址才是我们真正面对的问题。本文将介绍如何获取本机的真实局域网 IP 地址。</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2026-01-15T00:00:00Z>Jan 15, 2026</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 6 分钟</time></div></footer></div></header><section class=article-content><p>获取本机 IP
+地址听起来是一个非常简单的需求，但实际操作起来却并不容易。虚拟网卡、IPv6、APIPA
+地址等因素会让我们获取到一大堆 IP，而如何从中筛选出真正想要的局域网 IP
+才是我们要解决的问题。</p><h2 id=常见的坑>常见的坑
+<a href=#%e5%b8%b8%e8%a7%81%e7%9a%84%e5%9d%91 class=anchor>&para;</a></h2><h3 id=1-获取到一堆-ip-地址>1. 获取到一堆 IP 地址
+<a href=#1-%e8%8e%b7%e5%8f%96%e5%88%b0%e4%b8%80%e5%a0%86-ip-%e5%9c%b0%e5%9d%80 class=anchor>&para;</a></h3><p>最直接的想法可能是使用 <code>Dns.GetHostAddresses</code> 或 <code>Dns.GetHostEntry</code>
+来获取本机所有的 IP 地址：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kt>var</span> <span class=n>hostName</span> <span class=p>=</span> <span class=n>Dns</span><span class=p>.</span><span class=n>GetHostName</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>ipAddresses</span> <span class=p>=</span> <span class=n>Dns</span><span class=p>.</span><span class=n>GetHostEntry</span><span class=p>(</span><span class=n>hostName</span><span class=p>).</span><span class=n>AddressList</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>foreach</span> <span class=p>(</span><span class=kt>var</span> <span class=n>ip</span> <span class=k>in</span> <span class=n>ipAddresses</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=n>ip</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>运行后你可能会看到类似这样的输出：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-fallback data-lang=fallback><span class=line><span class=cl>192.168.1.100
+</span></span><span class=line><span class=cl>169.254.123.45
+</span></span><span class=line><span class=cl>172.17.0.1
+</span></span><span class=line><span class=cl>10.0.75.1
+</span></span><span class=line><span class=cl>192.168.56.1
+</span></span><span class=line><span class=cl>fe80::1234:5678:abcd:ef01%12
+</span></span><span class=line><span class=cl>::1
+</span></span></code></pre></td></tr></table></div></div><p>这么多 IP 地址，到底哪个才是我们想要的真实局域网 IP？</p><h3 id=2-虚拟网卡的干扰>2. 虚拟网卡的干扰
+<a href=#2-%e8%99%9a%e6%8b%9f%e7%bd%91%e5%8d%a1%e7%9a%84%e5%b9%b2%e6%89%b0 class=anchor>&para;</a></h3><p>现代计算机上通常会存在多种类型的网络适配器：</p><ul><li><strong>物理网卡</strong>：真实的以太网卡或 Wi-Fi 适配器</li><li><strong>虚拟网卡</strong>：<ul><li>VMware、VirtualBox、Hyper-V 等虚拟机软件创建的虚拟网卡</li><li>Docker Desktop 创建的虚拟网卡（如 vEthernet）</li><li>VPN 软件创建的虚拟适配器</li><li>WSL2 创建的虚拟网卡</li><li>蓝牙适配器</li><li>回环地址（Loopback）</li></ul></li></ul><p>这些虚拟网卡都会有自己的 IP 地址，导致我们获取到一大堆无用的地址。</p><h3 id=3-ipv4-vs-ipv6>3. IPv4 vs IPv6
+<a href=#3-ipv4-vs-ipv6 class=anchor>&para;</a></h3><p>除了虚拟网卡的问题，还有 IPv4 和 IPv6 的区别：</p><ul><li><strong>IPv4</strong>：如 <code>192.168.1.100</code>（我们通常想要的）</li><li><strong>IPv6</strong>：如 <code>fe80::1234:5678:abcd:ef01%12</code>（链路本地地址）</li><li><strong>IPv6 本地回环</strong>：<code>::1</code>（相当于 IPv4 的 <code>127.0.0.1</code>）</li></ul><p>在大多数局域网场景中，我们想要的是 IPv4 地址。</p><h2 id=解决方案>解决方案
+<a href=#%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88 class=anchor>&para;</a></h2><h3 id=方法一使用-networkinterface-获取>方法一：使用 NetworkInterface 获取
+<a href=#%e6%96%b9%e6%b3%95%e4%b8%80%e4%bd%bf%e7%94%a8-networkinterface-%e8%8e%b7%e5%8f%96 class=anchor>&para;</a></h3><p>这个方法通过 <code>NetworkInterface</code>
+获取所有网络接口，过滤出正在运行的网卡，排除虚拟网卡，然后根据接口索引排序选择最佳
+IP。下面的例子中排除了 VMware 虚拟网卡：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>static</span> <span class=kt>string?</span> <span class=n>GetBestIPByMetric</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>bestIp</span> <span class=p>=</span> <span class=n>NetworkInterface</span><span class=p>.</span><span class=n>GetAllNetworkInterfaces</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=n>Where</span><span class=p>(</span><span class=n>n</span> <span class=p>=&gt;</span> <span class=n>n</span><span class=p>.</span><span class=n>OperationalStatus</span> <span class=p>==</span> <span class=n>OperationalStatus</span><span class=p>.</span><span class=n>Up</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=n>Where</span><span class=p>(</span><span class=n>n</span> <span class=p>=&gt;</span> <span class=p>!</span><span class=n>n</span><span class=p>.</span><span class=n>Description</span><span class=p>.</span><span class=n>ToLower</span><span class=p>().</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;vmware&#34;</span><span class=p>))</span> <span class=c1>// 排除 VMware 虚拟网卡</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=n>SelectMany</span><span class=p>(</span><span class=n>n</span> <span class=p>=&gt;</span> <span class=n>n</span><span class=p>.</span><span class=n>GetIPProperties</span><span class=p>().</span><span class=n>UnicastAddresses</span>
+</span></span><span class=line><span class=cl>            <span class=p>.</span><span class=n>Where</span><span class=p>(</span><span class=n>a</span> <span class=p>=&gt;</span> <span class=n>a</span><span class=p>.</span><span class=n>Address</span><span class=p>.</span><span class=n>AddressFamily</span> <span class=p>==</span> <span class=n>System</span><span class=p>.</span><span class=n>Net</span><span class=p>.</span><span class=n>Sockets</span><span class=p>.</span><span class=n>AddressFamily</span><span class=p>.</span><span class=n>InterNetwork</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>.</span><span class=n>Select</span><span class=p>(</span><span class=n>a</span> <span class=p>=&gt;</span> <span class=k>new</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>IP</span> <span class=p>=</span> <span class=n>a</span><span class=p>.</span><span class=n>Address</span><span class=p>.</span><span class=n>ToString</span><span class=p>(),</span>
+</span></span><span class=line><span class=cl>                <span class=n>Description</span> <span class=p>=</span> <span class=n>n</span><span class=p>.</span><span class=n>Description</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// 获取网卡的 IPv4 接口指标</span>
+</span></span><span class=line><span class=cl>                <span class=n>Metric</span> <span class=p>=</span> <span class=n>n</span><span class=p>.</span><span class=n>GetIPProperties</span><span class=p>().</span><span class=n>GetIPv4Properties</span><span class=p>()?.</span><span class=n>Index</span>
+</span></span><span class=line><span class=cl>            <span class=p>}))</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=n>OrderBy</span><span class=p>(</span><span class=n>x</span> <span class=p>=&gt;</span> <span class=n>x</span><span class=p>.</span><span class=n>Metric</span><span class=p>)</span> <span class=c1>// 索引通常反映了绑定顺序</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=n>FirstOrDefault</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>bestIp</span><span class=p>?.</span><span class=n>IP</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这个方法的优点是精确可控，可以根据需求添加过滤条件，且不依赖路由表。缺点是需要手动维护虚拟网卡的排除列表，不同虚拟网卡的名称和描述可能不同。</p><div class="notice tip"><div class=notice-title><i class="fa-solid fa-lightbulb" aria-hidden=true></i>Tip</div><div class=notice-content>接口索引（Index）通常反映了网卡的绑定顺序和优先级，索引越小优先级越高。通过
+<code>GetIPv4Properties().Index</code> 可以获取这个值。</div></div><h3 id=方法二使用-socket-连接外部地址>方法二：使用 Socket 连接外部地址
+<a href=#%e6%96%b9%e6%b3%95%e4%ba%8c%e4%bd%bf%e7%94%a8-socket-%e8%bf%9e%e6%8e%a5%e5%a4%96%e9%83%a8%e5%9c%b0%e5%9d%80 class=anchor>&para;</a></h3><p>这是一个非常经典且巧妙的方法。通过创建一个 UDP Socket 并"连接"到外部地址（如
+Google DNS 的 8.8.8.8），让操作系统根据路由表自动选择最合适的本地 IP。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>static</span> <span class=kt>string?</span> <span class=n>GetLocalIp</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>using</span> <span class=nn>Socket</span> <span class=n>socket</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Socket</span><span class=p>(</span><span class=n>AddressFamily</span><span class=p>.</span><span class=n>InterNetwork</span><span class=p>,</span> <span class=n>SocketType</span><span class=p>.</span><span class=n>Dgram</span><span class=p>,</span> <span class=m>0</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>try</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 这里使用一个伪造的外部地址。</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 即使断网，系统也会根据路由表返回最匹配的物理网卡 IP</span>
+</span></span><span class=line><span class=cl>        <span class=n>socket</span><span class=p>.</span><span class=n>Connect</span><span class=p>(</span><span class=s>&#34;8.8.8.8&#34;</span><span class=p>,</span> <span class=m>65530</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=kt>var</span> <span class=n>endPoint</span> <span class=p>=</span> <span class=n>socket</span><span class=p>.</span><span class=n>LocalEndPoint</span> <span class=k>as</span> <span class=n>IPEndPoint</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>endPoint</span><span class=p>?.</span><span class=n>Address</span><span class=p>.</span><span class=n>ToString</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>catch</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 如果没有任何网卡连接，会进入这里</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=s>&#34;127.0.0.1&#34;</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><div class="notice tip"><div class=notice-title><i class="fa-solid fa-lightbulb" aria-hidden=true></i>Tip</div><div class=notice-content>这里使用的是 UDP 协议（<code>SocketType.Dgram</code>），<code>Connect</code>
+方法只是设置默认目标地址，<strong>不会真正发送数据包</strong>。因此即使断网也能正常工作，系统会根据路由表返回最匹配的本地
+IP。</div></div><p>这个方法代码最简洁，能自动避开虚拟网卡。但如果局域网与外网完全隔离，路由表中没有相应路由时可能失效。</p><h3 id=方法三使用-wmi-查询物理网卡>方法三：使用 WMI 查询物理网卡
+<a href=#%e6%96%b9%e6%b3%95%e4%b8%89%e4%bd%bf%e7%94%a8-wmi-%e6%9f%a5%e8%af%a2%e7%89%a9%e7%90%86%e7%bd%91%e5%8d%a1 class=anchor>&para;</a></h3><p>这个方法利用 Windows Management Instrumentation (WMI)
+来查询系统中标记为物理适配器的网卡，然后与 <code>NetworkInterface</code> 的 DeviceID
+进行匹配，从而准确过滤出物理网卡的 IP。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>static</span> <span class=k>void</span> <span class=n>GetRealIP</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// 使用 WMI 查询物理网卡</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>searcher</span> <span class=p>=</span> <span class=k>new</span> <span class=n>ManagementObjectSearcher</span><span class=p>(</span><span class=s>&#34;SELECT * FROM Win32_NetworkAdapter WHERE PhysicalAdapter = True&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>physicalIds</span> <span class=p>=</span> <span class=n>searcher</span><span class=p>.</span><span class=n>Get</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=n>Cast</span><span class=p>&lt;</span><span class=n>ManagementBaseObject</span><span class=p>&gt;()</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=n>Select</span><span class=p>(</span><span class=n>x</span> <span class=p>=&gt;</span> <span class=n>x</span><span class=p>[</span><span class=s>&#34;DeviceID&#34;</span><span class=p>].</span><span class=n>ToString</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>        <span class=p>.</span><span class=n>ToList</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>interfaces</span> <span class=p>=</span> <span class=n>NetworkInterface</span><span class=p>.</span><span class=n>GetAllNetworkInterfaces</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=k>foreach</span> <span class=p>(</span><span class=kt>var</span> <span class=n>ni</span> <span class=k>in</span> <span class=n>interfaces</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// 匹配物理网卡 ID 并且状态为 Up</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>physicalIds</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=n>ni</span><span class=p>.</span><span class=n>Id</span><span class=p>)</span> <span class=p>&amp;&amp;</span> <span class=n>ni</span><span class=p>.</span><span class=n>OperationalStatus</span> <span class=p>==</span> <span class=n>OperationalStatus</span><span class=p>.</span><span class=n>Up</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=kt>var</span> <span class=n>props</span> <span class=p>=</span> <span class=n>ni</span><span class=p>.</span><span class=n>GetIPProperties</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>            <span class=kt>var</span> <span class=n>ipv4</span> <span class=p>=</span> <span class=n>props</span><span class=p>.</span><span class=n>UnicastAddresses</span>
+</span></span><span class=line><span class=cl>                <span class=p>.</span><span class=n>FirstOrDefault</span><span class=p>(</span><span class=n>x</span> <span class=p>=&gt;</span> <span class=n>x</span><span class=p>.</span><span class=n>Address</span><span class=p>.</span><span class=n>AddressFamily</span> <span class=p>==</span> <span class=n>System</span><span class=p>.</span><span class=n>Net</span><span class=p>.</span><span class=n>Sockets</span><span class=p>.</span><span class=n>AddressFamily</span><span class=p>.</span><span class=n>InterNetwork</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>ipv4</span> <span class=p>!=</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// 排除掉 169.254.x.x (自动配置地址)</span>
+</span></span><span class=line><span class=cl>                <span class=k>if</span> <span class=p>(</span><span class=n>ipv4</span><span class=p>.</span><span class=n>Address</span><span class=p>.</span><span class=n>ToString</span><span class=p>().</span><span class=n>StartsWith</span><span class=p>(</span><span class=s>&#34;169.254&#34;</span><span class=p>))</span> <span class=k>continue</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>$&#34;网卡名称: {ni.Description}&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>$&#34;真实局域网 IP: {ipv4.Address}&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这个方法从准确性来说是最可靠的，能从操作系统底层识别物理网卡。但它有明显的局限性：</p><ul><li>需要引用 <code>System.Management</code> NuGet 包</li><li>只能在 Windows 平台使用，不支持跨平台</li><li>WMI 查询相对较慢，性能敏感场景需要缓存结果</li></ul><div class="notice tip"><div class=notice-title><i class="fa-solid fa-lightbulb" aria-hidden=true></i>Tip</div><div class=notice-content><code>169.254.x.x</code> 是 APIPA（Automatic Private IP
+Addressing）地址段，当 DHCP 服务器不可用时，Windows
+会自动分配这个范围的地址。这通常不是我们想要的真实局域网地址。</div></div><h3 id=方法四networkinterface-评分机制终极方案>方法四：NetworkInterface 评分机制（终极方案）
+<a href=#%e6%96%b9%e6%b3%95%e5%9b%9bnetworkinterface-%e8%af%84%e5%88%86%e6%9c%ba%e5%88%b6%e7%bb%88%e6%9e%81%e6%96%b9%e6%a1%88 class=anchor>&para;</a></h3><p>兜兜转转尝试了各种方法后，发现还是回到 <code>NetworkInterface</code>
+最简单且有效。下面这个方案相当于 <a class=link href=#%e6%96%b9%e6%b3%95%e4%b8%80%e4%bd%bf%e7%94%a8-networkinterface-%e8%8e%b7%e5%8f%96>方法一</a>
+的增强版，通过更全面的过滤条件和评分机制来选择最佳 IP 地址：</p><ul><li>排除更多种类的虚拟网卡（Clash、ZeroTier、Tailscale、WireGuard、VMware、Docker
+等）</li><li>排除特殊 IP 段（Docker 的 172.16-31.x.x、网络基准测试的 198.18.x.x、APIPA 的
+169.254.x.x）</li><li>使用评分系统综合评估：有网关 +100 分，以太网/无线网卡 +50
+分，知名厂商（Intel、Realtek 等）+30 分</li></ul><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span><span class=lnt>62
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>static</span> <span class=kt>string</span> <span class=n>GetRealLocalIP</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>allInterfaces</span> <span class=p>=</span> <span class=n>NetworkInterface</span><span class=p>.</span><span class=n>GetAllNetworkInterfaces</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>candidates</span> <span class=p>=</span> <span class=k>new</span> <span class=n>List</span><span class=p>&lt;(</span><span class=n>IPAddress</span> <span class=n>Ip</span><span class=p>,</span> <span class=kt>int</span> <span class=n>Score</span><span class=p>)&gt;();</span>
+</span></span><span class=line><span class=cl>    <span class=k>foreach</span> <span class=p>(</span><span class=kt>var</span> <span class=n>ni</span> <span class=k>in</span> <span class=n>allInterfaces</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>ni</span><span class=p>.</span><span class=n>OperationalStatus</span> <span class=p>!=</span> <span class=n>OperationalStatus</span><span class=p>.</span><span class=n>Up</span><span class=p>)</span> <span class=k>continue</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>ni</span><span class=p>.</span><span class=n>NetworkInterfaceType</span> <span class=p>==</span> <span class=n>NetworkInterfaceType</span><span class=p>.</span><span class=n>Loopback</span><span class=p>)</span> <span class=k>continue</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>ni</span><span class=p>.</span><span class=n>NetworkInterfaceType</span> <span class=p>==</span> <span class=n>NetworkInterfaceType</span><span class=p>.</span><span class=n>Tunnel</span><span class=p>)</span> <span class=k>continue</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=kt>string</span> <span class=n>desc</span> <span class=p>=</span> <span class=n>ni</span><span class=p>.</span><span class=n>Description</span><span class=p>.</span><span class=n>ToLower</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=kt>string</span> <span class=n>name</span> <span class=p>=</span> <span class=n>ni</span><span class=p>.</span><span class=n>Name</span><span class=p>.</span><span class=n>ToLower</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;wintun&#34;</span><span class=p>)</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>            <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;clash&#34;</span><span class=p>)</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>            <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;virtual&#34;</span><span class=p>)</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>            <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;vmware&#34;</span><span class=p>)</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>            <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;vbox&#34;</span><span class=p>)</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>            <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;hyper-v&#34;</span><span class=p>)</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>            <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;zerotier&#34;</span><span class=p>)</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>            <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;tailscale&#34;</span><span class=p>)</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>            <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;wireguard&#34;</span><span class=p>)</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>            <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;docker&#34;</span><span class=p>)</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>            <span class=n>name</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;vethernet&#34;</span><span class=p>)</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>            <span class=n>name</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;wsl&#34;</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>            <span class=k>continue</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=kt>var</span> <span class=n>ipProps</span> <span class=p>=</span> <span class=n>ni</span><span class=p>.</span><span class=n>GetIPProperties</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=kt>var</span> <span class=n>ipv4Addrs</span> <span class=p>=</span> <span class=n>ipProps</span><span class=p>.</span><span class=n>UnicastAddresses</span>
+</span></span><span class=line><span class=cl>            <span class=p>.</span><span class=n>Where</span><span class=p>(</span><span class=n>a</span> <span class=p>=&gt;</span> <span class=n>a</span><span class=p>.</span><span class=n>Address</span><span class=p>.</span><span class=n>AddressFamily</span> <span class=p>==</span> <span class=n>AddressFamily</span><span class=p>.</span><span class=n>InterNetwork</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>foreach</span> <span class=p>(</span><span class=kt>var</span> <span class=n>addr</span> <span class=k>in</span> <span class=n>ipv4Addrs</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=kt>string</span> <span class=n>ipStr</span> <span class=p>=</span> <span class=n>addr</span><span class=p>.</span><span class=n>Address</span><span class=p>.</span><span class=n>ToString</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>ipStr</span><span class=p>.</span><span class=n>StartsWith</span><span class=p>(</span><span class=s>&#34;169.254&#34;</span><span class=p>))</span> <span class=k>continue</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>ipStr</span><span class=p>.</span><span class=n>StartsWith</span><span class=p>(</span><span class=s>&#34;198.18.&#34;</span><span class=p>))</span> <span class=k>continue</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>ipStr</span><span class=p>.</span><span class=n>StartsWith</span><span class=p>(</span><span class=s>&#34;172.&#34;</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=kt>var</span> <span class=n>parts</span> <span class=p>=</span> <span class=n>ipStr</span><span class=p>.</span><span class=n>Split</span><span class=p>(</span><span class=sc>&#39;.&#39;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=k>if</span> <span class=p>(</span><span class=n>parts</span><span class=p>.</span><span class=n>Length</span> <span class=p>==</span> <span class=m>4</span> <span class=p>&amp;&amp;</span> <span class=kt>int</span><span class=p>.</span><span class=n>TryParse</span><span class=p>(</span><span class=n>parts</span><span class=p>[</span><span class=m>1</span><span class=p>],</span> <span class=k>out</span> <span class=kt>int</span> <span class=n>secondOctet</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>                <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=k>if</span> <span class=p>(</span><span class=n>secondOctet</span> <span class=p>&gt;=</span> <span class=m>16</span> <span class=p>&amp;&amp;</span> <span class=n>secondOctet</span> <span class=p>&lt;=</span> <span class=m>31</span><span class=p>)</span> <span class=k>continue</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=kt>int</span> <span class=n>score</span> <span class=p>=</span> <span class=m>0</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>ipProps</span><span class=p>.</span><span class=n>GatewayAddresses</span><span class=p>.</span><span class=n>Any</span><span class=p>(</span><span class=n>g</span> <span class=p>=&gt;</span> <span class=p>!</span><span class=n>g</span><span class=p>.</span><span class=n>Address</span><span class=p>.</span><span class=n>ToString</span><span class=p>().</span><span class=n>Equals</span><span class=p>(</span><span class=s>&#34;0.0.0.0&#34;</span><span class=p>)))</span>
+</span></span><span class=line><span class=cl>                <span class=n>score</span> <span class=p>+=</span> <span class=m>100</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>ni</span><span class=p>.</span><span class=n>NetworkInterfaceType</span> <span class=p>==</span> <span class=n>NetworkInterfaceType</span><span class=p>.</span><span class=n>Ethernet</span> <span class=p>||</span>
+</span></span><span class=line><span class=cl>                <span class=n>ni</span><span class=p>.</span><span class=n>NetworkInterfaceType</span> <span class=p>==</span> <span class=n>NetworkInterfaceType</span><span class=p>.</span><span class=n>Wireless80211</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                <span class=n>score</span> <span class=p>+=</span> <span class=m>50</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;intel&#34;</span><span class=p>)</span> <span class=p>||</span> <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;realtek&#34;</span><span class=p>)</span> <span class=p>||</span> <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;atheros&#34;</span><span class=p>)</span> <span class=p>||</span> <span class=n>desc</span><span class=p>.</span><span class=n>Contains</span><span class=p>(</span><span class=s>&#34;broadcom&#34;</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>                <span class=n>score</span> <span class=p>+=</span> <span class=m>30</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=n>candidates</span><span class=p>.</span><span class=n>Add</span><span class=p>((</span><span class=n>addr</span><span class=p>.</span><span class=n>Address</span><span class=p>,</span> <span class=n>score</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>candidates</span><span class=p>.</span><span class=n>Count</span> <span class=p>==</span> <span class=m>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=s>&#34;192.168.1.100&#34;</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>candidates</span><span class=p>.</span><span class=n>OrderByDescending</span><span class=p>(</span><span class=n>c</span> <span class=p>=&gt;</span> <span class=n>c</span><span class=p>.</span><span class=n>Score</span><span class=p>).</span><span class=n>First</span><span class=p>().</span><span class=n>Ip</span><span class=p>.</span><span class=n>ToString</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这个版本覆盖了几乎所有常见场景，通过多维度评分确保选择的是真正在使用的物理网卡
+IP。评分机制比简单的索引排序或依赖路由表更智能，能适应各种复杂网络环境。</p><div class="notice warning"><div class=notice-title><i class="fa-solid fa-exclamation-triangle" aria-hidden=true></i>Warning</div><div class=notice-content>虽然这个方法提供了最大的灵活性和准确性，但代码较长，维护成本相对较高。需要根据实际遇到的虚拟网卡类型持续更新过滤列表。</div></div><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p>获取本机真实 IP 地址看似简单，实则需要处理虚拟网卡、特殊 IP
+段、多网卡等复杂情况。本文介绍了四种方法，各有优劣：</p><div class=table-wrapper><table><thead><tr><th>方法</th><th>优点</th><th>缺点</th><th>适用场景</th></tr></thead><tbody><tr><td>方法一（基础 NetworkInterface）</td><td>可控性强，代码相对简单</td><td>需要手动维护排除列表</td><td>一般场景</td></tr><tr><td>方法二（Socket 连接）</td><td>代码最简洁，自动选择</td><td>完全隔离网络可能失效</td><td>快速实现</td></tr><tr><td>方法三（WMI 查询）</td><td>最准确，系统层面识别</td><td>仅限 Windows，性能较慢</td><td>Windows 专用</td></tr><tr><td>方法四（评分机制）</td><td>最灵活准确，覆盖全面</td><td>代码较长，维护成本高</td><td>复杂网络环境</td></tr></tbody></table></div><p>大家可以根据自己的实际需求选择合适的方法，或者结合多种方法以获得最佳效果。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/dotnet/>dotnet</a>
+<a href=/tags/csharp/>csharp</a>
+<a href=/tags/networking/>networking</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/dont-easily-use-comprehensive-extension-libraries/><div class=article-details><h2 class=article-title>不要轻易使用大而全的扩展库</h2></div></a></article><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article><article><a href=/posts/how-to-remove-event-handler-outside-a-class.md/><div class=article-details><h2 class=article-title>如何在类外移除类的事件订阅？</h2></div></a></article><article><a href=/posts/customize-order-with-icomparer/><div class=article-details><h2 class=article-title>在 C# 中使用 IComparer 实现自定义排序</h2></div></a></article><article><a href=/posts/linq-new-features-added-in-recent-dotnet/><div class=article-details><h2 class=article-title>盘点 LINQ 在最近几个 .NET 版本中新增的功能和特性</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

@@ -1,0 +1,259 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="Go 语言中的 defer 关键字非常好用，可以用来释放资源，关闭文件等。本文介绍了如何在 C# 中模拟 Go 的 defer 关键字，并将其用于 WPF 客户端开发。"><title>如何在 C# 中模拟 Go 的 defer 关键字并用于客户端开发</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/mimic-go-defer-in-csharp/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="如何在 C# 中模拟 Go 的 defer 关键字并用于客户端开发"><meta property='og:description' content="Go 语言中的 defer 关键字非常好用，可以用来释放资源，关闭文件等。本文介绍了如何在 C# 中模拟 Go 的 defer 关键字，并将其用于 WPF 客户端开发。"><meta property='og:url' content='https://blog.coldwind.top/posts/mimic-go-defer-in-csharp/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='dotnet'><meta property='article:tag' content='csharp'><meta property='article:tag' content='wpf'><meta property='article:tag' content='syntax'><meta property='article:published_time' content='2024-05-28T00:00:00+00:00'><meta property='article:modified_time' content='2024-05-28T00:00:00+00:00'><meta property='og:image' content='https://s2.loli.net/2024/05/28/WyuKtqiXZQ3pDEA.jpg'><meta name=twitter:title content="如何在 C# 中模拟 Go 的 defer 关键字并用于客户端开发"><meta name=twitter:description content="Go 语言中的 defer 关键字非常好用，可以用来释放资源，关闭文件等。本文介绍了如何在 C# 中模拟 Go 的 defer 关键字，并将其用于 WPF 客户端开发。"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://s2.loli.net/2024/05/28/WyuKtqiXZQ3pDEA.jpg'><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#go-中的-defer-大概是怎么一回事>Go 中的 defer 大概是怎么一回事</a></li><li><a href=#在-c-中模拟-go-的-defer>在 C# 中模拟 Go 的 defer</a></li><li><a href=#这一技巧在-wpf-开发中的妙用>这一技巧在 WPF 开发中的妙用</a></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/posts/mimic-go-defer-in-csharp/><img src=https://s2.loli.net/2024/05/28/WyuKtqiXZQ3pDEA.jpg loading=lazy alt="Featured image of post 如何在 C# 中模拟 Go 的 defer 关键字并用于客户端开发"></a></div><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/mimic-go-defer-in-csharp/>如何在 C# 中模拟 Go 的 defer 关键字并用于客户端开发</a></h2><h3 class=article-subtitle>Go 语言中的 defer 关键字非常好用，可以用来释放资源，关闭文件等。本文介绍了如何在 C# 中模拟 Go 的 defer 关键字，并将其用于 WPF 客户端开发。</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2024-05-28T00:00:00Z>May 28, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 4 分钟</time></div></footer></div></header><section class=article-content><blockquote><p>本文有对应的视频教程：<a class=link href=https://www.bilibili.com/video/BV1Ym421T7CS/ target=_blank rel=noopener>哔哩哔哩</a></p></blockquote><h2 id=go-中的-defer-大概是怎么一回事>Go 中的 defer 大概是怎么一回事
+<a href=#go-%e4%b8%ad%e7%9a%84-defer-%e5%a4%a7%e6%a6%82%e6%98%af%e6%80%8e%e4%b9%88%e4%b8%80%e5%9b%9e%e4%ba%8b class=anchor>&para;</a></h2><p>Go 语言中有一个非常好用的 <code>defer</code> 关键字。<code>defer</code> 会在函数返回之前执行，可以用来释放资源，关闭文件等。比如我们想打开并读取一个外部文件的内容，我们可以这样写：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=line><span class=cl><span class=kd>func</span> <span class=nf>ReadFile</span><span class=p>()</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nx>file</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>os</span><span class=p>.</span><span class=nf>Open</span><span class=p>(</span><span class=s>&#34;file.txt&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// 如果打开文件失败，直接返回
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nx>log</span><span class=p>.</span><span class=nf>Fatal</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// 在函数返回之前关闭文件
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=k>defer</span> <span class=nx>file</span><span class=p>.</span><span class=nf>Close</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// 读取文件内容
+</span></span></span><span class=line><span class=cl><span class=c1></span>    <span class=nx>content</span> <span class=o>:=</span> <span class=nb>make</span><span class=p>([]</span><span class=kt>byte</span><span class=p>,</span> <span class=mi>1024</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>file</span><span class=p>.</span><span class=nf>Read</span><span class=p>(</span><span class=nx>content</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nb>string</span><span class=p>(</span><span class=nx>content</span><span class=p>))</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>在这个例子中，我们使用 <code>defer</code> 关键字来确保在函数返回之前关闭文件。这样我们就不用担心忘记关闭文件，导致资源泄漏。</p><p>其实在 C# 和 Python 中，我们也可以借助一些特殊的语法来实现类似的效果。比如在 C# 中，我们可以使用 <code>using</code> 关键字来确保资源在使用完之后被释放；在 Python 中，我们可以使用 <code>with</code> 关键字来确保资源在使用完之后被释放。</p><p>但有些时候，我们想要实现的功能只是希望在离开作用域之前执行一些代码，而不是释放资源。这种情况下，我们仍然可以借助 <code>using</code> 关键字来实现，可以为我们带来意想不到的便利。</p><h2 id=在-c-中模拟-go-的-defer>在 C# 中模拟 Go 的 defer
+<a href=#%e5%9c%a8-c-%e4%b8%ad%e6%a8%a1%e6%8b%9f-go-%e7%9a%84-defer class=anchor>&para;</a></h2><p>前面已经提到，我们需要在 C# 中使用 <code>using</code> 关键字来模拟 Go 的 <code>defer</code>。但是 <code>using</code> 关键字只能用于“释放资源”，或者说需要对一个实现了 <code>IDisposable</code> 接口的对象进行操作。那么我们就必须实现 <code>Dispose</code> 相关的逻辑了。话虽如此，并没有人规定我们必须在 <code>Dispose</code> 方法中执行释放资源的逻辑。比如我们前面提到的，希望在离开作用域之前执行一些代码，就可以放在 <code>Dispose</code> 方法中去执行。</p><p>基于这个思路，我们可以写出这样的代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>MyDisposable</span> <span class=p>:</span> <span class=n>IDisposable</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>Action</span> <span class=n>_callback</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MyDisposable</span><span class=p>(</span><span class=n>Action</span> <span class=n>callback</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_this</span><span class=p>.</span><span class=n>_callback</span> <span class=p>=</span> <span class=n>callback</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Dispose</span><span class=p>()</span> <span class=p>=&gt;</span> <span class=n>_callback</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样我们就可以在 <code>Dispose</code> 方法中执行我们想要执行的代码了。比如我们可以这样使用：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>void</span> <span class=n>Foo</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>using</span> <span class=nn>var</span> <span class=n>md</span> <span class=p>=</span> <span class=k>new</span> <span class=n>MyDisposable</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>&#34;Job is done.&#34;</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// Do something</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>我们在上面的例子中还用到了 C# 8.0 的新特性：<code>using</code> 语法的改进。在 C# 8.0 中，我们可以省略 <code>using</code> 语句中的大括号，直接在 <code>using</code> 语句后面写一个表达式。这样我们就可以更加简洁地使用 <code>using</code> 语法了。</p><p>它实际对应的底层 C# 代码是这样的：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>void</span> <span class=n>Foo</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>MyDisposable</span> <span class=n>md</span> <span class=p>=</span> <span class=k>new</span> <span class=n>MyDisposable</span><span class=p>(()</span> <span class=p>=&gt;</span> <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>&#34;Job is done.&#34;</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>    <span class=k>try</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// Do something</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>finally</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>md</span> <span class=p>!=</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>md</span><span class=p>.</span><span class=n>Dispose</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>所以可以保证 <code>finally</code> 语句中的代码一定会被执行，即使在 <code>try</code> 语句中抛出了异常。</p><h2 id=这一技巧在-wpf-开发中的妙用>这一技巧在 WPF 开发中的妙用
+<a href=#%e8%bf%99%e4%b8%80%e6%8a%80%e5%b7%a7%e5%9c%a8-wpf-%e5%bc%80%e5%8f%91%e4%b8%ad%e7%9a%84%e5%a6%99%e7%94%a8 class=anchor>&para;</a></h2><p>其实这个小妙招并不是我的原创，而是油管上的 <a class=link href=https://www.youtube.com/@jason-williams target=_blank rel=noopener>Jason Williams</a> 在他的<a class=link href="https://www.youtube.com/watch?v=DOtS7IOtACI" target=_blank rel=noopener>一期视频</a>中提到的。在他的视频中，他为我们提供了一个绝妙的点子。</p><p>我们在做 WPF（以及其他诸如 Win UI、Avalonia 等）的客户端开发时，经常会遇到一个问题，就是需要去管理一个进度条的可见状态。比如我们现在有一个异步任务，我们希望任务在执行期间能够显示一个进度条，任务执行完毕（不管成功与否）后进度条消失。通常我们的做法是：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=c1>// 模拟搜索电影的异步任务</span>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=kt>bool</span> <span class=n>IsBusy</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=k>set</span><span class=p>;</span> <span class=p>}</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span> <span class=c1>// 控制进度条是否可见，且该属性具备通知功能</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>async</span> <span class=n>Task</span> <span class=n>SearchMovieAsync</span><span class=p>(</span><span class=kt>string</span> <span class=n>movieName</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>IsBusy</span> <span class=p>=</span> <span class=kc>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(!</span><span class=n>CanSearch</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>IsBusy</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>resList</span> <span class=p>=</span> <span class=k>await</span> <span class=n>SearchMoviesFromInternetAsync</span><span class=p>(</span><span class=n>movieName</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>resList</span> <span class=p>==</span> <span class=kc>null</span> <span class=p>||</span> <span class=n>resList</span><span class=p>.</span><span class=n>Count</span> <span class=p>==</span> <span class=m>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>IsBusy</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>foreach</span> <span class=p>(</span><span class=kt>var</span> <span class=n>res</span> <span class=k>in</span> <span class=n>resList</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// Do something</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=n>IsBusy</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>可以看到，我们在方法中需要多次根据情况设置 <code>IsBusy</code> 属性。这样的代码看起来不太优雅。为了解决这个问题，我们就可以用上前面实现的类了。不过我们需要稍微修改一下，使它的回调函数可以接受一个参数：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>BusyDisposable</span> <span class=p>:</span> <span class=n>IDisposable</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>Action</span><span class=p>&lt;</span><span class=kt>bool</span><span class=p>&gt;</span> <span class=n>_busySetter</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>BusyDisposable</span><span class=p>(</span><span class=n>Action</span><span class=p>&lt;</span><span class=kt>bool</span><span class=p>&gt;</span> <span class=n>busySetter</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_busySetter</span> <span class=p>=</span> <span class=n>busySetter</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_busySetter</span><span class=p>(</span><span class=kc>true</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Dispose</span><span class=p>()</span> <span class=p>=&gt;</span> <span class=n>_busySetter</span><span class=p>(</span><span class=kc>false</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>然后我们就可以这样使用了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>async</span> <span class=n>Task</span> <span class=n>SearchMovieAsync</span><span class=p>(</span><span class=kt>string</span> <span class=n>movieName</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>using</span> <span class=nn>var</span> <span class=n>_</span> <span class=p>=</span> <span class=k>new</span> <span class=n>BusyDisposable</span><span class=p>(</span><span class=k>value</span> <span class=p>=&gt;</span> <span class=n>IsBusy</span> <span class=p>=</span> <span class=k>value</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(!</span><span class=n>CanSearch</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>resList</span> <span class=p>=</span> <span class=k>await</span> <span class=n>SearchMoviesFromInternetAsync</span><span class=p>(</span><span class=n>movieName</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>resList</span> <span class=p>==</span> <span class=kc>null</span> <span class=p>||</span> <span class=n>resList</span><span class=p>.</span><span class=n>Count</span> <span class=p>==</span> <span class=m>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>foreach</span> <span class=p>(</span><span class=kt>var</span> <span class=n>res</span> <span class=k>in</span> <span class=n>resList</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=c1>// Do something</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content><p>这里有一个需要注意的点：我们是在 ViewModel 中对 <code>IsBusy</code> 进行的操作，并借助绑定来控制前台进度条的显示。<strong>这无形中帮助我们解决了一个重要的隐患：线程安全</strong>。即便我们在非 UI 线程中修改了 <code>IsBusy</code> 属性，由于 WPF 的数据绑定机制，我们也不用担心线程安全问题。</p><p>但如果是在 View 中去直接操作进度条的 <code>Visibility</code> 属性，那么就可能需要我们自己去处理线程安全问题了。常见的方式比如使用 <code>Dispatcher</code>，或参考我的这篇 <a class=link href=/posts/how-to-report-progress>关于使用 IProgress 的文章</a>。</p></div></div><p>相信大家立刻就能够明白这个方式有多么简洁和优雅了。我们通过使用 <code>using</code> 关键字，保证了当前作用域中的代码不管是正常执行还是异常退出，都会在离开作用域之前执行 <code>IsBusy = false</code> 这一行代码。这样我们就不用在方法中多次设置 <code>IsBusy</code> 属性了。</p><p>甚至我们还能再稍微优化一下，比如使用一个自动属性来简化 <code>BusyDisposable</code> 的实例化：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>private</span> <span class=n>BusyDisposable</span> <span class=n>NewBusyDisposable</span> 
+</span></span><span class=line><span class=cl>    <span class=p>=&gt;</span> <span class=k>new</span> <span class=n>BusyDisposable</span><span class=p>(</span><span class=k>value</span> <span class=p>=&gt;</span> <span class=n>IsBusy</span> <span class=p>=</span> <span class=k>value</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>async</span> <span class=n>Task</span> <span class=n>SearchMovieAsync</span><span class=p>(</span><span class=kt>string</span> <span class=n>movieName</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>using</span> <span class=nn>var</span> <span class=n>_</span> <span class=p>=</span> <span class=n>NewBusyDisposable</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// ...</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样我们就可以进一步简化这一语法，从而使其更接近 Go 语言中的 <code>defer</code> 关键字的使用方式。</p><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p>本期内容主要介绍了 Go 语言中的 <code>defer</code> 关键字，以及如何在 C# 中模拟 <code>defer</code> 的实现。虽然我们似乎一定程度上“滥用”了 <code>using</code> 关键字以及 <code>IDisposable</code> 接口，但这种方式确实可以带来一些意想不到的便利。</p><p>油管上的这位 Jason Williams 也绝对是一位大神。虽然他视频非常少，粉丝也只有几百，但是每期内容都堪称精品。大家有机会的话也可以去关注一下他，相信一定会有所收获。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/dotnet/>dotnet</a>
+<a href=/tags/csharp/>csharp</a>
+<a href=/tags/wpf/>wpf</a>
+<a href=/tags/syntax/>syntax</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article><article><a href=/posts/built-in-design-patterns-in-wpf/><div class=article-details><h2 class=article-title>原生 WPF 框架中体现出的设计模式</h2></div></a></article><article><a href=/posts/more-observable-collections/><div class=article-details><h2 class=article-title>借助 ObservableCollections 获得更多具有通知功能的集合类型</h2></div></a></article><article><a href=/posts/contentcontrol-vs-contentpresenter/><div class=article-details><h2 class=article-title>WPF 中的 ContentControl 及 ContentPresenter 有何异同？</h2></div></a></article><article class=has-image><a href=/posts/objectdataprovider-tips/><div class=article-image><img src=https://s2.loli.net/2025/03/04/6BmTwRWGapOPoIE.webp loading=lazy data-key=objectdataprovider-tips data-hash=https://s2.loli.net/2025/03/04/6BmTwRWGapOPoIE.webp></div><div class=article-details><h2 class=article-title>WPF 中 ObjectDataProvider 的一些有趣用法</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

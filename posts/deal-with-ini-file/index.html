@@ -1,0 +1,214 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="INI 文件是一种相当古老的配置文件格式，但如今仍然被广泛使用。本文将会介绍几种在 C# 中读写 INI 文件的方法，并探讨它们的效率和适用场景。"><title>如何读写 INI 配置文件？</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/deal-with-ini-file/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="如何读写 INI 配置文件？"><meta property='og:description' content="INI 文件是一种相当古老的配置文件格式，但如今仍然被广泛使用。本文将会介绍几种在 C# 中读写 INI 文件的方法，并探讨它们的效率和适用场景。"><meta property='og:url' content='https://blog.coldwind.top/posts/deal-with-ini-file/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='csharp'><meta property='article:tag' content='dotnet'><meta property='article:published_time' content='2024-07-11T00:00:00+00:00'><meta property='article:modified_time' content='2024-07-11T00:00:00+00:00'><meta property='og:image' content='https://s2.loli.net/2024/07/11/QyFiMdrfNPKpazT.jpg'><meta name=twitter:title content="如何读写 INI 配置文件？"><meta name=twitter:description content="INI 文件是一种相当古老的配置文件格式，但如今仍然被广泛使用。本文将会介绍几种在 C# 中读写 INI 文件的方法，并探讨它们的效率和适用场景。"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://s2.loli.net/2024/07/11/QyFiMdrfNPKpazT.jpg'><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#ini-文件格式概述>INI 文件格式概述</a></li><li><a href=#传统方法使用-win32-api>传统方法：使用 Win32 API</a></li><li><a href=#第三方库ini-parser>第三方库：Ini-Parser</a></li><li><a href=#第三方库inisharp>第三方库：IniSharp</a></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/posts/deal-with-ini-file/><img src=https://s2.loli.net/2024/07/11/QyFiMdrfNPKpazT.jpg loading=lazy alt="Featured image of post 如何读写 INI 配置文件？"></a></div><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/deal-with-ini-file/>如何读写 INI 配置文件？</a></h2><h3 class=article-subtitle>INI 文件是一种相当古老的配置文件格式，但如今仍然被广泛使用。本文将会介绍几种在 C# 中读写 INI 文件的方法，并探讨它们的效率和适用场景。</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2024-07-11T00:00:00Z>Jul 11, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 6 分钟</time></div></footer></div></header><section class=article-content><p>INI 文件是一种相当古老的配置文件格式，但很“可惜”的是，它如今依旧被广泛使用。正因为如此，即便现在已经出现了很多更加现代化的配置文件格式（比如 JSON、YAML、TOML 等），我们仍然可能会遇到读写 INI 文件的情形。那么这次我们就来看看如何在 C# 中读写 INI 文件。</p><h2 id=ini-文件格式概述>INI 文件格式概述
+<a href=#ini-%e6%96%87%e4%bb%b6%e6%a0%bc%e5%bc%8f%e6%a6%82%e8%bf%b0 class=anchor>&para;</a></h2><p>INI 文件是一种文本文件，它由一系列的节（Section）和键值对（Key-value pair）组成。每个键值对都位于某个节中，键和值位于等号（<code>=</code>）左右，而节则由方括号（<code>[]</code>）括起来。一个简单的 INI 文件看起来可能是这样的：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ini data-lang=ini><span class=line><span class=cl><span class=k>[Section1]</span>
+</span></span><span class=line><span class=cl><span class=na>Key1</span><span class=o>=</span><span class=s>Value1</span>
+</span></span><span class=line><span class=cl><span class=na>Key2</span><span class=o>=</span><span class=s>Value2</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>[Section2]</span>
+</span></span><span class=line><span class=cl><span class=na>Key3</span><span class=o>=</span><span class=s>Value3</span>
+</span></span><span class=line><span class=cl><span class=na>Key4</span><span class=o>=</span><span class=s>Value4</span>
+</span></span></code></pre></td></tr></table></div></div><p>此外，INI 文件还支持注释，通常以分号（<code>;</code>）开头（有时也可以自定义为其他符号，比如 <code>#</code> 等），直到行尾为止：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-ini data-lang=ini><span class=line><span class=cl><span class=k>[Section1]</span>
+</span></span><span class=line><span class=cl><span class=na>Key1</span><span class=o>=</span><span class=s>Value1 ; 这是一个注释</span>
+</span></span></code></pre></td></tr></table></div></div><p>INI 文件的格式要求基本就是这样了。其他可能还有一些诸如命名习惯，以及等号左右是否添加空格等细节，但这些通常都是没有具体约束的。</p><p>不难发现，INI 因为格式极其简单，所以它的解析也是相当容易的，我们稍加思考，通常就可以写出一个简单的解析器。但是，既然已经有现成的解析库，我们当然不必自己重复造轮子。接下来我们就来看看在 C# 中如何读写 INI 文件。</p><h2 id=传统方法使用-win32-api>传统方法：使用 Win32 API
+<a href=#%e4%bc%a0%e7%bb%9f%e6%96%b9%e6%b3%95%e4%bd%bf%e7%94%a8-win32-api class=anchor>&para;</a></h2><p>相信大家只要在网上搜索过这个问题，就一定会看到有人推荐使用 Win32 API 来读写 INI 文件。这种方法的优点是简单、高效，但缺点也很明显：它是不跨平台的。如果你的程序需要在 Linux 或 macOS 上运行，那么这种方法就不适用了。</p><p>INI 文件的读写操作在 Windows 平台上有专门的 API 支持，这些 API 位于 <code>kernel32.dll</code> 中。我们可以通过 P/Invoke 的方式调用这些 API，实现对 INI 文件的读写。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=k>using</span> <span class=nn>System</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>using</span> <span class=nn>System.Runtime.InteropServices</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>[DllImport(&#34;kernel32&#34;)]</span>
+</span></span><span class=line><span class=cl><span class=kd>private</span> <span class=kd>static</span> <span class=kd>extern</span> <span class=kt>long</span> <span class=n>WritePrivateProfileString</span><span class=p>(</span><span class=kt>string</span> <span class=n>section</span><span class=p>,</span> <span class=kt>string</span> <span class=n>key</span><span class=p>,</span> <span class=kt>string</span> <span class=n>val</span><span class=p>,</span> <span class=kt>string</span> <span class=n>filePath</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>[DllImport(&#34;kernel32&#34;)]</span>
+</span></span><span class=line><span class=cl><span class=kd>private</span> <span class=kd>static</span> <span class=kd>extern</span> <span class=kt>int</span> <span class=n>GetPrivateProfileString</span><span class=p>(</span><span class=kt>string</span> <span class=n>section</span><span class=p>,</span> <span class=kt>string</span> <span class=n>key</span><span class=p>,</span> <span class=kt>string</span> <span class=n>def</span><span class=p>,</span> <span class=n>StringBuilder</span> <span class=n>retVal</span><span class=p>,</span> <span class=kt>int</span> <span class=n>size</span><span class=p>,</span> <span class=kt>string</span> <span class=n>filePath</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=kt>string</span> <span class=n>IniReadValue</span><span class=p>(</span><span class=kt>string</span> <span class=n>Section</span><span class=p>,</span><span class=kt>string</span> <span class=n>Key</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>StringBuilder</span> <span class=n>temp</span> <span class=p>=</span> <span class=k>new</span> <span class=n>StringBuilder</span><span class=p>(</span><span class=m>256</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=kt>int</span> <span class=n>i</span> <span class=p>=</span> <span class=n>GetPrivateProfileString</span><span class=p>(</span><span class=n>Section</span><span class=p>,</span><span class=n>Key</span><span class=p>,</span><span class=s>&#34;&#34;</span><span class=p>,</span><span class=n>temp</span><span class=p>,</span> <span class=m>256</span><span class=p>,</span> <span class=k>this</span><span class=p>.</span><span class=n>path</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>temp</span><span class=p>.</span><span class=n>ToString</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>我们只需要从 <code>kernel32.dll</code> 中导入 <code>WritePrivateProfileString</code> 和 <code>GetPrivateProfileString</code> 两个函数，就可以实现对于 INI 文件的读写操作了。通常情况下，我们还会额外写一个 <code>IniReadValue</code> 方法来包装 <code>GetPrivateProfileString</code> 函数，以便更加方便地读取键值。</p><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content>除了上面的两个方法，<code>kernel32.dll</code> 中还有一些其他的函数，比如 <code>GetPrivateProfileSection</code>、<code>GetPrivateProfileSectionNames</code> 等，它们可以帮助我们更加方便地操作 INI 文件。有兴趣的读者可以自行查阅相关文档。</div></div><p>但是大家在使用这个库的时候，不知道会不会有一种仿佛“高射炮打蚊子”一样的心情？毕竟 INI 这么简单的一种格式，居然要使用到 P/Invoke 来调用 Win32 API，这未免也太麻烦了。所以，这种传统方式存在以下问题：</p><ol><li>使用体验差：需要通过 P/Invoke 来调用 Win32 API，这对于 C# 开发者来说并不是一种友好的体验。</li><li>不跨平台：这种方法只能在 Windows 平台上使用，无法在 Linux 或 macOS 上运行。</li><li>线程不安全：由于这是一个全局函数，每次调用都会操作外部文件，所以在多线程环境下可能会出现问题。</li><li>时间复杂度高：假如我们想要读取 INI 文件中的多个键值对，那么就需要多次调用 <code>GetPrivateProfileString</code> 函数，而每次调用都需要从文件开头开始读取，直到找到对应的键值对。这样的时间复杂度显然是不够理想的。</li><li>文本编码：这种方法只会使用系统默认的文本编码（比如中文操作系统的 ANSI 对应 GBK 编码），无法指定其他编码，因此非 ASCII 字符可能会出现乱码。</li></ol><p>所以下面我们再介绍几个别的库。但是大家也不要高兴太早，因为这些库虽然各有优点，但也有各自的问题。</p><h2 id=第三方库ini-parser>第三方库：Ini-Parser
+<a href=#%e7%ac%ac%e4%b8%89%e6%96%b9%e5%ba%93ini-parser class=anchor>&para;</a></h2><p><a class=link href=https://github.com/rickyah/ini-parser target=_blank rel=noopener>ini-parser</a> 是一款非常好用的 INI 文件解析库。它可以一次性将整个 INI 文件解析为一个 <code>IniData</code> 对象（可以想象成一个字典），从而方便我们像操作字典那样便捷又高效地进行高频率的读写操作，并在最后统一写回文件。</p><div class="notice tip"><div class=notice-title><i class="fa-solid fa-lightbulb" aria-hidden=true></i>Tip</div><div class=notice-content>大家在 NuGet 中搜索 <code>ini-parser</code> 时，还会发现 <code>ini-parser-netstandard</code> 这个库。这两个库的功能是一样的，只是前者是 .NET Framework的，而后者则是 .NET Standard 2.0 的，因此可以在 .NET Core、.NET 5+ 及跨平台环境中使用，甚至还可以用于 Unity 游戏开发。推荐大家在任何情况下都使用后者。</div></div><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=k>using</span> <span class=nn>IniParser</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>parser</span> <span class=p>=</span> <span class=k>new</span> <span class=n>FileIniDataParser</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=n>IniData</span> <span class=n>data</span> <span class=p>=</span> <span class=n>parser</span><span class=p>.</span><span class=n>ReadFile</span><span class=p>(</span><span class=s>&#34;config.ini&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 读取键值对</span>
+</span></span><span class=line><span class=cl><span class=kt>string</span> <span class=n>value1</span> <span class=p>=</span> <span class=n>data</span><span class=p>[</span><span class=s>&#34;Section1&#34;</span><span class=p>][</span><span class=s>&#34;Key1&#34;</span><span class=p>];</span>
+</span></span><span class=line><span class=cl><span class=kt>string</span> <span class=n>value2</span> <span class=p>=</span> <span class=n>data</span><span class=p>[</span><span class=s>&#34;Section1&#34;</span><span class=p>][</span><span class=s>&#34;Key2&#34;</span><span class=p>];</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 修改键值对</span>
+</span></span><span class=line><span class=cl><span class=n>data</span><span class=p>[</span><span class=s>&#34;Section1&#34;</span><span class=p>][</span><span class=s>&#34;Key1&#34;</span><span class=p>]</span> <span class=p>=</span> <span class=s>&#34;NewValue1&#34;</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=n>data</span><span class=p>[</span><span class=s>&#34;Section1&#34;</span><span class=p>][</span><span class=s>&#34;Key2&#34;</span><span class=p>]</span> <span class=p>=</span> <span class=s>&#34;NewValue2&#34;</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 写回文件</span>
+</span></span><span class=line><span class=cl><span class=n>parser</span><span class=p>.</span><span class=n>WriteFile</span><span class=p>(</span><span class=s>&#34;config.ini&#34;</span><span class=p>,</span> <span class=n>data</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><p>除此之外，它还支持更多功能，比如合并多个 INI 文件等。大家可以查看官方文档来了解更多信息。</p><p>但是，这个库有一个非常明显的限制：虽然它一次性读取了整个 INI 文件，使得我们在需要频繁读写时更加高效。但是当文件较大时，一次性读取整个文件可能会导致占用更大的内存；不仅如此，如果我们的需求仅仅是临时读写某一项配置，那么这种一次性读取整个文件的方式显然是不够高效的。</p><p>所以这里再和大家推荐另外一个库。</p><h2 id=第三方库inisharp>第三方库：IniSharp
+<a href=#%e7%ac%ac%e4%b8%89%e6%96%b9%e5%ba%93inisharp class=anchor>&para;</a></h2><p><a class=link href=https://github.com/kevinlae/IniSharp target=_blank rel=noopener>IniSharp</a> 真是一个不错的名字。这个库提供了便捷的操作 INI 文件的方法，并且不依赖 Win32 API，因此可以在跨平台环境下使用。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=k>using</span> <span class=nn>IniSharp</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>ini</span> <span class=p>=</span> <span class=k>new</span> <span class=n>IniFile</span><span class=p>(</span><span class=s>&#34;config.ini&#34;</span><span class=p>,</span> <span class=n>Encoding</span><span class=p>.</span><span class=n>UTF8</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>value1</span> <span class=p>=</span> <span class=n>ini</span><span class=p>.</span><span class=n>GetValue</span><span class=p>(</span><span class=s>&#34;Section1&#34;</span><span class=p>,</span> <span class=s>&#34;Key1&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>value2</span> <span class=p>=</span> <span class=n>ini</span><span class=p>.</span><span class=n>GetValue</span><span class=p>(</span><span class=s>&#34;Section1&#34;</span><span class=p>,</span> <span class=s>&#34;Key2&#34;</span><span class=p>,</span> <span class=s>&#34;Default&#34;</span><span class=p>);</span>  <span class=c1>// 如果该键不存在，则创建并返回默认值</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>ini</span><span class=p>.</span><span class=n>SetValue</span><span class=p>(</span><span class=s>&#34;Section1&#34;</span><span class=p>,</span> <span class=s>&#34;Key1&#34;</span><span class=p>,</span> <span class=s>&#34;NewValue1&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>ini</span><span class=p>.</span><span class=n>DeleteKey</span><span class=p>(</span><span class=s>&#34;Section1&#34;</span><span class=p>,</span> <span class=s>&#34;Key2&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>ini</span><span class=p>.</span><span class=n>DeleteSection</span><span class=p>(</span><span class=s>&#34;Section2&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>List</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>sections</span> <span class=p>=</span> <span class=n>ini</span><span class=p>.</span><span class=n>GetSections</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=n>List</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>keys</span> <span class=p>=</span> <span class=n>ini</span><span class=p>.</span><span class=n>GetKeys</span><span class=p>(</span><span class=s>&#34;Section1&#34;</span><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><p>这个库并不会一次性读取整个 INI 文件，而是在每次操作时进行读取或写入操作，因此不会占用过多的内存。这在我们的需求是临时读写某一项配置时显得尤为重要。</p><p>但是我仍然要泼大家一盆冷水：这个库的性能并不高，因为它底层的代码存在一些值得优化的空间。以读取单个键值的方法为例（以下代码为节选，并不完整）：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=c1>// 它在底层声明了一个“碰巧”与 Win 32 API 一样的函数名</span>
+</span></span><span class=line><span class=cl><span class=kd>private</span> <span class=kt>string</span> <span class=n>GetPrivateProfileString</span><span class=p>(</span><span class=kt>string</span> <span class=n>section</span><span class=p>,</span> <span class=kt>string</span> <span class=n>key</span><span class=p>,</span> <span class=kt>string</span> <span class=n>defaultValue</span> <span class=p>=</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>List</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>lines</span> <span class=p>=</span> <span class=n>File</span><span class=p>.</span><span class=n>ReadAllLines</span><span class=p>(</span><span class=n>filePath</span><span class=p>,</span> <span class=n>FileEncoding</span><span class=p>).</span><span class=n>ToList</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>(</span><span class=kt>int</span> <span class=n>sectionNum</span><span class=p>,</span> <span class=kt>int</span> <span class=n>keyNum</span><span class=p>)</span> <span class=p>=</span> <span class=n>FindSectionAndKey</span><span class=p>(</span><span class=n>section</span><span class=p>,</span> <span class=n>key</span><span class=p>,</span> <span class=n>lines</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>sectionNum</span> <span class=p>!=</span> <span class=p>-</span><span class=m>1</span> <span class=p>&amp;&amp;</span> <span class=n>keyNum</span> <span class=p>!=</span> <span class=p>-</span><span class=m>1</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>startIndex</span> <span class=p>=</span> <span class=n>lines</span><span class=p>[</span><span class=n>keyNum</span><span class=p>].</span><span class=n>IndexOf</span><span class=p>(</span><span class=n>key</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>equalsIndex</span> <span class=p>=</span> <span class=n>lines</span><span class=p>[</span><span class=n>keyNum</span><span class=p>].</span><span class=n>IndexOf</span><span class=p>(</span><span class=sc>&#39;=&#39;</span><span class=p>,</span> <span class=n>startIndex</span> <span class=p>+</span> <span class=n>key</span><span class=p>.</span><span class=n>Length</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=kt>string</span> <span class=n>strLalue</span> <span class=p>=</span> <span class=n>lines</span><span class=p>[</span><span class=n>keyNum</span><span class=p>].</span><span class=n>Substring</span><span class=p>(</span><span class=n>equalsIndex</span> <span class=p>+</span> <span class=m>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=kt>int</span> <span class=n>hashIndex</span> <span class=p>=</span> <span class=n>strLalue</span><span class=p>.</span><span class=n>IndexOf</span><span class=p>(</span><span class=n>commentChar</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=p>(</span><span class=n>hashIndex</span> <span class=p>!=</span> <span class=p>-</span><span class=m>1</span><span class=p>)</span> <span class=p>?</span> <span class=n>strLalue</span><span class=p>.</span><span class=n>Substring</span><span class=p>(</span><span class=m>0</span><span class=p>,</span> <span class=n>hashIndex</span><span class=p>)</span> <span class=p>:</span> <span class=n>strLalue</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>defaultValue</span> <span class=p>!=</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>sectionNum</span> <span class=p>!=</span> <span class=p>-</span><span class=m>1</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>keyNum</span> <span class=p>==</span> <span class=p>-</span><span class=m>1</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>lines</span><span class=p>.</span><span class=n>Insert</span><span class=p>(</span><span class=n>sectionNum</span> <span class=p>+</span> <span class=m>1</span><span class=p>,</span> <span class=s>$&#34;{key}={defaultValue}&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=k>lock</span> <span class=p>(</span><span class=n>lockObject</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=n>File</span><span class=p>.</span><span class=n>WriteAllLines</span><span class=p>(</span><span class=n>filePath</span><span class=p>,</span> <span class=n>lines</span><span class=p>,</span> <span class=n>FileEncoding</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=k>else</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>lock</span> <span class=p>(</span><span class=n>lockObject</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=k>using</span> <span class=p>(</span><span class=n>StreamWriter</span> <span class=n>sw</span> <span class=p>=</span> <span class=n>File</span><span class=p>.</span><span class=n>AppendText</span><span class=p>(</span><span class=n>filePath</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>                <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=n>sw</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>$&#34;[{section}]&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                    <span class=n>sw</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>$&#34;{key}={defaultValue}&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>defaultValue</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>不难看出几个问题：</p><ol><li>它使用的是 <code>ReadAllLines()</code> 方法，而不是采用 <code>ReadLines()</code> 方法返回一个延迟加载的 <code>IEnumerable&lt;string></code>，或使用 <code>StreamReader</code> 逐行读取。这样会导致一次性读取整个文件，占用更多内存。尤其是即便我们要找的键就在文件的开头，它也会从头读取整个文件，这显然是不够高效的。</li><li>它使用了 <code>File.WriteAllLines()</code> 方法，每次修改都会重写整个文件。</li><li>在插入新键值对时，它使用了 <code>List.Insert()</code> 方法，这会导致整个列表的元素向后移动，时间复杂度为 O(n)。</li></ol><p>除此之外，这个库还有其他一些提升空间，比如可以使用 <code>Span</code>、<code>ArrayPool</code> 等，来减少内存分配和 GC 压力。</p><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p>上面提到的几种方式可以说是各有千秋，总会存在一些缺憾，因此关于 INI 这么简单的一个文件格式，我们的故事并没有结束。在后续的文章中，我还会和大家分享更多关于 INI 文件的读写方法，以及一些优化技巧。欢迎大家继续关注我的博客。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/csharp/>csharp</a>
+<a href=/tags/dotnet/>dotnet</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/dont-easily-use-comprehensive-extension-libraries/><div class=article-details><h2 class=article-title>不要轻易使用大而全的扩展库</h2></div></a></article><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article><article><a href=/posts/how-to-remove-event-handler-outside-a-class.md/><div class=article-details><h2 class=article-title>如何在类外移除类的事件订阅？</h2></div></a></article><article><a href=/posts/how-to-get-real-local-ip-address/><div class=article-details><h2 class=article-title>如何在 C# 中获取本机真实 IP 地址？</h2></div></a></article><article><a href=/posts/customize-order-with-icomparer/><div class=article-details><h2 class=article-title>在 C# 中使用 IComparer 实现自定义排序</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

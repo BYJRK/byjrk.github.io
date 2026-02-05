@@ -1,0 +1,581 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="我们在多线程开发中，经常会用到标志位和轮询。但是这样的方式并不优雅。这篇文章我们来看一看如何用信号量等机制来替代轮询标志位的方式，从而实现线程间的通信和控制。"><title>在多线程开发中用信号量代替轮询和标志位</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/use-signal-over-polling-flags/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="在多线程开发中用信号量代替轮询和标志位"><meta property='og:description' content="我们在多线程开发中，经常会用到标志位和轮询。但是这样的方式并不优雅。这篇文章我们来看一看如何用信号量等机制来替代轮询标志位的方式，从而实现线程间的通信和控制。"><meta property='og:url' content='https://blog.coldwind.top/posts/use-signal-over-polling-flags/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='dotnet'><meta property='article:tag' content='csharp'><meta property='article:tag' content='threading'><meta property='article:published_time' content='2025-04-02T00:00:00+00:00'><meta property='article:modified_time' content='2025-04-02T00:00:00+00:00'><meta name=twitter:title content="在多线程开发中用信号量代替轮询和标志位"><meta name=twitter:description content="我们在多线程开发中，经常会用到标志位和轮询。但是这样的方式并不优雅。这篇文章我们来看一看如何用信号量等机制来替代轮询标志位的方式，从而实现线程间的通信和控制。"><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#传统方式>传统方式</a></li><li><a href=#经典的两个标志位>经典的两个标志位</a><ol><li><a href=#用-manualresetevent-实现线程的暂停和继续>用 <code>ManualResetEvent</code> 实现线程的暂停和继续</a></li><li><a href=#用-cancellationtoken-实现任务的停止>用 <code>CancellationToken</code> 实现任务的停止</a></li></ol></li><li><a href=#优化使用消息队列的情形>优化使用消息队列的情形</a><ol><li><a href=#用线程安全的集合类型>用线程安全的集合类型</a></li><li><a href=#用信号量来取代标志位>用信号量来取代标志位</a></li><li><a href=#用-blockingcollection-来实现生产者消费者模式>用 <code>BlockingCollection</code> 来实现生产者消费者模式</a></li></ol></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/use-signal-over-polling-flags/>在多线程开发中用信号量代替轮询和标志位</a></h2><h3 class=article-subtitle>我们在多线程开发中，经常会用到标志位和轮询。但是这样的方式并不优雅。这篇文章我们来看一看如何用信号量等机制来替代轮询标志位的方式，从而实现线程间的通信和控制。</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2025-04-02T00:00:00Z>Apr 02, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 7 分钟</time></div></footer></div></header><section class=article-content><blockquote><p>本文有对应的视频教程：<a class=link href=https://www.bilibili.com/video/BV1e7o2YTEpi target=_blank rel=noopener>哔哩哔哩</a></p></blockquote><p>我们在多线程开发中，经常会用到标志位和轮询，从而控制一个线程中的执行逻辑。但是这样的方式会导致代码的可读性和可维护性下降，并且也不够优雅。这篇文章我们来看一看如何用信号量等机制来替代轮询标志位的方式，从而实现线程间的通信和控制。</p><h2 id=传统方式>传统方式
+<a href=#%e4%bc%a0%e7%bb%9f%e6%96%b9%e5%bc%8f class=anchor>&para;</a></h2><p>首先我们来看一看传统的标志位和轮询是怎么一回事。这里我们用一个简单的例子来探讨：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MyService</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kd>volatile</span> <span class=kt>bool</span> <span class=n>_shouldStop</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>Thread</span><span class=p>?</span> <span class=n>_workerThread</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Start</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Thread</span><span class=p>(</span><span class=n>Worker</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>_shouldStop</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span><span class=p>.</span><span class=n>Start</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Stop</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_shouldStop</span> <span class=p>=</span> <span class=kc>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span><span class=p>?.</span><span class=n>Join</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>void</span> <span class=n>Worker</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>while</span> <span class=p>(!</span><span class=n>_shouldStop</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=c1>// 执行一些工作</span>
+</span></span><span class=line><span class=cl>            <span class=n>Thread</span><span class=p>.</span><span class=n>Sleep</span><span class=p>(</span><span class=m>50</span><span class=p>);</span> <span class=c1>// 模拟工作</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>上面就是一个典型的例子。这里，<code>_shouldStop</code> 是一个标志位，表示线程是否需要停止。我们在 <code>Start</code> 和 <code>Stop</code> 方法中分别设置和读取这个标志位，并在 <code>Worker</code> 方法中，通过轮询它来判断线程是否需要继续执行。</p><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content>上面的标志位 <code>_shouldStop</code> 是 <code>volatile</code> 的，这样做能够保证编译器不会对其进行优化，从而保证每次读取都是最新的值。其实一般情况下，如果我们的轮询中包含了 <code>Thread.Sleep</code> 等操作，那么即便不加 <code>volatile</code>，也依旧是可以读到最新的值的。</div></div><div class="notice warning"><div class=notice-title><i class="fa-solid fa-exclamation-triangle" aria-hidden=true></i>Warning</div><div class=notice-content>注意，这里我们只是用简单的代码大概介绍思路，并没有提供一个稳健的实现。比如上面的例子中，我们并没有处理用户多次调用 <code>Start</code> 方法，也没有处理线程异常等情况。</div></div><p>如果我们想在上面的基础上再添加暂停和继续的功能，那么我们就需要添加更多的标志位和轮询逻辑。比如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MyService</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kd>volatile</span> <span class=kt>bool</span> <span class=n>_shouldStop</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kd>volatile</span> <span class=kt>bool</span> <span class=n>_isRunning</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>Thread</span><span class=p>?</span> <span class=n>_workerThread</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Start</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Thread</span><span class=p>(</span><span class=n>Worker</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>_shouldStop</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_isRunning</span> <span class=p>=</span> <span class=kc>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span><span class=p>.</span><span class=n>Start</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Stop</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_shouldStop</span> <span class=p>=</span> <span class=kc>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span><span class=p>?.</span><span class=n>Join</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Pause</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_isRunning</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Resume</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_isRunning</span> <span class=p>=</span> <span class=kc>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>void</span> <span class=n>Worker</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>while</span> <span class=p>(!</span><span class=n>_shouldStop</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>_isRunning</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// 执行一些工作</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=n>Thread</span><span class=p>.</span><span class=n>Sleep</span><span class=p>(</span><span class=m>50</span><span class=p>);</span> <span class=c1>// 暂停时也要休眠，避免 CPU 占用过高</span>
+</span></span><span class=line><span class=cl>            
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=经典的两个标志位>经典的两个标志位
+<a href=#%e7%bb%8f%e5%85%b8%e7%9a%84%e4%b8%a4%e4%b8%aa%e6%a0%87%e5%bf%97%e4%bd%8d class=anchor>&para;</a></h2><p>现在我们来看一看如何使用信号量来替代标志位。</p><h3 id=用-manualresetevent-实现线程的暂停和继续>用 <code>ManualResetEvent</code> 实现线程的暂停和继续
+<a href=#%e7%94%a8-manualresetevent-%e5%ae%9e%e7%8e%b0%e7%ba%bf%e7%a8%8b%e7%9a%84%e6%9a%82%e5%81%9c%e5%92%8c%e7%bb%a7%e7%bb%ad class=anchor>&para;</a></h3><p>我们先来思考一下，上面的 <code>_isRunning</code> 的作用和效果是什么。我们想用它的值来控制线程是否要执行操作，但是我们不能在它发生变化时立刻得到通知，因此我们只能每隔一段时间去轮询一下。那么，如果有办法能够在它为 <code>false</code> 时不需要我们轮询，而是直接阻塞在某个地方，等到它变为 <code>true</code> 时再继续执行，是不是就好很多了？</p><p>根据这一需求，我们可以使用 <code>WaitHandle</code> 的两个子类——<code>ManualResetEvent</code> 及 <code>AutoResetEvent</code> 来实现。<code>ManualResetEvent</code> 是一个可以手动重置的信号量。当它 <code>Set</code> 后，将会保持放行状态，直到再次 <code>Reset</code> 才会关闭。与它相对的是 <code>AutoResetEvent</code>，它会在每次放行后自动重置。这里更符合我们的需求的是 <code>ManualResetEvent</code>，因为我们希望放行后能够连续执行多次，而不需要每次都 <code>Set</code> 后执行一次。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MyService</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kd>volatile</span> <span class=kt>bool</span> <span class=n>_shouldStop</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>ManualResetEvent</span> <span class=n>_isRunningEvent</span> <span class=p>=</span> <span class=k>new</span> <span class=n>ManualResetEvent</span><span class=p>(</span><span class=kc>false</span><span class=p>);</span> <span class=c1>// 初始是关闭的</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>Thread</span><span class=p>?</span> <span class=n>_workerThread</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Start</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Thread</span><span class=p>(</span><span class=n>Worker</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>_shouldStop</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_isRunningEvent</span><span class=p>.</span><span class=n>Set</span><span class=p>();</span> <span class=c1>// 线程开始时放行</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span><span class=p>.</span><span class=n>Start</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Stop</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_shouldStop</span> <span class=p>=</span> <span class=kc>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span><span class=p>?.</span><span class=n>Join</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Pause</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_isRunningEvent</span><span class=p>.</span><span class=n>Reset</span><span class=p>();</span> <span class=c1>// 关闭信号量</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Resume</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_isRunningEvent</span><span class=p>.</span><span class=n>Set</span><span class=p>();</span> <span class=c1>// 放行信号量</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>void</span> <span class=n>Worker</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>while</span> <span class=p>(!</span><span class=n>_shouldStop</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_isRunningEvent</span><span class=p>.</span><span class=n>WaitOne</span><span class=p>();</span> <span class=c1>// 等待信号量放行</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=c1>// 执行一些工作</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=n>Thread</span><span class=p>.</span><span class=n>Sleep</span><span class=p>(</span><span class=m>50</span><span class=p>);</span> <span class=c1>// 适当休眠，避免 CPU 占用过高</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=用-cancellationtoken-实现任务的停止>用 <code>CancellationToken</code> 实现任务的停止
+<a href=#%e7%94%a8-cancellationtoken-%e5%ae%9e%e7%8e%b0%e4%bb%bb%e5%8a%a1%e7%9a%84%e5%81%9c%e6%ad%a2 class=anchor>&para;</a></h3><p>我们可以进一步优化上面的例子，比如我们可以使用 <code>CancellationToken</code> 来实现任务的停止。<code>CancellationToken</code> 是 .NET 中用于取消操作的机制，它可以在任务中传递一个取消请求，并且可以在任务中检查这个请求。它不仅可以用于异步编程，也可以用于多线程编程。这里，我们用它来取代 <code>_shouldStop</code> 标志位。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MyService</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>ManualResetEvent</span> <span class=n>_isRunningEvent</span> <span class=p>=</span> <span class=k>new</span> <span class=n>ManualResetEvent</span><span class=p>(</span><span class=kc>false</span><span class=p>);</span> <span class=c1>// 初始是关闭的</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>Thread</span><span class=p>?</span> <span class=n>_workerThread</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>CancellationTokenSource</span> <span class=n>_cancellationTokenSource</span> <span class=p>=</span> <span class=k>new</span> <span class=n>CancellationTokenSource</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Start</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Thread</span><span class=p>(</span><span class=n>Worker</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>_isRunningEvent</span><span class=p>.</span><span class=n>Set</span><span class=p>();</span> <span class=c1>// 线程开始时放行</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span><span class=p>.</span><span class=n>Start</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Stop</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_cancellationTokenSource</span><span class=p>.</span><span class=n>Cancel</span><span class=p>();</span> <span class=c1>// 取消操作</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span><span class=p>?.</span><span class=n>Join</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Pause</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_isRunningEvent</span><span class=p>.</span><span class=n>Reset</span><span class=p>();</span> <span class=c1>// 关闭信号量</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Resume</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_isRunningEvent</span><span class=p>.</span><span class=n>Set</span><span class=p>();</span> <span class=c1>// 放行信号量</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>void</span> <span class=n>Worker</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>while</span> <span class=p>(!</span><span class=n>_cancellationTokenSource</span><span class=p>.</span><span class=n>Token</span><span class=p>.</span><span class=n>IsCancellationRequested</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_isRunningEvent</span><span class=p>.</span><span class=n>WaitOne</span><span class=p>();</span> <span class=c1>// 等待信号量放行</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=c1>// 执行一些工作</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=n>Thread</span><span class=p>.</span><span class=n>Sleep</span><span class=p>(</span><span class=m>50</span><span class=p>);</span> <span class=c1>// 适当休眠，避免 CPU 占用过高</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>上面的例子因为比较简单，所以并没有体现出使用 <code>CancellationToken</code> 的优势。实际上，有很多方法都可以接收一个 <code>CancellationToken</code> 参数。这样我们还可以通过传递它来实现停止在 <code>Worker</code> 方法中调用的长时间运行的其他任务；否则我们可能就只能在取消后等待这些任务的结束了。</p><h2 id=优化使用消息队列的情形>优化使用消息队列的情形
+<a href=#%e4%bc%98%e5%8c%96%e4%bd%bf%e7%94%a8%e6%b6%88%e6%81%af%e9%98%9f%e5%88%97%e7%9a%84%e6%83%85%e5%bd%a2 class=anchor>&para;</a></h2><p>除了上面的例子，我们还经常会遇到需要使用一个队列来实现生产者消费者模式的情况。比如下面这个例子：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MyService</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>Queue</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;</span> <span class=n>_queue</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Queue</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;();</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=kt>object</span> <span class=n>_lock</span> <span class=p>=</span> <span class=k>new</span> <span class=kt>object</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kd>volatile</span> <span class=kt>bool</span> <span class=n>_shouldStop</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kd>volatile</span> <span class=kt>bool</span> <span class=n>_isRunning</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>Thread</span><span class=p>?</span> <span class=n>_workerThread</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Start</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Thread</span><span class=p>(</span><span class=n>Worker</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>_shouldStop</span> <span class=p>=</span> <span class=kc>false</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_isRunning</span> <span class=p>=</span> <span class=kc>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span><span class=p>.</span><span class=n>Start</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Stop</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_shouldStop</span> <span class=p>=</span> <span class=kc>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>_workerThread</span><span class=p>?.</span><span class=n>Join</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// 省略 Pause 和 Resume 方法的实现</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Enqueue</span><span class=p>(</span><span class=kt>int</span> <span class=n>item</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>lock</span> <span class=p>(</span><span class=n>_lock</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_queue</span><span class=p>.</span><span class=n>Enqueue</span><span class=p>(</span><span class=n>item</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Worker</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>while</span> <span class=p>(!</span><span class=n>_shouldStop</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>lock</span> <span class=p>(</span><span class=n>_lock</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=k>if</span> <span class=p>(</span><span class=n>_queue</span><span class=p>.</span><span class=n>Count</span> <span class=p>&gt;</span> <span class=m>0</span> <span class=p>&amp;&amp;</span> <span class=n>_isRunning</span><span class=p>)</span>  <span class=c1>// 也可以使用 TryDequeue</span>
+</span></span><span class=line><span class=cl>                <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=kt>var</span> <span class=n>item</span> <span class=p>=</span> <span class=n>_queue</span><span class=p>.</span><span class=n>Dequeue</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>                    <span class=c1>// 处理 item</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=n>Thread</span><span class=p>.</span><span class=n>Sleep</span><span class=p>(</span><span class=m>50</span><span class=p>);</span> <span class=c1>// 暂停时也要休眠，避免 CPU 占用过高</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>在上面的例子中，我们具体做了这样几件事情：</p><ol><li>使用 <code>Queue</code> 来存储数据，并使用线程锁和 <code>lock</code> 语句来保证线程安全；</li><li>使用 <code>_shouldStop</code> 和 <code>_isRunning</code> 来控制线程的执行；</li><li>在 <code>Worker</code> 方法中使用 <code>lock</code> 来获取锁，并在队列不为空时获取传入的任务和进行处理；</li><li>暴露一个 <code>Enqueue</code> 方法来让生产者添加任务到队列中。</li></ol><p>那么我们该如何优化这个例子呢？</p><h3 id=用线程安全的集合类型>用线程安全的集合类型
+<a href=#%e7%94%a8%e7%ba%bf%e7%a8%8b%e5%ae%89%e5%85%a8%e7%9a%84%e9%9b%86%e5%90%88%e7%b1%bb%e5%9e%8b class=anchor>&para;</a></h3><p>实际上，.NET 标准库中已经提供了线程安全的集合类型，比如 <code>ConcurrentQueue&lt;T></code>。它们可以在多线程环境中安全地使用，而不需要我们手动加锁。我们可以直接用它来替代上面的 <code>Queue</code> 和 <code>lock</code> 语句。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MyService</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>ConcurrentQueue</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;</span> <span class=n>_queue</span> <span class=p>=</span> <span class=k>new</span> <span class=n>ConcurrentQueue</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Enqueue</span><span class=p>(</span><span class=kt>int</span> <span class=n>item</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_queue</span><span class=p>.</span><span class=n>Enqueue</span><span class=p>(</span><span class=n>item</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Worker</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>while</span> <span class=p>(!</span><span class=n>_shouldStop</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>_isRunning</span> <span class=p>&amp;&amp;</span> <span class=n>_queue</span><span class=p>.</span><span class=n>TryDequeue</span><span class=p>(</span><span class=k>out</span> <span class=kt>var</span> <span class=n>item</span><span class=p>))</span> <span class=c1>// 也可以使用 TryDequeue</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// 处理 item</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=n>Thread</span><span class=p>.</span><span class=n>Sleep</span><span class=p>(</span><span class=m>50</span><span class=p>);</span> <span class=c1>// 暂停时也要休眠，避免 CPU 占用过高</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>通过这样的方式，我们就不需要手动加锁了。<code>ConcurrentQueue&lt;T></code> 会自动处理线程安全的问题。</p><h3 id=用信号量来取代标志位>用信号量来取代标志位
+<a href=#%e7%94%a8%e4%bf%a1%e5%8f%b7%e9%87%8f%e6%9d%a5%e5%8f%96%e4%bb%a3%e6%a0%87%e5%bf%97%e4%bd%8d class=anchor>&para;</a></h3><p>上面的代码中，我们又用到了轮询。但是这个轮询本质上做的事情是等待队列中有数据可用。基于这一思路，我们可以考虑用一个只在有新数据到来时才放行一次的信号量——也就是 <code>AutoResetEvent</code> 来替代它。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MyService</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>ConcurrentQueue</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;</span> <span class=n>_queue</span> <span class=p>=</span> <span class=k>new</span> <span class=n>ConcurrentQueue</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;();</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>AutoResetEvent</span> <span class=n>_queueEvent</span> <span class=p>=</span> <span class=k>new</span> <span class=n>AutoResetEvent</span><span class=p>(</span><span class=kc>false</span><span class=p>);</span> <span class=c1>// 初始是关闭的</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Enqueue</span><span class=p>(</span><span class=kt>int</span> <span class=n>item</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_queue</span><span class=p>.</span><span class=n>Enqueue</span><span class=p>(</span><span class=n>item</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>_queueEvent</span><span class=p>.</span><span class=n>Set</span><span class=p>();</span> <span class=c1>// 放行信号量</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Worker</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>while</span> <span class=p>(!</span><span class=n>_shouldStop</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_queueEvent</span><span class=p>.</span><span class=n>WaitOne</span><span class=p>();</span> <span class=c1>// 等待信号量放行</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>_isRunning</span> <span class=p>&amp;&amp;</span> <span class=n>_queue</span><span class=p>.</span><span class=n>TryDequeue</span><span class=p>(</span><span class=k>out</span> <span class=kt>var</span> <span class=n>item</span><span class=p>))</span> <span class=c1>// 也可以使用 TryDequeue</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// 处理 item</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>但是这个例子并不好，因为如果同时来了多条数据，那么我们虽然会调用多次 <code>Set</code>，但是信号量只会放行一次。可就有可能出现数据处理不及时的情况。所以更好的方式是使用 <code>Semaphore</code>。它好比一扇宽度可变的大门。每次放行都会让门变宽一些，而不像是 <code>AutoResetEvent</code> 那样只有开和关这两种状态。不过这个例子我们就不演示了，因为我们有更好的方法。</p><h3 id=用-blockingcollection-来实现生产者消费者模式>用 <code>BlockingCollection</code> 来实现生产者消费者模式
+<a href=#%e7%94%a8-blockingcollection-%e6%9d%a5%e5%ae%9e%e7%8e%b0%e7%94%9f%e4%ba%a7%e8%80%85%e6%b6%88%e8%b4%b9%e8%80%85%e6%a8%a1%e5%bc%8f class=anchor>&para;</a></h3><p>实际上，.NET 中已经提供了一个现成的类来实现生产者消费者模式——<code>BlockingCollection&lt;T></code>。它是一个线程安全的集合类型，而且它还提供了阻塞和通知的功能。我们可以直接用它来替代上面的 <code>ConcurrentQueue&lt;T></code> 和 <code>AutoResetEvent</code>。</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MyService</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>BlockingCollection</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;</span> <span class=n>_queue</span> <span class=p>=</span> <span class=k>new</span> <span class=n>BlockingCollection</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>&gt;();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Enqueue</span><span class=p>(</span><span class=kt>int</span> <span class=n>item</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_queue</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=n>item</span><span class=p>);</span> <span class=c1>// 添加数据到队列中</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=k>void</span> <span class=n>Worker</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>while</span> <span class=p>(!</span><span class=n>_shouldStop</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=n>_isRunning</span> <span class=p>&amp;&amp;</span> <span class=n>_queue</span><span class=p>.</span><span class=n>TryTake</span><span class=p>(</span><span class=k>out</span> <span class=kt>var</span> <span class=n>item</span><span class=p>,</span> <span class=n>Timeout</span><span class=p>.</span><span class=n>Infinite</span><span class=p>))</span> <span class=c1>// 等待数据可用</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=c1>// 处理 item</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样，如果队列为空时，<code>TryTake</code> 会阻塞当前线程，直到有数据可用。当调用 <code>Add</code> 方法时，<code>BlockingCollection&lt;T></code> 会自动放行等待的线程。这样我们就不需要手动处理信号量了。</p><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content>其实通过观察 <code>BlockingCollection&lt;T></code> 的<a class=link href=https://source.dot.net/#System.Collections.Concurrent/System/Collections/Concurrent/BlockingCollection.cs,3fc8b6e4e28ee36c target=_blank rel=noopener>源代码</a>，我们不难发现它在底层用到了 <code>ConcurrentQueue&lt;T></code> 和 <code>SemaphoreSlim</code>。此外，它底层使用的集合类型也是可变的，比如 <code>ConcurrentStack&lt;T></code> 和 <code>ConcurrentBag&lt;T></code> 等。我们可以通过传入不同的集合类型来实现不同的行为。</div></div><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p>在这篇文章中，我们探讨了如何用信号量等机制来替代轮询标志位的方式，从而实现线程间的通信和控制。我们使用了 <code>ManualResetEvent</code>、<code>AutoResetEvent</code>、<code>CancellationToken</code> 和 <code>BlockingCollection&lt;T></code> 等类来实现这些功能。通过这些类，我们可以更优雅地实现多线程编程，避免了轮询和标志位带来的问题。</p><p>大家在实际的开发中，也一定要多多关注这些现成的类和工具，而不是盲目地自己造轮子。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/dotnet/>dotnet</a>
+<a href=/tags/csharp/>csharp</a>
+<a href=/tags/threading/>threading</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/how-many-timers-are-there/><div class=article-details><h2 class=article-title>.NET 原生有哪些 Timer 以及它们分别是怎么用的？</h2></div></a></article><article><a href=/posts/dont-easily-use-comprehensive-extension-libraries/><div class=article-details><h2 class=article-title>不要轻易使用大而全的扩展库</h2></div></a></article><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article><article><a href=/posts/how-to-remove-event-handler-outside-a-class.md/><div class=article-details><h2 class=article-title>如何在类外移除类的事件订阅？</h2></div></a></article><article><a href=/posts/how-to-get-real-local-ip-address/><div class=article-details><h2 class=article-title>如何在 C# 中获取本机真实 IP 地址？</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

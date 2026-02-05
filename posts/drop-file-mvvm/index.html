@@ -1,0 +1,250 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="在 WPF 中，实现文件拖入功能并不难，但是想要遵守 MVVM 模式，恐怕需要稍微多花费一点心思。"><title>如何在 WPF 中实现符合 MVVM 模式的文件拖入功能</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/drop-file-mvvm/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="如何在 WPF 中实现符合 MVVM 模式的文件拖入功能"><meta property='og:description' content="在 WPF 中，实现文件拖入功能并不难，但是想要遵守 MVVM 模式，恐怕需要稍微多花费一点心思。"><meta property='og:url' content='https://blog.coldwind.top/posts/drop-file-mvvm/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='wpf'><meta property='article:tag' content='mvvm'><meta property='article:tag' content='csharp'><meta property='article:tag' content='dotnet'><meta property='article:published_time' content='2024-05-08T00:00:00+00:00'><meta property='article:modified_time' content='2024-05-08T00:00:00+00:00'><meta property='og:image' content='https://s2.loli.net/2024/05/08/tw73xXjhTbN8pZQ.jpg'><meta name=twitter:title content="如何在 WPF 中实现符合 MVVM 模式的文件拖入功能"><meta name=twitter:description content="在 WPF 中，实现文件拖入功能并不难，但是想要遵守 MVVM 模式，恐怕需要稍微多花费一点心思。"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://s2.loli.net/2024/05/08/tw73xXjhTbN8pZQ.jpg'><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#原始方式>原始方式</a></li><li><a href=#添加视图模型>添加视图模型</a></li><li><a href=#使用行为>使用行为</a></li><li><a href=#制作界面>制作界面</a></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/posts/drop-file-mvvm/><img src=https://s2.loli.net/2024/05/08/tw73xXjhTbN8pZQ.jpg loading=lazy alt="Featured image of post 如何在 WPF 中实现符合 MVVM 模式的文件拖入功能"></a></div><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/drop-file-mvvm/>如何在 WPF 中实现符合 MVVM 模式的文件拖入功能</a></h2><h3 class=article-subtitle>在 WPF 中，实现文件拖入功能并不难，但是想要遵守 MVVM 模式，恐怕需要稍微多花费一点心思。</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2024-05-08T00:00:00Z>May 08, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 4 分钟</time></div></footer></div></header><section class=article-content><p>本篇文章对应的教学视频链接：<a class=link href=https://www.bilibili.com/video/BV1NF4m1A7SD/ target=_blank rel=noopener>WPF中如何实现符合MVVM模式的文件拖入功能</a></p><h2 id=原始方式>原始方式
+<a href=#%e5%8e%9f%e5%a7%8b%e6%96%b9%e5%bc%8f class=anchor>&para;</a></h2><p>在 WPF 中，实现文件拖入功能并不难。稍微在网上搜索一下，就能够得到答案。比如现在有一个窗口，我们只需要设置它的 <code>AllowDrop</code> 属性为 <code>True</code>，然后在 <code>Drop</code> 事件中处理即可。形如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;Window</span> <span class=err>...</span>
+</span></span><span class=line><span class=cl>        <span class=na>AllowDrop=</span><span class=s>&#34;True&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=na>Drop=</span><span class=s>&#34;Window_Drop&#34;</span><span class=nt>&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kd>public</span> <span class=kd>partial</span> <span class=k>class</span> <span class=nc>MainWindow</span> <span class=p>:</span> <span class=n>Window</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MainWindow</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>InitializeComponent</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>void</span> <span class=n>Window_Drop</span><span class=p>(</span><span class=kt>object</span> <span class=n>sender</span><span class=p>,</span> <span class=n>DragEventArgs</span> <span class=n>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>e</span><span class=p>.</span><span class=n>Data</span><span class=p>.</span><span class=n>GetDataPresent</span><span class=p>(</span><span class=n>DataFormats</span><span class=p>.</span><span class=n>FileDrop</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=kt>var</span> <span class=n>files</span> <span class=p>=</span> <span class=p>(</span><span class=kt>string</span><span class=p>[])</span><span class=n>e</span><span class=p>.</span><span class=n>Data</span><span class=p>.</span><span class=n>GetData</span><span class=p>(</span><span class=n>DataFormats</span><span class=p>.</span><span class=n>FileDrop</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=c1>// 处理拖入的文件</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><h2 id=添加视图模型>添加视图模型
+<a href=#%e6%b7%bb%e5%8a%a0%e8%a7%86%e5%9b%be%e6%a8%a1%e5%9e%8b class=anchor>&para;</a></h2><p>但问题是，如果现在 <code>Window</code> 拥有一个视图模型（ViewModel），形如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>MainViewModel</span> <span class=p>:</span> <span class=n>ViewModelBase</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=kt>string?</span> <span class=n>_fileName</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kt>string?</span> <span class=n>FileName</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>get</span> <span class=p>=&gt;</span> <span class=n>_fileName</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>set</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>_fileName</span> <span class=p>=</span> <span class=k>value</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>            <span class=n>OnPropertyChanged</span><span class=p>(</span><span class=k>this</span><span class=p>,</span> <span class=n>nameof</span><span class=p>(</span><span class=n>FileName</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content>这里我们假定已经实现了 <code>ViewModelBase</code> 类，它实现了 <code>INotifyPropertyChanged</code> 接口，并提供了 <code>OnPropertyChanged</code> 方法以便于通知属性发生了变化。</div></div><p>然后 <code>Window</code> 上面有一个 <code>TextBox</code> 绑定了这个属性，这又该怎么办呢？</p><p>这里有两种比较简单粗暴的方式：</p><ol><li>为 <code>TextBox</code> 添加一个 <code>Name</code>，然后在 <code>Window</code> 的 <code>Drop</code> 事件中直接修改 <code>TextBox</code> 的 <code>Text</code> 属性，进而使用依赖属性的一些方法来通知绑定的 ViewModel 属性发生了变化</li><li>在 <code>Window</code> 的 <code>Drop</code> 事件中直接修改 <code>ViewModel</code> 的属性（获取 <code>Window.DataContext</code>，并将其转为 <code>MainViewModel</code> 类型），然后在 <code>ViewModel</code> 中实现 <code>INotifyPropertyChanged</code> 接口，进而通知 <code>TextBox</code> 的 <code>Text</code> 属性发生了变化</li></ol><p>这两种方式都很直接，而且其实都不违背 MVVM 模式。但是这两种方式并不优雅，所以这里我们借助行为（Behaviors）来实现一个更加优雅且通用的方式。</p><h2 id=使用行为>使用行为
+<a href=#%e4%bd%bf%e7%94%a8%e8%a1%8c%e4%b8%ba class=anchor>&para;</a></h2><p>首先，我们需要安装 <code>Microsoft.Xaml.Behaviors.Wpf</code> 包。然后我们可以创建一个 <code>DropFileBehavior</code> 类，形如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-c# data-lang=c#><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>DropFileBehavior</span> <span class=p>:</span> <span class=n>Behavior</span><span class=p>&lt;</span><span class=n>FrameworkElement</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kt>string</span><span class=p>[]?</span> <span class=n>Data</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>get</span> <span class=p>=&gt;</span> <span class=p>(</span><span class=kt>string</span><span class=p>[]?)</span><span class=n>GetValue</span><span class=p>(</span><span class=n>FilesProperty</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>set</span> <span class=p>=&gt;</span> <span class=n>SetValue</span><span class=p>(</span><span class=n>FilesProperty</span><span class=p>,</span> <span class=k>value</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kd>static</span> <span class=k>readonly</span> <span class=n>DependencyProperty</span> <span class=n>FilesProperty</span> <span class=p>=</span> <span class=n>DependencyProperty</span><span class=p>.</span><span class=n>Register</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=n>nameof</span><span class=p>(</span><span class=n>Data</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>        <span class=k>typeof</span><span class=p>(</span><span class=kt>string</span><span class=p>[]),</span>
+</span></span><span class=line><span class=cl>        <span class=k>typeof</span><span class=p>(</span><span class=n>DropFileBehavior</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>        <span class=k>new</span> <span class=n>UIPropertyMetadata</span><span class=p>(</span><span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>protected</span> <span class=kd>override</span> <span class=k>void</span> <span class=n>OnAttached</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>AssociatedObject</span><span class=p>.</span><span class=n>AllowDrop</span> <span class=p>=</span> <span class=kc>true</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>AssociatedObject</span><span class=p>.</span><span class=n>Drop</span> <span class=p>+=</span> <span class=n>DropHandler</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>protected</span> <span class=kd>override</span> <span class=k>void</span> <span class=n>OnDetaching</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>AssociatedObject</span><span class=p>.</span><span class=n>Drop</span> <span class=p>-=</span> <span class=n>DropHandler</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>void</span> <span class=n>DropHandler</span><span class=p>(</span><span class=kt>object</span> <span class=n>sender</span><span class=p>,</span> <span class=n>DragEventArgs</span> <span class=n>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>e</span><span class=p>.</span><span class=n>Data</span><span class=p>.</span><span class=n>GetDataPresent</span><span class=p>(</span><span class=n>DataFormats</span><span class=p>.</span><span class=n>FileDrop</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>Data</span> <span class=p>=</span> <span class=p>(</span><span class=kt>string</span><span class=p>[])</span><span class=n>e</span><span class=p>.</span><span class=n>Data</span><span class=p>.</span><span class=n>GetData</span><span class=p>(</span><span class=n>DataFormats</span><span class=p>.</span><span class=n>FileDrop</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这个行为大致实现的功能是：</p><ol><li>当附加到一个 <code>FrameworkElement</code> 上时，将其 <code>AllowDrop</code> 属性设置为 <code>True</code>，并注册 <code>Drop</code> 事件</li><li>当拖入文件时，将文件路径保存到 <code>Data</code> 依赖属性中</li></ol><p>然后我们就可以在 XAML 中使用这个行为了（因为这里我们声明的 <code>Data</code> 属性是一个数组，所以我们稍微修改 <code>MainViewModel</code> 中相关属性的名称及类型，从而实现绑定功能）：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;Window</span> <span class=err>...</span>
+</span></span><span class=line><span class=cl>        <span class=na>xmlns:i=</span><span class=s>&#34;http://schemas.microsoft.com/xaml/behaviors&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=na>xmlns:local=</span><span class=s>&#34;clr-namespace:YourNamespace&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;i:Interaction.Behaviors&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;local:DropFileBehavior</span> <span class=na>Data=</span><span class=s>&#34;{Binding FileNames, Mode=OneWayToSource}&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/i:Interaction.Behaviors&gt;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;TextBox</span> <span class=na>Text=</span><span class=s>&#34;{Binding FileNames[0]}&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl><span class=nt>&lt;/Window&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>注意这里，我们在书写行为的 <code>Data</code> 属性的绑定时，使用了 <code>Mode=OneWayToSource</code>，这是因为我们只需要将数据从视图传递到视图模型，而不需要反向传递。并且如果不写 <code>Mode</code>，它默认将会是 <code>OneWay</code>，导致可能无法正确通知到 <code>ViewModel</code>。</p><h2 id=制作界面>制作界面
+<a href=#%e5%88%b6%e4%bd%9c%e7%95%8c%e9%9d%a2 class=anchor>&para;</a></h2><p>最后，我们还可以搞一个“酷炫”的界面，形如：</p><img src=https://s2.loli.net/2024/05/08/ZNiGDOtz1AJTnXW.gif style=width:400px><p>首先，我们可以在窗口中添加这样一个置于上方的控件：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;Grid</span> <span class=na>Name=</span><span class=s>&#34;dropFilePanel&#34;</span> <span class=na>Visibility=</span><span class=s>&#34;Hidden&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Border</span> <span class=na>Background=</span><span class=s>&#34;White&#34;</span> <span class=na>Opacity=</span><span class=s>&#34;0.8&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;TextBlock</span> <span class=na>HorizontalAlignment=</span><span class=s>&#34;Center&#34;</span>
+</span></span><span class=line><span class=cl>               <span class=na>VerticalAlignment=</span><span class=s>&#34;Center&#34;</span>
+</span></span><span class=line><span class=cl>               <span class=na>Text=</span><span class=s>&#34;将文件拖放到此处&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Rectangle</span> <span class=na>Width=</span><span class=s>&#34;200&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=na>Height=</span><span class=s>&#34;100&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=na>Stroke=</span><span class=s>&#34;Gray&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=na>RadiusX=</span><span class=s>&#34;10&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=na>RadiusY=</span><span class=s>&#34;10&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=na>StrokeDashArray=</span><span class=s>&#34;3,4&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=na>StrokeThickness=</span><span class=s>&#34;2&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl><span class=nt>&lt;/Grid&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>同时，因为我们现在有了这个专门的用于放置文件的面板，所以我们可以将之前添加给窗口的行为转移到它身上，形如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;Grid</span> <span class=na>Name=</span><span class=s>&#34;dropFilePanel&#34;</span> <span class=na>Visibility=</span><span class=s>&#34;Hidden&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;i:Interaction.Behaviors&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;local:DropFileBehavior</span> <span class=na>Data=</span><span class=s>&#34;{Binding FileNames, Mode=OneWayToSource}&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/i:Interaction.Behaviors&gt;</span>
+</span></span><span class=line><span class=cl>    ...
+</span></span></code></pre></td></tr></table></div></div><p>但是我们要控制它在合适的时机出现与消失。这里我们可以使用触发器与行为来快速地实现这一效果。具体来说，我们可以给窗口添加这样的触发器：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;Window</span> <span class=err>...</span>
+</span></span><span class=line><span class=cl>        <span class=na>xmlns:b=</span><span class=s>&#34;http://schemas.microsoft.com/xaml/behaviors&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;b:Interaction.Triggers&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;b:EventTrigger</span> <span class=na>EventName=</span><span class=s>&#34;DragEnter&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&lt;b:ChangePropertyAction</span> <span class=na>TargetObject=</span><span class=s>&#34;{Binding ElementName=dropFilePanel}&#34;</span> <span class=na>PropertyName=</span><span class=s>&#34;Visibility&#34;</span> <span class=na>Value=</span><span class=s>&#34;Visible&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;/b:EventTrigger&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;b:EventTrigger</span> <span class=na>EventName=</span><span class=s>&#34;DragLeave&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&lt;b:ChangePropertyAction</span> <span class=na>TargetObject=</span><span class=s>&#34;{Binding ElementName=dropFilePanel}&#34;</span> <span class=na>PropertyName=</span><span class=s>&#34;Visibility&#34;</span> <span class=na>Value=</span><span class=s>&#34;Hidden&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;/b:EventTrigger&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/b:Interaction.Triggers&gt;</span>
+</span></span><span class=line><span class=cl>    ...
+</span></span></code></pre></td></tr></table></div></div><p>这样，当鼠标拖入窗口时，<code>dropFilePanel</code> 就会显示出来；当鼠标拖出窗口时，<code>dropFilePanel</code> 就会被隐藏。</p><p>实际测试后会发现，当我们将文件拖到上方并松开左键后，虽然行为得到了正确的响应，但面板并没有消失。这是因为我们上面写的触发器只会在鼠标拖动状态离开窗口后才会隐藏面板。所以这里，我们可以再为面板添加一个触发器，并在它触发了 <code>Drop</code> 事件后将自身隐藏：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;Grid</span> <span class=na>Name=</span><span class=s>&#34;dropFilePanel&#34;</span> <span class=na>Visibility=</span><span class=s>&#34;Hidden&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;b:Interaction.Triggers&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;b:EventTrigger</span> <span class=na>EventName=</span><span class=s>&#34;Drop&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&lt;b:ChangePropertyAction</span> <span class=na>PropertyName=</span><span class=s>&#34;Visibility&#34;</span> <span class=na>Value=</span><span class=s>&#34;Hidden&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;/b:EventTrigger&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/b:Interaction.Triggers&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样，上面动图中的效果就实现了。</p><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p>WPF 开发必然会经常和控件的事件打交道。但很多时候，如果我们希望遵循 MVVM 模式，可能就会不知所措。相信大家通过这篇文章的代码，都能够充分领略到使用触发器与行为的强大之处。当然，这里只是一个简单的例子，实际开发中，我们还可以为上面的例子添加更多丰富的功能及特效。这些就有待大家的探索了。</p><p>大家如果有什么自己的好方法，也欢迎在文章评论区留言，分享给大家。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/wpf/>wpf</a>
+<a href=/tags/mvvm/>mvvm</a>
+<a href=/tags/csharp/>csharp</a>
+<a href=/tags/dotnet/>dotnet</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article><article><a href=/posts/built-in-design-patterns-in-wpf/><div class=article-details><h2 class=article-title>原生 WPF 框架中体现出的设计模式</h2></div></a></article><article><a href=/posts/more-observable-collections/><div class=article-details><h2 class=article-title>借助 ObservableCollections 获得更多具有通知功能的集合类型</h2></div></a></article><article><a href=/posts/contentcontrol-vs-contentpresenter/><div class=article-details><h2 class=article-title>WPF 中的 ContentControl 及 ContentPresenter 有何异同？</h2></div></a></article><article class=has-image><a href=/posts/objectdataprovider-tips/><div class=article-image><img src=https://s2.loli.net/2025/03/04/6BmTwRWGapOPoIE.webp loading=lazy data-key=objectdataprovider-tips data-hash=https://s2.loli.net/2025/03/04/6BmTwRWGapOPoIE.webp></div><div class=article-details><h2 class=article-title>WPF 中 ObjectDataProvider 的一些有趣用法</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

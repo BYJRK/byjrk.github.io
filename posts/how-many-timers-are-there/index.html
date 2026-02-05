@@ -1,0 +1,250 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content=".NET 标准库为我们提供了数个计时器（Timer），它们各自的功能和使用场景是什么？这篇文章我们就来盘点一下吧。"><title>.NET 原生有哪些 Timer 以及它们分别是怎么用的？</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/how-many-timers-are-there/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content=".NET 原生有哪些 Timer 以及它们分别是怎么用的？"><meta property='og:description' content=".NET 标准库为我们提供了数个计时器（Timer），它们各自的功能和使用场景是什么？这篇文章我们就来盘点一下吧。"><meta property='og:url' content='https://blog.coldwind.top/posts/how-many-timers-are-there/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='dotnet'><meta property='article:tag' content='csharp'><meta property='article:tag' content='timer'><meta property='article:tag' content='threading'><meta property='article:tag' content='async'><meta property='article:published_time' content='2025-07-07T00:00:00+00:00'><meta property='article:modified_time' content='2025-07-07T00:00:00+00:00'><meta name=twitter:title content=".NET 原生有哪些 Timer 以及它们分别是怎么用的？"><meta name=twitter:description content=".NET 标准库为我们提供了数个计时器（Timer），它们各自的功能和使用场景是什么？这篇文章我们就来盘点一下吧。"><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#一共有多少种-timer>一共有多少种 Timer？</a></li><li><a href=#systemthreadingtimer>System.Threading.Timer</a></li><li><a href=#systemtimerstimer>System.Timers.Timer</a></li><li><a href=#systemthreadingperiodictimer>System.Threading.PeriodicTimer</a></li><li><a href=#systemwindowsthreadingdispatchertimer>System.Windows.Threading.DispatcherTimer</a></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/how-many-timers-are-there/>.NET 原生有哪些 Timer 以及它们分别是怎么用的？</a></h2><h3 class=article-subtitle>.NET 标准库为我们提供了数个计时器（Timer），它们各自的功能和使用场景是什么？这篇文章我们就来盘点一下吧。</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2025-07-07T00:00:00Z>Jul 07, 2025</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 6 分钟</time></div></footer></div></header><section class=article-content><p>相信很多 .NET 新手（甚至有几年经验的老手）都会搞不清楚这个问题：.NET 原生有哪些计时器（Timer）？它们分别是做什么用的？该如何选择以及如何正确地使用？</p><p>这篇文章我们就来盘点一下吧。</p><h2 id=一共有多少种-timer>一共有多少种 Timer？
+<a href=#%e4%b8%80%e5%85%b1%e6%9c%89%e5%a4%9a%e5%b0%91%e7%a7%8d-timer class=anchor>&para;</a></h2><p>首先我们来回答一下这个问题。在 <a class=link href=https://source.dot.net target=_blank rel=noopener>.NET 源代码</a> 中搜索 <code>Timer</code>，我们可以找到答案。排除掉一些 <code>internal</code> 或 <code>abstract</code> 的类型（例如 <code>System.Net.Timer</code>、<code>Microsoft.ML.Trainers.FastTree.Timer</code> 等），我们可以找到以下几种计时器：</p><ul><li><code>System.Threading.Timer</code></li><li><code>System.Timers.Timer</code></li><li><code>System.Threading.PeriodicTimer</code></li><li><code>System.Windows.Threading.DispatcherTimer</code></li><li><code>System.Windows.Forms.Timer</code></li><li><code>System.Web.UI.Timer</code></li><li><code>Windows.UI.Xaml.DispatcherTimer</code></li></ul><p>这里，后面四个可以从命名空间看出，它们适用于特定的 UI 框架（即 WPF、WinForms、ASP.NET Forms、Win UI 等），而前面三个则是更通用的计时器，适用于大多数场景。这篇文章我们主要介绍前三个，并且在后四个中选择适用于 WPF 的 <code>DispatcherTimer</code> 进行介绍。</p><h2 id=systemthreadingtimer>System.Threading.Timer
+<a href=#systemthreadingtimer class=anchor>&para;</a></h2><p>源代码：<a class=link href=https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/Threading/Timer.cs target=_blank rel=noopener>System.Threading.Timer.cs</a></p><p><code>System.Threading.Timer</code> 是 .NET 中最常用也是最轻量的计时器之一。它是基于线程池的，所以不与某个特定线程（如 UI 线程）关联，并且也不会阻塞调用线程。</p><p>它没有提供诸如 <code>Start</code> 和 <code>Stop</code> 方法，而是通过设置回调函数和周期来启动（还可以通过 <code>Change</code> 方法来调整周期）。当不需要使用时，可以通过调用 <code>Dispose</code> 方法来结束它并释放资源。</p><p>下面是一个简单的例子：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>using</span> <span class=nn>System</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>using</span> <span class=nn>System.Threading</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 第三个参数是初始延迟时间，第四个参数是周期时间（单位都是毫秒）</span>
+</span></span><span class=line><span class=cl><span class=c1>// 这里的传参意味着，计时器将会没有初始延迟，且每隔 1 秒执行一次回调函数</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>timer</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Timer</span><span class=p>(</span><span class=n>TimerCallback</span><span class=p>,</span> <span class=kc>null</span><span class=p>,</span> <span class=m>0</span><span class=p>,</span> <span class=m>1000</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>&#34;Timer started. Press Enter to exit...&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=n>Console</span><span class=p>.</span><span class=n>ReadLine</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>timer</span><span class=p>.</span><span class=n>Dispose</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>&#34;Timer stopped and disposed.&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>void</span> <span class=n>TimerCallback</span><span class=p>(</span><span class=kt>object?</span> <span class=n>state</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>$&#34;Timer callback executed at {DateTime.Now}, thread id: {Environment.CurrentManagedThreadId}&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>输出结果形如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-plaintext data-lang=plaintext><span class=line><span class=cl>Timer started. Press Enter to exit...
+</span></span><span class=line><span class=cl>Timer callback executed at 2025/7/6 19:27:27, thread id: 11
+</span></span><span class=line><span class=cl>Timer callback executed at 2025/7/6 19:27:28, thread id: 9
+</span></span><span class=line><span class=cl>Timer callback executed at 2025/7/6 19:27:29, thread id: 9
+</span></span><span class=line><span class=cl>Timer callback executed at 2025/7/6 19:27:30, thread id: 9
+</span></span><span class=line><span class=cl>Timer stopped and disposed.
+</span></span></code></pre></td></tr></table></div></div><p>我们不难发现几个现象：</p><ol><li>计时器在创建后立刻就开始执行了，不需要调用类似 <code>Start</code> 的方法；</li><li>计时器没有阻塞创建它的线程，它类似于启动了一个后台服务；</li><li>计时器的回调函数是在不同的线程上执行的，而且每次执行的线程 ID 可能不同，这取决于线程池的调度；</li><li>计时器可以通过 <code>Dispose</code> 方法来停止及释放资源。</li></ol><p>因为它的一些局限性，这在实际开发中可能会让我们遇到一些困难，比如我们无法灵活地控制它的开始与结束，以及暂停和重启等。另外，因为它每次的回调可能都发生在不同的线程上，所以我们需要特别注意线程安全问题，尤其是在访问共享资源，或者需要某些操作发生在特定线程（如 UI 线程）时。</p><p>关于这些问题，我们会在后续介绍的其他计时器中看到更好的解决方案。</p><h2 id=systemtimerstimer>System.Timers.Timer
+<a href=#systemtimerstimer class=anchor>&para;</a></h2><p>源代码：<a class=link href=https://source.dot.net/#System.ComponentModel.TypeConverter/System/Timers/Timer.cs target=_blank rel=noopener>System.Timers.Timer.cs</a></p><p><code>System.Timers.Timer</code> 是一个更高级的计时器，它基于（或者可以理解为封装了） <code>System.Threading.Timer</code>，并提供了更多的功能和更易用的 API。比如它提供了开始、停止、关闭等功能，还提供了一些属性来控制计时器的行为，比如：</p><ul><li>Interval：设置计时器的间隔时间（毫秒），不再需要使用 <code>Change</code> 方法了；</li><li>Enabled：设置计时器是否启用（<code>Start</code> 和 <code>Stop</code> 方法其实就是在控制它）；</li><li>AutoReset：设置计时器是否自动重置（即是否在回调函数执行完毕后立即重新开始计时，默认为 <code>true</code>）。或者换一种理解方式，有时候我们不希望计时器会每周期都触发一次，而是真的像一个简单的定时器那样，在开始后到达设定的周期就触发，然后停在那里，等待下一次启动。</li></ul><p>下面是一个简单的例子：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>using</span> <span class=nn>System</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>using</span> <span class=nn>System.Timers</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>timer</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Timer</span><span class=p>();</span> <span class=c1>// 创建一个计时器（默认的周期为 100 毫秒）</span>
+</span></span><span class=line><span class=cl><span class=n>timer</span><span class=p>.</span><span class=n>Elapsed</span> <span class=p>+=</span> <span class=n>TimerElapsedHandler</span><span class=p>;</span> <span class=c1>// 订阅 Elapsed 事件</span>
+</span></span><span class=line><span class=cl><span class=n>timer</span><span class=p>.</span><span class=n>Interval</span> <span class=p>=</span> <span class=m>1000</span><span class=p>;</span> <span class=c1>// 设置间隔为 1 秒</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>timer</span><span class=p>.</span><span class=n>Start</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>&#34;Timer started. Press Enter to exit...&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=n>Console</span><span class=p>.</span><span class=n>ReadLine</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>timer</span><span class=p>.</span><span class=n>Stop</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>&#34;Timer stopped and disposed.&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>timer</span><span class=p>.</span><span class=n>Dispose</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>void</span> <span class=n>TimerElapsedHandler</span><span class=p>(</span><span class=kt>object?</span> <span class=n>sender</span><span class=p>,</span> <span class=n>ElapsedEventArgs</span> <span class=n>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>$&#34;Timer elapsed at {e.SignalTime}, thread id: {Environment.CurrentManagedThreadId}&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>现在我们可以稍微探讨一下这个计时器的另外一个特性了：如果它的回调函数比较耗时，甚至超过了它的周期，会怎么样？</p><p>答案非常简单：计时器依旧会按照设定的周期继续触发回调函数，虽然看起来（比如从控制台的输出）可能会表现出延迟，甚至可能因为每次回调的延迟不同而使得输出顺序变得混乱。这也就是它使用线程池的原因之一：即便上一次回调还没有完成，导致它所在的线程仍处于阻塞状态，下一次回调依旧可以在其他线程上继续执行。</p><div class="notice note"><div class=notice-title><i class="fa-solid fa-sticky-note" aria-hidden=true></i>Note</div><div class=notice-content>还有一个值得注意的点：当计时器停止（甚至释放）后，之前每次 <code>Elapsed</code> 触发的回调如果还没有执行完毕，那么将仍会处于执行状态，尤其是它们内部有耗时的操作时。这是因为计时器每次触发时，都会将回调函数放入线程池中执行，而线程池中的线程会继续执行这些任务，直到它们完成。</div></div><h2 id=systemthreadingperiodictimer>System.Threading.PeriodicTimer
+<a href=#systemthreadingperiodictimer class=anchor>&para;</a></h2><p>源代码：<a class=link href=https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/Threading/PeriodicTimer.cs target=_blank rel=noopener>System.Threading.PeriodicTimer.cs</a></p><p>这是一个比较新的计时器（.NET 6+），它不仅现代，而且精确，还支持异步操作。正如它的名称所提示的，它旨在提供一个周期性的计时器，允许我们在每个周期结束时执行一个异步操作。它与传统的 <code>Timer</code> 类不同，不使用事件或回调，而是通过 <code>await</code> 一个异步方法来控制每次操作的发生。</p><p>它的使用方式也非常简单，下面是一个例子：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>using</span> <span class=nn>System</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>using</span> <span class=nn>System.Threading</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>timer</span> <span class=p>=</span> <span class=k>new</span> <span class=n>PeriodicTimer</span><span class=p>(</span><span class=n>TimeSpan</span><span class=p>.</span><span class=n>FromSeconds</span><span class=p>(</span><span class=m>1</span><span class=p>));</span> <span class=c1>// 创建一个周期为 1 秒的计时器</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>cts</span> <span class=p>=</span> <span class=k>new</span> <span class=n>CancellationTokenSource</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>token</span> <span class=p>=</span> <span class=n>cts</span><span class=p>.</span><span class=n>Token</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>try</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>while</span> <span class=p>(</span><span class=k>await</span> <span class=n>timer</span><span class=p>.</span><span class=n>WaitForNextTickAsync</span><span class=p>(</span><span class=n>token</span><span class=p>))</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>token</span><span class=p>.</span><span class=n>ThrowIfCancellationRequested</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>$&#34;Periodic timer tick at {DateTime.Now}, thread id: {Environment.CurrentManagedThreadId}&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=k>catch</span> <span class=p>(</span><span class=n>OperationCanceledException</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>&#34;Periodic timer canceled.&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=k>finally</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>timer</span><span class=p>.</span><span class=n>Dispose</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=n>cts</span><span class=p>.</span><span class=n>Dispose</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这个计时器还有一个常见的使用情形，就是在 ASP.NET Core 中借助它来创建一个后台的定时任务。因为它不仅准时，而且支持异步操作。比如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>MyService</span> <span class=p>:</span> <span class=n>BackgroundService</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>ILogger</span><span class=p>&lt;</span><span class=n>MyService</span><span class=p>&gt;</span> <span class=n>logger</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>PeriodicTimer</span> <span class=n>timer</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MyService</span><span class=p>(</span><span class=n>ILogger</span><span class=p>&lt;</span><span class=n>MyService</span><span class=p>&gt;</span> <span class=n>logger</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>this</span><span class=p>.</span><span class=n>logger</span> <span class=p>=</span> <span class=n>logger</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>this</span><span class=p>.</span><span class=n>timer</span> <span class=p>=</span> <span class=k>new</span><span class=p>(</span><span class=n>TimeSpan</span><span class=p>.</span><span class=n>FromMilliseconds</span><span class=p>(</span><span class=m>1000</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>protected</span> <span class=kd>override</span> <span class=kd>async</span> <span class=n>Task</span> <span class=n>ExecuteAsync</span><span class=p>(</span><span class=n>CancellationToken</span> <span class=n>stoppingToken</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>while</span> <span class=p>(</span><span class=k>await</span> <span class=n>timer</span><span class=p>.</span><span class=n>WaitForNextTickAsync</span><span class=p>(</span><span class=n>stoppingToken</span><span class=p>)</span> <span class=p>&amp;&amp;</span> <span class=p>!</span><span class=n>stoppingToken</span><span class=p>.</span><span class=n>IsCancellationRequested</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=n>logger</span><span class=p>.</span><span class=n>LogInformation</span><span class=p>(</span><span class=s>&#34;Hello, world!&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>然后我们就可以在入口处注册这个服务了：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=n>builder</span><span class=p>.</span><span class=n>Services</span><span class=p>.</span><span class=n>AddHostedService</span><span class=p>&lt;</span><span class=n>MyService</span><span class=p>&gt;();</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样即便每次循环体中的操作比较耗时，它仍然可以保证每次触发的时间是准确的。它绝对比在循环中使用 <code>await Task.Delay()</code> 要准确得多。</p><h2 id=systemwindowsthreadingdispatchertimer>System.Windows.Threading.DispatcherTimer
+<a href=#systemwindowsthreadingdispatchertimer class=anchor>&para;</a></h2><p>源代码：<a class=link href=https://github.com/dotnet/wpf/blob/main/src/Microsoft.DotNet.Wpf/src/WindowsBase/System/Windows/Threading/DispatcherTimer.cs target=_blank rel=noopener>DispatcherTimer.cs</a></p><p>最后我们再来简单地看一下适用于 WPF 的 <code>DispatcherTimer</code>。看到 <code>Dispatcher</code> 这个词，我们很容易联想到诸如 <code>Application.Current.Dispatcher</code>，所以它主要用于在 UI 线程上执行操作。它的使用方式与 <code>System.Timers.Timer</code> 类似，也提供了 <code>Start</code>、<code>Stop</code> 等方法，以及 <code>Interval</code> 属性和 <code>Tick</code> 事件等。</p><p>下面是一个简单的例子：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>using</span> <span class=nn>System</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=k>using</span> <span class=nn>System.Windows.Threading</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=kd>partial</span> <span class=k>class</span> <span class=nc>MainWindow</span> <span class=p>:</span> <span class=n>Window</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>DispatcherTimer</span> <span class=n>timer</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>MainWindow</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>InitializeComponent</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>timer</span> <span class=p>=</span> <span class=k>new</span> <span class=n>DispatcherTimer</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>        <span class=n>timer</span><span class=p>.</span><span class=n>Interval</span> <span class=p>=</span> <span class=n>TimeSpan</span><span class=p>.</span><span class=n>FromSeconds</span><span class=p>(</span><span class=m>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>timer</span><span class=p>.</span><span class=n>Tick</span> <span class=p>+=</span> <span class=n>Timer_Tick</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=n>timer</span><span class=p>.</span><span class=n>Start</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>void</span> <span class=n>Timer_Tick</span><span class=p>(</span><span class=kt>object</span> <span class=n>sender</span><span class=p>,</span> <span class=n>EventArgs</span> <span class=n>e</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>listBox</span><span class=p>.</span><span class=n>Items</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>$&#34;Dispatcher timer tick at {DateTime.Now}, thread id: {Environment.CurrentManagedThreadId}&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p><code>DispatcherTimer</code> 有几个构造函数，可以指定它的优先级以及所使用的 <code>Dispatcher</code>。默认情况下，它会使用 <code>DispatcherPriority.Background</code> 以及 <code>Dispatcher.Current</code>。只要你在 UI 线程上创建它，它就会在 UI 线程上执行回调函数。</p><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p>在这篇文章中，我们介绍了 .NET 中常用的几种计时器，包括它们各自的功能和特点，以及所适合的场景。简单来说：</p><ul><li><code>System.Threading.Timer</code> 是最轻量的计时器，适用于大多数非 UI 线程的场景，但因为缺少灵活的控制方法和线程安全问题，可能需要一些额外的处理；</li><li><code>System.Timers.Timer</code> 提供了更易用的 API 和更多的功能，适用于大多数需要定时操作的场景；</li><li><code>System.Threading.PeriodicTimer</code> 是一个现代的计时器，支持异步操作，适用于需要精确控制周期性操作的场景，以及异步编程；</li><li><code>DispatcherTimer</code> 适用于 WPF，能够在 UI 线程上执行操作，适合需要与 UI 交互的场景。</li></ul><p>希望这篇文章能帮助你更好地理解 .NET 中的计时器，并在实际开发中选择合适的计时器来满足你的需求。如果你有任何问题或建议，欢迎在评论区留言讨论！</p></section><footer class=article-footer><section class=article-tags><a href=/tags/dotnet/>dotnet</a>
+<a href=/tags/csharp/>csharp</a>
+<a href=/tags/timer/>timer</a>
+<a href=/tags/threading/>threading</a>
+<a href=/tags/async/>async</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/use-signal-over-polling-flags/><div class=article-details><h2 class=article-title>在多线程开发中用信号量代替轮询和标志位</h2></div></a></article><article class=has-image><a href=/posts/use-asyncbarrier-to-sync-tasks/><div class=article-image><img src=https://s2.loli.net/2024/08/11/15IEZJX7fCq4caS.jpg loading=lazy data-key=use-asyncbarrier-to-sync-tasks data-hash=https://s2.loli.net/2024/08/11/15IEZJX7fCq4caS.jpg></div><div class=article-details><h2 class=article-title>使用 AsyncBarrier 来等待并同步多个异步任务</h2></div></a></article><article class=has-image><a href=/posts/how-to-report-progress/><div class=article-image><img src=https://s2.loli.net/2024/05/09/RJYeMSKs5q6UdQn.jpg loading=lazy data-key=how-to-report-progress data-hash=https://s2.loli.net/2024/05/09/RJYeMSKs5q6UdQn.jpg></div><div class=article-details><h2 class=article-title>如何在异步任务中汇报进度</h2></div></a></article><article class=has-image><a href=/posts/why-we-need-valuetask/><div class=article-image><img src=https://s2.loli.net/2024/04/14/P4HJMlIpSxY6CDn.jpg loading=lazy data-key=why-we-need-valuetask data-hash=https://s2.loli.net/2024/04/14/P4HJMlIpSxY6CDn.jpg></div><div class=article-details><h2 class=article-title>为什么我们需要 ValueTask？</h2></div></a></article><article><a href=/posts/dont-easily-use-comprehensive-extension-libraries/><div class=article-details><h2 class=article-title>不要轻易使用大而全的扩展库</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

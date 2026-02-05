@@ -1,0 +1,342 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content="如果在异步编程开发过程中遇到了多个异步任务需要在某一时刻全部完成后才能继续执行的情形，那么可以使用 AsyncBarrier 来帮助我们实现这一需求。这篇文章我们就来学习一下如何将它用在一个 WPF 项目中。"><title>使用 AsyncBarrier 来等待并同步多个异步任务</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/use-asyncbarrier-to-sync-tasks/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="使用 AsyncBarrier 来等待并同步多个异步任务"><meta property='og:description' content="如果在异步编程开发过程中遇到了多个异步任务需要在某一时刻全部完成后才能继续执行的情形，那么可以使用 AsyncBarrier 来帮助我们实现这一需求。这篇文章我们就来学习一下如何将它用在一个 WPF 项目中。"><meta property='og:url' content='https://blog.coldwind.top/posts/use-asyncbarrier-to-sync-tasks/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='dotnet'><meta property='article:tag' content='csharp'><meta property='article:tag' content='async'><meta property='article:published_time' content='2024-08-11T00:00:00+00:00'><meta property='article:modified_time' content='2024-08-11T00:00:00+00:00'><meta property='og:image' content='https://s2.loli.net/2024/08/11/15IEZJX7fCq4caS.jpg'><meta name=twitter:title content="使用 AsyncBarrier 来等待并同步多个异步任务"><meta name=twitter:description content="如果在异步编程开发过程中遇到了多个异步任务需要在某一时刻全部完成后才能继续执行的情形，那么可以使用 AsyncBarrier 来帮助我们实现这一需求。这篇文章我们就来学习一下如何将它用在一个 WPF 项目中。"><meta name=twitter:card content="summary_large_image"><meta name=twitter:image content='https://s2.loli.net/2024/08/11/15IEZJX7fCq4caS.jpg'><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#引入-asyncbarrier>引入 AsyncBarrier</a></li><li><a href=#使用-asyncbarrier>使用 AsyncBarrier</a></li><li><a href=#取消任务>取消任务</a></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class="has-image main-article"><header class=article-header><div class=article-image><a href=/posts/use-asyncbarrier-to-sync-tasks/><img src=https://s2.loli.net/2024/08/11/15IEZJX7fCq4caS.jpg loading=lazy alt="Featured image of post 使用 AsyncBarrier 来等待并同步多个异步任务"></a></div><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/use-asyncbarrier-to-sync-tasks/>使用 AsyncBarrier 来等待并同步多个异步任务</a></h2><h3 class=article-subtitle>如果在异步编程开发过程中遇到了多个异步任务需要在某一时刻全部完成后才能继续执行的情形，那么可以使用 AsyncBarrier 来帮助我们实现这一需求。这篇文章我们就来学习一下如何将它用在一个 WPF 项目中。</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2024-08-11T00:00:00Z>Aug 11, 2024</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 7 分钟</time></div></footer></div></header><section class=article-content><blockquote><p>本文有对应的视频教程：<a class=link href=https://www.bilibili.com/video/BV1Gx4y1479f/ target=_blank rel=noopener>哔哩哔哩</a></p></blockquote><p>大家在做异步编程开发的时候，不知道是否会遇到这样的一种情形：</p><p>有多个异步任务，这些任务之间没有依赖关系，但是我们需要等待所有任务都完成后再继续执行后续的操作。我们唯一知道的，就是这些任务的数量。</p><p>举个例子：我们现在有三个 IO 相关的异步任务。这些任务的先后顺序是不确定的，并且这些任务也不必同时发起，但是我们需要等待这三个任务都完成后再继续执行后续的操作。</p><p>对于最普通的等待多个异步任务，我们首先肯定会想到使用 <code>Task.WhenAll</code> 方法。但是 <code>Task.WhenAll</code> 现在并不能满足我们的需求，因为它需要能够立刻获取到所有任务的集合。并且因为我们希望在每个异步任务的中间某个环节去等待其他任务的完成，而并不是所有异步任务都会在同一时间点发起，所以这就产生了一个矛盾。</p><p>这时候大家可能会想到另外一种更加简单粗暴的方式：我们创建一个局部字段 <code>int count</code>，然后每个异步任务完成后，我们将 <code>count</code> 自增。当 <code>count</code> 的值等于我们预期的任务数量时，我们就可以继续执行后续的操作。这种方式虽然可以解决问题，但是实现起来比较繁琐，因为我们还需要考虑使用什么机制来控制这些异步任务在 <code>count</code> 达到预期值时进行后续操作。最简单的方式无疑是使用轮询，但这显然是不够好的。聪明一些的方式是使用信号量，如 <code>SemaphoreSlim</code>，或者其他库提供的 <code>AsyncAutoResetEvent</code> 等。当然，我们还可以采用更加轻量的 TCS（<code>TaskCompletionSource</code>）来实现。但即便思路已经有了，实际实现起来依旧非常复杂，因为我们还要考虑 <code>count</code> 变量的线程安全、异常处理、取消任务等。</p><h2 id=引入-asyncbarrier>引入 AsyncBarrier
+<a href=#%e5%bc%95%e5%85%a5-asyncbarrier class=anchor>&para;</a></h2><p>这时候，<code>AsyncBarrier</code> 就派上用场了。<code>AsyncBarrier</code> 是一个非常轻量级的类，它可以帮助我们等待并同步多个异步任务。这个类是由 <code>Microsoft.VisualStudio.Threading</code> 提供的，我们可以轻易地找到<a class=link href=https://github.com/microsoft/vs-threading/blob/main/src/Microsoft.VisualStudio.Threading/AsyncBarrier.cs target=_blank rel=noopener>它的源代码</a>。</p><p>实际在使用时，我并不推荐大家去直接将 <code>Microsoft.VisualStudio.Threading</code> 这个库引入到项目中，因为这个库本身是一个非常庞大的库，而且里面还包含了一些代码分析器（Code Analyzers），会给我们的项目添加一些恼人的“波浪线”。所以，一般情况下，我更推荐大家去使用 <code>Nito.AsyncEx</code> 这个库。但是它又不包含 <code>AsyncBarrier</code> 这个类，所以我们可以直接将 <code>AsyncBarrier</code> 的源代码复制到我们的项目中，然后稍作修改即可。如果你不想麻烦，我也提供了一个开箱即用的版本，在 <a class=link href=https://gist.github.com/BYJRK/b1b893bb5660cea32326025f49116609 target=_blank rel=noopener>GitHub Gist</a> 上。</p><p>我们来简单理解一下它的源代码。这里我节选了一部分：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span><span class=lnt>34
+</span><span class=lnt>35
+</span><span class=lnt>36
+</span><span class=lnt>37
+</span><span class=lnt>38
+</span><span class=lnt>39
+</span><span class=lnt>40
+</span><span class=lnt>41
+</span><span class=lnt>42
+</span><span class=lnt>43
+</span><span class=lnt>44
+</span><span class=lnt>45
+</span><span class=lnt>46
+</span><span class=lnt>47
+</span><span class=lnt>48
+</span><span class=lnt>49
+</span><span class=lnt>50
+</span><span class=lnt>51
+</span><span class=lnt>52
+</span><span class=lnt>53
+</span><span class=lnt>54
+</span><span class=lnt>55
+</span><span class=lnt>56
+</span><span class=lnt>57
+</span><span class=lnt>58
+</span><span class=lnt>59
+</span><span class=lnt>60
+</span><span class=lnt>61
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>AsyncBarrier</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=kt>int</span> <span class=n>participantCount</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=k>readonly</span> <span class=n>Stack</span><span class=p>&lt;</span><span class=n>Waiter</span><span class=p>&gt;</span> <span class=n>waiters</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>AsyncBarrier</span><span class=p>(</span><span class=kt>int</span> <span class=n>participants</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>participants</span> <span class=p>&lt;=</span> <span class=m>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=k>throw</span> <span class=k>new</span> <span class=n>ArgumentOutOfRangeException</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>                <span class=n>nameof</span><span class=p>(</span><span class=n>participants</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>                <span class=s>$&#34;Argument {nameof(participants)} must be a positive number.&#34;</span>
+</span></span><span class=line><span class=cl>            <span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>this</span><span class=p>.</span><span class=n>participantCount</span> <span class=p>=</span> <span class=n>participants</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>this</span><span class=p>.</span><span class=n>waiters</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Stack</span><span class=p>&lt;</span><span class=n>Waiter</span><span class=p>&gt;(</span><span class=n>participants</span> <span class=p>-</span> <span class=m>1</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>ValueTask</span> <span class=n>SignalAndWait</span><span class=p>(</span><span class=n>CancellationToken</span> <span class=n>cancellationToken</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>lock</span> <span class=p>(</span><span class=k>this</span><span class=p>.</span><span class=n>waiters</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=p>(</span><span class=k>this</span><span class=p>.</span><span class=n>waiters</span><span class=p>.</span><span class=n>Count</span> <span class=p>+</span> <span class=m>1</span> <span class=p>==</span> <span class=k>this</span><span class=p>.</span><span class=n>participantCount</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=k>while</span> <span class=p>(</span><span class=k>this</span><span class=p>.</span><span class=n>waiters</span><span class=p>.</span><span class=n>Count</span> <span class=p>&gt;</span> <span class=m>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=n>Waiter</span> <span class=n>waiter</span> <span class=p>=</span> <span class=k>this</span><span class=p>.</span><span class=n>waiters</span><span class=p>.</span><span class=n>Pop</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>                    <span class=n>waiter</span><span class=p>.</span><span class=n>CompletionSource</span><span class=p>.</span><span class=n>TrySetResult</span><span class=p>(</span><span class=k>default</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                    <span class=n>waiter</span><span class=p>.</span><span class=n>CancellationRegistration</span><span class=p>.</span><span class=n>Dispose</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>                <span class=k>return</span> <span class=k>new</span> <span class=n>ValueTask</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>                    <span class=n>cancellationToken</span><span class=p>.</span><span class=n>IsCancellationRequested</span>
+</span></span><span class=line><span class=cl>                        <span class=p>?</span> <span class=n>Task</span><span class=p>.</span><span class=n>FromCanceled</span><span class=p>(</span><span class=n>cancellationToken</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                        <span class=p>:</span> <span class=n>Task</span><span class=p>.</span><span class=n>CompletedTask</span>
+</span></span><span class=line><span class=cl>                <span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=k>else</span>
+</span></span><span class=line><span class=cl>            <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=n>TaskCompletionSource</span><span class=p>&lt;</span><span class=n>EmptyStruct</span><span class=p>&gt;</span> <span class=n>tcs</span> <span class=p>=</span>
+</span></span><span class=line><span class=cl>                    <span class=k>new</span><span class=p>(</span><span class=n>TaskCreationOptions</span><span class=p>.</span><span class=n>RunContinuationsAsynchronously</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=n>CancellationTokenRegistration</span> <span class=n>ctr</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=k>if</span> <span class=p>(</span><span class=n>cancellationToken</span><span class=p>.</span><span class=n>CanBeCanceled</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=n>ctr</span> <span class=p>=</span> <span class=n>cancellationToken</span><span class=p>.</span><span class=n>Register</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>                        <span class=kd>static</span> <span class=p>(</span><span class=n>tcs</span><span class=p>,</span> <span class=n>ct</span><span class=p>)</span> <span class=p>=&gt;</span>
+</span></span><span class=line><span class=cl>                            <span class=p>((</span><span class=n>TaskCompletionSource</span><span class=p>&lt;</span><span class=n>EmptyStruct</span><span class=p>&gt;)</span><span class=n>tcs</span><span class=p>!).</span><span class=n>TrySetCanceled</span><span class=p>(</span><span class=n>ct</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>                        <span class=n>tcs</span>
+</span></span><span class=line><span class=cl>                    <span class=p>);</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span>
+</span></span><span class=line><span class=cl>                <span class=k>else</span>
+</span></span><span class=line><span class=cl>                <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=n>ctr</span> <span class=p>=</span> <span class=k>default</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>                <span class=k>this</span><span class=p>.</span><span class=n>waiters</span><span class=p>.</span><span class=n>Push</span><span class=p>(</span><span class=k>new</span> <span class=n>Waiter</span><span class=p>(</span><span class=n>tcs</span><span class=p>,</span> <span class=n>ctr</span><span class=p>));</span>
+</span></span><span class=line><span class=cl>                <span class=k>return</span> <span class=k>new</span> <span class=n>ValueTask</span><span class=p>(</span><span class=n>tcs</span><span class=p>.</span><span class=n>Task</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>            <span class=p>}</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这里还有另外两个类型 <code>Waiter</code> 和 <code>EmptyStruct</code>，这里由于篇幅的关系就不展示了。它们做的事情也非常简单，前者用于存储等待器的信息，后者则是一个空结构体，用于表示一个空的异步操作。它们并不是我们的重点，所以就不展开讨论了。</p><p>我们不难观察到这么几点：</p><ol><li>它内部有一个 <code>participantCount</code> 字段，表示参与者的数量；另外还有一个 <code>Stack</code>，用来存储所有等待的参与者；</li><li>它只有一个公开的方法 <code>SignalAndWait</code>，表示调用者现在要进入等待状态。在这个方法中：<ul><li>首先，它会判断当前等待的参与者数量是否等于预期的参与者数量。如果是，那么就将等待器逐个从 <code>Stack</code> 中弹出并唤醒；</li><li>如果不是，那么就创建一个新的 <code>TaskCompletionSource</code>，并将其存入 <code>Stack</code> 中，然后返回这个 <code>TaskCompletionSource</code> 的 <code>Task</code> 给参与者用于 <code>await</code>。</li></ul></li><li>当所有参与者都到齐后，<code>SignalAndWait</code> 方法会返回一个已完成的 <code>ValueTask</code>，这时候所有参与者都可以继续执行后续的操作。</li></ol><div class="notice info"><div class=notice-title><i class="fa-solid fa-exclamation-circle" aria-hidden=true></i>Info</div><div class=notice-content>这里其实还有一个小细节，就是 <code>Stack</code> 的容量是 <code>participantCount - 1</code>。这是因为我们并不需要将最后一个参与者也入栈。毕竟，当“倒数第一”到达终点时，我们就可以宣告比赛结束了。</div></div><h2 id=使用-asyncbarrier>使用 AsyncBarrier
+<a href=#%e4%bd%bf%e7%94%a8-asyncbarrier class=anchor>&para;</a></h2><p>现在我们就可以来用一用它了。我们这里借助 <code>CommunityToolkit.Mvvm</code> 这个库来写一个视图模型（ViewModel），大致如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span><span class=lnt>30
+</span><span class=lnt>31
+</span><span class=lnt>32
+</span><span class=lnt>33
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>partial</span> <span class=k>class</span> <span class=nc>MainViewModel</span> <span class=p>:</span> <span class=n>ObservableObject</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>ObservableCollection</span><span class=p>&lt;</span><span class=kt>string</span><span class=p>&gt;</span> <span class=n>Results</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span> <span class=p>=</span> <span class=k>new</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=kd>private</span> <span class=n>AsyncBarrier</span> <span class=n>_asyncBarrier</span> <span class=p>=</span> <span class=k>new</span><span class=p>(</span><span class=m>3</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>    [RelayCommand]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>async</span> <span class=n>Task</span> <span class=n>FirstJobAsync</span><span class=p>(</span><span class=n>CancellationToken</span> <span class=n>token</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>await</span> <span class=n>Task</span><span class=p>.</span><span class=n>Delay</span><span class=p>(</span><span class=m>1500</span><span class=p>,</span> <span class=n>token</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>Results</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;First job completed. Waiting for async barrier...&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>await</span> <span class=n>_asyncBarrier</span><span class=p>.</span><span class=n>SignalAndWait</span><span class=p>(</span><span class=n>token</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>Results</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;First job completed.&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>    [RelayCommand]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>async</span> <span class=n>Task</span> <span class=n>SecondJobAsync</span><span class=p>(</span><span class=n>CancellationToken</span> <span class=n>token</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>await</span> <span class=n>Task</span><span class=p>.</span><span class=n>Delay</span><span class=p>(</span><span class=m>1500</span><span class=p>,</span> <span class=n>token</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>Results</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;Second job completed. Waiting for async barrier...&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>await</span> <span class=n>_asyncBarrier</span><span class=p>.</span><span class=n>SignalAndWait</span><span class=p>(</span><span class=n>token</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>Results</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;Second job completed.&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>    [RelayCommand]</span>
+</span></span><span class=line><span class=cl>    <span class=kd>async</span> <span class=n>Task</span> <span class=n>ThirdJobAsync</span><span class=p>(</span><span class=n>CancellationToken</span> <span class=n>token</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>await</span> <span class=n>Task</span><span class=p>.</span><span class=n>Delay</span><span class=p>(</span><span class=m>1500</span><span class=p>,</span> <span class=n>token</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>Results</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;Third job completed. Waiting for async barrier...&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>await</span> <span class=n>_asyncBarrier</span><span class=p>.</span><span class=n>SignalAndWait</span><span class=p>(</span><span class=n>token</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>Results</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;Third job completed.&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这里我们定义了三个异步方法 <code>FirstJobAsync</code>、<code>SecondJobAsync</code> 和 <code>ThirdJobAsync</code>，它们分别模拟了三个异步任务。这三个任务之间没有依赖关系，但是我们希望在它们都完成后再继续执行后续的操作。我们在类中声明了一个 <code>AsyncBarrier</code> 字段，然后让这三个任务都调用它的 <code>SignalAndWait</code> 方法，这样就可以保证这三个任务都完成后才会继续执行后续的操作。</p><p>实际运行代码，我们可以发现确实达到了我们想要实现的效果。这三个按钮可以让用户以任意的顺序及时间间隔进行点击，并且每个任务接近完成的时候，都会进入等待状态。只有当所有任务都完成后，我们才会看到所有任务都已完成的提示。</p><p>更棒的是，<code>AsyncBarrier</code> 还可以重复使用。毕竟它底层只是一个 <code>Stack</code>。我们在等待时会入栈，等待完成后会出栈，最终使它回归初始状态。这样我们就可以在界面中反复实验这一现象。</p><h2 id=取消任务>取消任务
+<a href=#%e5%8f%96%e6%b6%88%e4%bb%bb%e5%8a%a1 class=anchor>&para;</a></h2><p>现在我们希望更进一步，为这些异步任务添加取消功能。那么，首先我们可以添加 <code>InitAllJobs</code> 与 <code>FinishJobs</code> 两个方法：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>private</span> <span class=n>AsyncBarrier</span><span class=p>?</span> <span class=n>_asyncBarrier</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=na>
+</span></span></span><span class=line><span class=cl><span class=na>[MemberNotNull(nameof(_asyncBarrier))]</span> <span class=c1>// 提示编译器，这个方法会确保 _asyncBarrier 不为空</span>
+</span></span><span class=line><span class=cl><span class=kd>private</span> <span class=k>void</span> <span class=n>InitJobs</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>_asyncBarrier</span> <span class=p>==</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_asyncBarrier</span> <span class=p>=</span> <span class=k>new</span> <span class=n>AsyncBarrier</span><span class=p>(</span><span class=m>3</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>Results</span><span class=p>.</span><span class=n>Clear</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>private</span> <span class=k>void</span> <span class=n>FinishJobs</span><span class=p>(</span><span class=kt>bool</span> <span class=n>success</span> <span class=p>=</span> <span class=kc>true</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>_asyncBarrier</span> <span class=p>!=</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>_asyncBarrier</span> <span class=p>=</span> <span class=kc>null</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=p>(</span><span class=n>success</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=n>Results</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;All jobs completed successfully.&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>else</span>
+</span></span><span class=line><span class=cl>            <span class=n>Results</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;Jobs were canceled.&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这两个方法分别用于初始化任务与结束任务。在初始化任务时，我们会创建一个新的 <code>AsyncBarrier</code> 实例，并清空 <code>Results</code> 集合。在结束任务时，我们会将 <code>AsyncBarrier</code> 实例置空，并根据是否成功完成任务来添加提示信息。</p><div class="notice tip"><div class=notice-title><i class="fa-solid fa-lightbulb" aria-hidden=true></i>Tip</div><div class=notice-content>这其实也是我比较推荐的使用 <code>AsyncBarrier</code> 的方式。虽然我们前面说了，它可以被重复使用。但是观察它的源代码会发现，它非常轻量，也不需要担心资源释放的问题，因为我们大可以每次使用的时候都实例化一个新的出来。毕竟这样还有一个好处，就是每次我们都可以根据实际情况去调整它的 <code>participantCount</code>。</div></div><p>接下来我们就可以在每个异步任务中添加取消逻辑。以 <code>FirstJobAsync</code> 为例：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=na>[RelayCommand]</span>
+</span></span><span class=line><span class=cl><span class=kd>async</span> <span class=n>Task</span> <span class=n>FirstJobAsync</span><span class=p>(</span><span class=n>CancellationToken</span> <span class=n>token</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>InitJobs</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>try</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=k>await</span> <span class=n>Task</span><span class=p>.</span><span class=n>Delay</span><span class=p>(</span><span class=m>1200</span><span class=p>,</span> <span class=n>token</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>Results</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;First job completed. Waiting for async barrier...&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>await</span> <span class=n>_asyncBarrier</span><span class=p>.</span><span class=n>SignalAndWait</span><span class=p>(</span><span class=n>token</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>FinishJobs</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=k>catch</span> <span class=p>(</span><span class=n>TaskCanceledException</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=n>Results</span><span class=p>.</span><span class=n>Add</span><span class=p>(</span><span class=s>&#34;First job was canceled.&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=n>FinishJobs</span><span class=p>(</span><span class=kc>false</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这里的大致思路是：</p><ol><li>首先会调用 <code>InitJobs</code> 方法，初始化任务。这里每个异步方法都会尝试去初始化，但只有第一个（即 <code>AsyncBarrier</code> 字段为空时）是有效的；</li><li>在异步任务中使用 <code>try-catch</code> 块，捕获 <code>TaskCanceledException</code> 异常。因为如果我们想要取消任务，那么这个异步任务中的 <code>Task.Delay</code> 以及 <code>AsyncBarrier.SignalAndWait</code> 都会抛出这个异常；</li><li>当异步任务完成时，会调用 <code>FinishJobs</code> 方法，结束任务。并且这里类似 <code>InitJobs</code>，只有第一个异步任务会有效调用。</li></ol><p>然后，我们还需要一个 <code>RelayCommand</code>，用来实现取消功能：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=na>[RelayCommand]</span>
+</span></span><span class=line><span class=cl><span class=kd>private</span> <span class=k>void</span> <span class=n>CancelAllJobs</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>FirstJobCommand</span><span class=p>.</span><span class=n>IsRunning</span><span class=p>)</span> <span class=n>FirstJobCommand</span><span class=p>.</span><span class=n>Cancel</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>SecondJobCommand</span><span class=p>.</span><span class=n>IsRunning</span><span class=p>)</span> <span class=n>SecondJobCommand</span><span class=p>.</span><span class=n>Cancel</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>ThirdJobCommand</span><span class=p>.</span><span class=n>IsRunning</span><span class=p>)</span> <span class=n>ThirdJobCommand</span><span class=p>.</span><span class=n>Cancel</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样我们就实现了想要的效果了。此时，我们在 XAML 中的代码如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-xml data-lang=xml><span class=line><span class=cl><span class=nt>&lt;Window</span> <span class=err>...</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;Window.DataContext&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;local:MainViewModel</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/Window.DataContext&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;DockPanel</span> <span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;DockPanel</span> <span class=na>DockPanel.Dock=</span><span class=s>&#34;Bottom&#34;</span> <span class=na>LastChildFill=</span><span class=s>&#34;False&#34;</span><span class=nt>&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&lt;Button</span> <span class=na>Content=</span><span class=s>&#34;Job1&#34;</span> <span class=na>Command=</span><span class=s>&#34;{Binding FirstJobCommand}&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&lt;Button</span> <span class=na>Content=</span><span class=s>&#34;Job2&#34;</span> <span class=na>Command=</span><span class=s>&#34;{Binding SecondJobCommand}&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&lt;Button</span> <span class=na>Content=</span><span class=s>&#34;Job3&#34;</span> <span class=na>Command=</span><span class=s>&#34;{Binding ThirdJobCommand}&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&lt;Button</span> <span class=na>Content=</span><span class=s>&#34;Cancel&#34;</span> <span class=na>Command=</span><span class=s>&#34;{Binding CancelAllJobsCommand}&#34;</span> <span class=na>DockPanel.Dock=</span><span class=s>&#34;Right&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;/DockPanel&gt;</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&lt;ListBox</span> <span class=na>ItemsSource=</span><span class=s>&#34;{Binding Results}&#34;</span> <span class=nt>/&gt;</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&lt;/DockPanel&gt;</span>
+</span></span><span class=line><span class=cl><span class=nt>&lt;/Window&gt;</span>
+</span></span></code></pre></td></tr></table></div></div><p>其实上面的故事还没有结束，因为实际运行后会发现，<code>Cancel</code> 按钮在任何时候都是可用的。这是因为我们没有正确处理它的 ICommand 的 <code>CanExecute</code> 方法。这里我就不展开讲了，我在视频中有详细讲解，大家可以在文章开头找到相应的视频链接。</p><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p><code>AsyncBarrier</code> 是一个非常轻量级的类，它可以帮助我们等待并同步多个异步任务。它的实现非常简单，但是却非常实用。我们可以在异步任务中使用它，来保证多个异步任务都完成后再继续执行后续的操作。同时，我们还可以在异步任务中添加取消逻辑，来保证任务的可靠性。</p><p>大家如果有这样的需求，不妨去试一下这个类，相信一定可以帮上忙。不仅如此，我们还可以借此学习微软官方的源代码，了解一下它的实现细节。这对我们提升编程能力也是非常有帮助的。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/dotnet/>dotnet</a>
+<a href=/tags/csharp/>csharp</a>
+<a href=/tags/async/>async</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/how-many-timers-are-there/><div class=article-details><h2 class=article-title>.NET 原生有哪些 Timer 以及它们分别是怎么用的？</h2></div></a></article><article class=has-image><a href=/posts/how-to-report-progress/><div class=article-image><img src=https://s2.loli.net/2024/05/09/RJYeMSKs5q6UdQn.jpg loading=lazy data-key=how-to-report-progress data-hash=https://s2.loli.net/2024/05/09/RJYeMSKs5q6UdQn.jpg></div><div class=article-details><h2 class=article-title>如何在异步任务中汇报进度</h2></div></a></article><article class=has-image><a href=/posts/why-we-need-valuetask/><div class=article-image><img src=https://s2.loli.net/2024/04/14/P4HJMlIpSxY6CDn.jpg loading=lazy data-key=why-we-need-valuetask data-hash=https://s2.loli.net/2024/04/14/P4HJMlIpSxY6CDn.jpg></div><div class=article-details><h2 class=article-title>为什么我们需要 ValueTask？</h2></div></a></article><article><a href=/posts/dont-easily-use-comprehensive-extension-libraries/><div class=article-details><h2 class=article-title>不要轻易使用大而全的扩展库</h2></div></a></article><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

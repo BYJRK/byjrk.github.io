@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>linq on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/linq/</link><description>Recent content in linq on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Thu, 25 Sep 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/linq/index.xml" rel="self" type="application/rss+xml"/><item><title>盘点 LINQ 在最近几个 .NET 版本中新增的功能和特性</title><link>https://blog.coldwind.top/posts/linq-new-features-added-in-recent-dotnet/</link><pubDate>Thu, 25 Sep 2025 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/linq-new-features-added-in-recent-dotnet/</guid><description>&lt;p>LINQ 表达式相信每一位 C# 开发者都不陌生，LINQ 作为 C# 语言的核心功能之一，极大地简化了数据查询和操作的过程。随着 .NET 平台的不断发展，LINQ 也在不断地引入新的特性和改进，以提升开发者的生产力和代码的可读性。本文将介绍最近几个版本的 .NET 中新增的 LINQ 特性。&lt;/p>
+&lt;h2 id="net-6">
+.NET 6
+&lt;a href="#net-6" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>.NET 5 作为首次合并了 .NET Framework 和 .NET Core 的版本，标志着 .NET 生态系统的统一。这一版本并没有引入什么新的 LINQ 特性，但是在随后的第一个 LTS 版本 .NET 6 中，微软引入了很多新功能。&lt;/p>
+&lt;h3 id="1-chunk-方法">
+1. Chunk 方法
+&lt;a href="#1-chunk-%e6%96%b9%e6%b3%95" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>&lt;code>Chunk&lt;/code> 方法允许开发者将一个序列分割成多个固定大小的块。这在处理大数据集时非常有用，可以帮助减少内存占用和提高性能。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">numbers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Enumerable&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">10&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">chunks&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Chunk&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">3&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="n">chunk&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">chunks&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Join&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;, &amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">chunk&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 输出:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 1, 2, 3&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 4, 5, 6&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 7, 8, 9&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 10&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果最后一块的元素数量不足指定大小，它将包含剩余的所有元素。&lt;/p>
+&lt;h3 id="2-minby--maxby">
+2. MinBy &amp;amp; MaxBy
+&lt;a href="#2-minby--maxby" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>在以前我们有 &lt;code>Min&lt;/code> 和 &lt;code>Max&lt;/code> 方法，用来获取序列中的最小值和最大值。这对于最传统的值类型，尤其是数字类型来说是非常易用且易懂的：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">numbers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">4&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">min&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Min&lt;/span>&lt;span class="p">();&lt;/span> &lt;span class="c1">// 1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">max&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Max&lt;/span>&lt;span class="p">();&lt;/span> &lt;span class="c1">// 5&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>但如果我们面对的是一个较为复杂的对象，比如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">Person&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">Age&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>现在我们想获取年龄最大的人，使用传统的方式就会比较繁琐且性能低下了：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">people&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Person&lt;/span>&lt;span class="p">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Person&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Age&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">30&lt;/span> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Person&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Bob&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Age&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">25&lt;/span> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Person&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Charlie&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Age&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">35&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 方法一&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">oldestPerson&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">people&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OrderByDescending&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">p&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Age&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">First&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 方法二&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">oldestAge&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">people&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Max&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">p&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Age&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">oldestPerson&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">people&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">First&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">p&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Age&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">oldestAge&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>而在 .NET 6 中，我们可以直接使用 &lt;code>MaxBy&lt;/code> 和 &lt;code>MinBy&lt;/code> 方法来简化这个过程：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">oldestPerson&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">people&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">MaxBy&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">p&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Age&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">youngestPerson&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">people&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">MinBy&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">p&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Age&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="3-distinctby-等">
+3. DistinctBy 等
+&lt;a href="#3-distinctby-%e7%ad%89" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>与上面的 &lt;code>MinBy&lt;/code> 和 &lt;code>MaxBy&lt;/code> 类似，&lt;code>DistinctBy&lt;/code> 等方法也是允许我们基于某个属性来进行去重、交集和差集操作，并最终返回原始对象。比如下面的例子中，我们可以得到所有名字不重复的人：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">people&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Person&lt;/span>&lt;span class="p">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Person&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Age&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">30&lt;/span> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Person&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Bob&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Age&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">25&lt;/span> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Person&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Charlie&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Age&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">35&lt;/span> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Person&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Age&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">28&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">distinctByName&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">people&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">DistinctBy&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">p&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Name&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>IntersectBy&lt;/code> 和 &lt;code>ExceptBy&lt;/code> 也是类似的用法。它们允许我们基于某个属性来进行交集和差集操作。具体的代码这里就不展示了，大家在用到的时候相信很快就能上手。&lt;/p>
+&lt;h3 id="4-firstordefault-等方法的重载">
+4. FirstOrDefault 等方法的重载
+&lt;a href="#4-firstordefault-%e7%ad%89%e6%96%b9%e6%b3%95%e7%9a%84%e9%87%8d%e8%bd%bd" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>在这个版本中，&lt;code>FirstOrDefault&lt;/code>、&lt;code>LastOrDefault&lt;/code>、&lt;code>SingleOrDefault&lt;/code> 这些方法允许传入一个自定义的默认值，而不是返回类型的默认值（例如 &lt;code>null&lt;/code> 或 &lt;code>0&lt;/code>）。这在某些情况下可以减少代码量，提高可读性。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">num&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">FirstOrDefault&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">n&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">n&lt;/span> &lt;span class="p">&amp;gt;&lt;/span> &lt;span class="m">10&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">-&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 如果没有找到符合条件的元素，返回 -1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">student&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">students&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SingleOrDefault&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">s&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">s&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Id&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Student&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Id&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Unknown&amp;#34;&lt;/span> &lt;span class="p">});&lt;/span> &lt;span class="c1">// 如果没有找到符合条件的元素，返回一个新的 Student 对象，而不是 null&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这对于引用类型来说，或许可以借助 &lt;code>??&lt;/code> 操作符来实现类似的功能；但对于值类型来说，这个重载就显得非常好用了。&lt;/p>
+&lt;h3 id="5-take">
+5. Take
+&lt;a href="#5-take" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>C# 8 引入了索引和范围的概念，这使得我们可以更方便地从集合中获取子集。比如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">numbers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Enumerable&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">10&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">ToArray&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">firstThree&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">[..&lt;/span>&lt;span class="m">3&lt;/span>&lt;span class="p">];&lt;/span> &lt;span class="c1">// 获取前3个元素&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">lastThree&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">[^&lt;/span>&lt;span class="m">3.&lt;/span>&lt;span class="p">.];&lt;/span> &lt;span class="c1">// 获取后3个元素&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">middleThree&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="m">3.&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="m">6&lt;/span>&lt;span class="p">];&lt;/span> &lt;span class="c1">// 获取第4到第6个元素&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>现在，&lt;code>Take&lt;/code> 方法也支持传入一个范围。这样我们就不需要再搭配使用 &lt;code>Skip&lt;/code> 等方法了：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">numbers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Enumerable&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">10&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 以前的做法&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">middleThree&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Skip&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">3&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">Take&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">3&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 现在可以直接使用范围&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">middleThree&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Take&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">3.&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="m">6&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="6-zip">
+6. Zip
+&lt;a href="#6-zip" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>对于 &lt;code>Zip&lt;/code> 方法，现在多了一个重载，允许我们组合三个序列。或许在特定情况下，这一功能会派上用场。但奇怪的是，微软并没有提供更多的重载来支持更多的序列。&lt;/p>
+&lt;p>如果我们有组合更多序列的需求，可以考虑多次使用 &lt;code>Zip&lt;/code> 方法来实现：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">numbers1&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">3&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">numbers2&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="m">4&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">6&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">numbers3&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="m">7&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">8&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">zipped&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers1&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Zip&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">numbers2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">n1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">n2&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">n1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">n2&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Zip&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">numbers3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">pair&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">n3&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">pair&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">n1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">pair&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">n2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">n3&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="net-7">
+.NET 7
+&lt;a href="#net-7" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>这个版本虽然在方法上仅新增了两个，但 LINQ 在性能上得到了显著提升。微软对 LINQ 的实现进行了优化，减少了内存分配和提高了执行速度。&lt;/p>
+&lt;h3 id="order--orderdescending">
+Order &amp;amp; OrderDescending
+&lt;a href="#order--orderdescending" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>在 .NET 7 中，微软引入了 &lt;code>Order&lt;/code> 和 &lt;code>OrderDescending&lt;/code> 方法，这两个方法允许我们对序列进行排序，而不需要指定排序的键。它们会根据元素默认的比较器进行排序。&lt;/p>
+&lt;p>有了这个新方法，当我们不需要指定排序键时，代码会更加简洁，而且因为减少了委托的使用，也会略微减小一些性能开销：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">numbers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="m">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">4&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">sortedNumbers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OrderBy&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">x&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">sortedNumbers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Order&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>不过这里仍然有必要强调一下，对于传统的集合类型，比如数组和 &lt;code>List&amp;lt;T&amp;gt;&lt;/code>，我们如果有原地（in-place）排序的需求，还是应该使用它们自带的 &lt;code>Sort&lt;/code> 方法，因为它们会直接修改原始集合。这种时候如果使用 LINQ 的 &lt;code>Order().ToArray()&lt;/code> 等方法，反而会带来不必要的内存分配和性能开销：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">arr&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="m">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">4&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">list&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="m">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">4&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">9&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">Array&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Sort&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">arr&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 原地排序&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">list&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Sort&lt;/span>&lt;span class="p">();&lt;/span> &lt;span class="c1">// 原地排序&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="net-8">
+.NET 8
+&lt;a href="#net-8" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>这个版本并没有引入新的 LINQ 方法，但值得一提的是，&lt;code>Random&lt;/code> 新引入了 &lt;code>Shuffle&lt;/code> 方法，也就是洗牌算法。这个方法可以随机打乱一个序列的顺序：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">numbers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Enumerable&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Range&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">10&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">shuffledNumbers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Random&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Shared&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Shuffle&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">numbers&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="net-9">
+.NET 9
+&lt;a href="#net-9" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;h3 id="index">
+Index
+&lt;a href="#index" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>在 .NET 9 中，微软引入了 &lt;code>Index&lt;/code> 方法。这个方法并不是类似 &lt;code>IndexOf&lt;/code>，而是可以将一个序列包装为一些包含了 &lt;code>Index&lt;/code> 和 &lt;code>Item&lt;/code> 的元组（&lt;code>ValueTuple&lt;/code>），方便我们在遍历时获取元素的索引。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="n">IEnumerable&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">numbers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="m">10&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">20&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">30&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">40&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">50&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">item&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Index&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">$&amp;#34;Index: {index}, Item: {item}&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>其实在以前，我们借助 &lt;code>Select&lt;/code> 方法也可以实现类似的功能。&lt;code>Select&lt;/code> 方法有一些重载，允许我们在选择元素的同时获取它们的索引：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="n">pair&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Select&lt;/span>&lt;span class="p">((&lt;/span>&lt;span class="n">item&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">index&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">index&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">item&lt;/span>&lt;span class="p">)))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">$&amp;#34;Index: {pair.index}, Item: {pair.item}&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>不过 &lt;code>Index&lt;/code> 方法的语义会更加明确一些，也更加易用了。&lt;/p>
+&lt;h3 id="countby">
+CountBy
+&lt;a href="#countby" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>&lt;code>CountBy&lt;/code> 方法允许我们根据某个键对序列进行分组，并计算每个组的元素数量。它返回一个包含键和值的元组序列。&lt;/p>
+&lt;p>比如我们有一个产品列表：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">Product&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Category&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>我们可以使用 &lt;code>CountBy&lt;/code> 方法来统计每个类别的产品数量：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">products&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Product&lt;/span>&lt;span class="p">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Product&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Apple&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Category&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Fruit&amp;#34;&lt;/span> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Product&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Banana&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Category&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Fruit&amp;#34;&lt;/span> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Product&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Carrot&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Category&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Vegetable&amp;#34;&lt;/span> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Product&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Broccoli&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Category&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Vegetable&amp;#34;&lt;/span> &lt;span class="p">},&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">new&lt;/span> &lt;span class="n">Product&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Chicken&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Category&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Meat&amp;#34;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">categoryCounts&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">products&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CountBy&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">p&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Category&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 结果:&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// [(&amp;#34;Fruit&amp;#34;, 2), (&amp;#34;Vegetable&amp;#34;, 2), (&amp;#34;Meat&amp;#34;, 1)]&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在以前，我们可以借助 &lt;code>GroupBy&lt;/code> 方法来实现类似的功能：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">categoryCounts&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">products&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">GroupBy&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">p&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">p&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Category&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Select&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">g&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">Category&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">g&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Key&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Count&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="n">g&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Count&lt;/span>&lt;span class="p">()));&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="aggregateby">
+AggregateBy
+&lt;a href="#aggregateby" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>&lt;code>AggregateBy&lt;/code> 方法允许我们根据某个键对序列进行分组，并对每个组应用一个聚合函数。它返回一个包含键和值的元组序列。&lt;/p>
+&lt;p>首先我们简单回顾一下 &lt;code>Aggregate&lt;/code> 方法。这个方法允许我们对序列中的元素进行累积操作，比如计算总和、乘积等：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">numbers&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="m">1&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">3&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">4&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">sum&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Aggregate&lt;/span>&lt;span class="p">((&lt;/span>&lt;span class="n">acc&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">n&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">acc&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="n">n&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 15&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">product&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">numbers&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Aggregate&lt;/span>&lt;span class="p">((&lt;/span>&lt;span class="n">acc&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">n&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">acc&lt;/span> &lt;span class="p">*&lt;/span> &lt;span class="n">n&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 120&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>现在，&lt;code>AggregateBy&lt;/code> 方法允许我们先根据某个键对序列进行分组，然后对每个组应用一个聚合函数。比如我们有一些订单，我们想计算每个客户的订单总金额：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">Order&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Customer&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">decimal&lt;/span> &lt;span class="n">Amount&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">results&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">orders&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AggregateBy&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">order&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">order&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Customer&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="c1">// 分组键&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">(&lt;/span>&lt;span class="n">acc&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">order&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">acc&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="n">order&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Amount&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="c1">// 聚合函数&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="m">0&lt;/span>&lt;span class="n">m&lt;/span> &lt;span class="c1">// 初始值&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">这个例子看似可以用 &lt;code>GroupBy&lt;/code> 和 &lt;code>Select&lt;/code> 来实现，但实际上 &lt;code>AggregateBy&lt;/code> 的性能会更好一些，因为它避免了中间集合的创建。&lt;code>GroupBy&lt;/code> 会创建一个中间的分组集合，而 &lt;code>AggregateBy&lt;/code> 则直接在遍历时进行聚合操作。&lt;/div>
+&lt;/div>
+&lt;h2 id="关于-by-的思考">
+关于 By 的思考
+&lt;a href="#%e5%85%b3%e4%ba%8e-by-%e7%9a%84%e6%80%9d%e8%80%83" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在 LINQ 中，名称带有 &lt;code>By&lt;/code> 的方法有很多。这里的 &lt;code>By&lt;/code> 虽然都表示要基于某个方式（比如属性、键等）来进行操作，但它们为方法带来的语义并不完全相同。一般来说分为两种情形：&lt;/p>
+&lt;ul>
+&lt;li>基于某个键进行操作，并在最后返回对象本身（而不是这个键）
+&lt;ul>
+&lt;li>&lt;code>MinBy&lt;/code>、&lt;code>MaxBy&lt;/code>、&lt;code>OrderBy&lt;/code>、&lt;code>DistinctBy&lt;/code>、&lt;code>IntersectBy&lt;/code>、&lt;code>ExceptBy&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>基于某个键进行分组（再进行后续操作）
+&lt;ul>
+&lt;li>&lt;code>GroupBy&lt;/code>、&lt;code>CountBy&lt;/code>、&lt;code>AggregateBy&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>因为两种不同的语义，某些方法其实是有可能引起误会的。比如 &lt;code>DintinctBy&lt;/code>，到底应该是以某个键来去重，还是应该以某个键分组后再在每组中进行去重呢？&lt;/p>
+&lt;p>细心观察会发现，LINQ 并没有提供诸如 &lt;code>SumBy&lt;/code>、&lt;code>AverageBy&lt;/code> 等方法。因为这些方法首先没有什么必要，其次也会引起歧义。比如 &lt;code>SumBy&lt;/code>，它是应该先分组再求和，还是直接对某个键求和呢？如果是前者，那它的语义就和 &lt;code>AggregateBy&lt;/code> 很接近了；如果是后者，那它其实和传了一个 &lt;code>selector&lt;/code> 的 &lt;code>Sum&lt;/code> 一样。&lt;/p>
+&lt;p>那么 &lt;code>CountBy&lt;/code> 又该怎么去理解呢？如果将 &lt;code>Count&lt;/code> 理解为一种聚合操作，那么它其实和 &lt;code>AggregateBy&lt;/code> 的语义是类似的。那么是不是说，对于一个聚合操作，它的 &lt;code>By&lt;/code> 意思就是分组了呢？其实也未必，因为 &lt;code>Max&lt;/code> 同样也可以看作是一种聚合操作，或者最起码我们确实可以用一个 &lt;code>Aggregate&lt;/code> 来实现不是吗？所以这些方法的名称可能有点绕，需要大家在使用时多加注意。&lt;/p>
+&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>随着 .NET 平台的不断发展，LINQ 也在不断地引入新的特性和改进。这些新特性不仅提升了开发者的生产力，也使代码更加简洁和易读。希望本文能帮助大家更好地理解和使用这些新特性，提升开发效率。同时也鼓励大家，在有条件的情况下，尽量使用最新版本的 .NET，以便享受到这些改进和优化带来的好处。&lt;/p></description></item></channel></rss>
