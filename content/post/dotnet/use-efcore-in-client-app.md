@@ -1,7 +1,7 @@
 ---
 title: "如何在本地客户端使用 EF Core"
 slug: "use-efcore-in-client-app"
-description: 
+description: "将 EF Core 用于 WPF、WinForms 等本地客户端应用程序可能并不是一个非常简单的事情。我们尤其需要了解它的一些内部机制，以及如何有针对性地进行配置，从而避免一些常见的问题。"
 date: 2026-02-02
 tags:
     - dotnet
