@@ -129,6 +129,12 @@ public partial class MainViewModel : ViewModelBase
 }
 ```
 
+{{< notice info>}}
+这里我们为 `scope` 使用了 `using` 语句，这样就可以确保在方法执行完成后，作用域会被正确地释放，从而避免内存泄漏的问题；另一方面，我们没有为 `dbContext` 使用 `using` 语句，因为它是由 `scope` 管理的，而后者会在 `using` 块结束时自动释放它所创建的所有服务实例。
+{{< /notice >}}
+
+## 方法三：使用 `IDbContextFactory`
+
 或者我们还可以更简单一些，我们直接将 `DbContext` 注册为瞬态生命周期，然后为视图模型注入一个 `IDbContextFactory<AppDbContext>`，每次需要访问数据库时，就通过工厂创建一个新的 `DbContext` 实例。
 
 ```c#
@@ -154,6 +160,18 @@ public partial class MainViewModel : ViewModelBase
     }
 }
 ```
+
+如果使用这种方式，我们还要稍微修改一下服务的注册。这次我们就不用 `AddDbContext` 了，而是使用 `AddDbContextFactory` 来注册 `DbContext` 工厂：
+
+```c#
+// 注册 DbContext 工厂
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+    options.UseSqlServer(connectionString));
+```
+
+{{< notice info >}}
+使用工厂方法创建一个 `DbContext` 的实例就类似于我们手动使用 `new` 关键字创建一个对象一样。每次调用 `CreateDbContext` 方法时，都会返回一个新的 `DbContext` 实例，这样就可以避免线程安全和内存泄漏的问题。但因此我们也要手动处理它的生命周期，确保在使用完成后正确地释放它。所以上面我们对它使用了 `using` 语句。
+{{< /notice >}}
 
 ## 总结
 
