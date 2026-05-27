@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>design-patterns on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/design-patterns/</link><description>Recent content in design-patterns on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Mon, 11 Aug 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/design-patterns/index.xml" rel="self" type="application/rss+xml"/><item><title>原生 WPF 框架中体现出的设计模式</title><link>https://blog.coldwind.top/posts/built-in-design-patterns-in-wpf/</link><pubDate>Mon, 11 Aug 2025 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/built-in-design-patterns-in-wpf/</guid><description>&lt;p>我们在做软件开发时，经常会使用设计模式，比如单例模式、工厂模式、观察者模式等。这些设计模式帮助我们更好地组织代码，提高代码的可维护性和可扩展性。&lt;/p>
+&lt;p>但是这次我们换一个角度，来看一看框架本身有没有体现出这些设计模式。希望这篇文章可以给大家一个不一样的视角。&lt;/p>
+&lt;h2 id="观察者模式">
+观察者模式
+&lt;a href="#%e8%a7%82%e5%af%9f%e8%80%85%e6%a8%a1%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>对于观察者模式，相信大多数人可能首先会想到的是在 MVVM 模式下，ViewModel 作为数据的提供者，而 View 作为数据的消费者。当 ViewModel 中的数据发生变化时，它会通知所有绑定的 View 进行更新（具体做法为实现 &lt;code>INotifyPropertyChanged&lt;/code> 接口，并触发相应的事件）。这种模式使得 View 和 ViewModel 之间的交互变得简单而高效。&lt;/p>
+&lt;p>但实际上，原生 WPF 就已经充分体现出了观察者模式。对于大多数控件，本身它就提供了两种实现了观察者模式，或者说可以被观察的特性：&lt;/p>
+&lt;ol>
+&lt;li>事件：控件的事件机制允许开发者注册事件处理程序，从而在特定事件发生时接收通知。例如，当用户点击按钮时，按钮会触发 Click 事件；当用户修改文本框的内容时，文本框会触发 TextChanged 事件。&lt;/li>
+&lt;li>依赖属性：控件的依赖属性发生变化时，如果有绑定的目标，它会自动通知这些目标进行更新。这种机制使得控件的状态变化能够被及时“观察”到，从而实现了观察者模式的效果。&lt;/li>
+&lt;/ol>
+&lt;p>所以，在 WPF 开发中，观察者模式并不仅仅体现在 MVVM 模式上，它在控件的事件和依赖属性中也得到了充分的体现。&lt;/p>
+&lt;h2 id="桥接模式">
+桥接模式
+&lt;a href="#%e6%a1%a5%e6%8e%a5%e6%a8%a1%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>我们简单回顾一下桥接模式大概是怎么一回事：&lt;/p>
+&lt;p>如果我们的某一个类存在多个维度的变化（比如不同的外观和不同的行为），比如图形类可能有不同的形状（Shape）以及颜色（Color），那么假如我们采用传统的 OOP 的思想，就不可避免地会引入大量的子类，比如 &lt;code>RedRectangle&lt;/code>、&lt;code>BlueCircle&lt;/code> 等，这显然是不理想的。&lt;/p>
+&lt;p>此时，我们就可以使用桥接模式将这两个维度分离开来。这样一来，我们就可以独立地对这两个维度进行扩展，而不必相互影响。&lt;/p>
+&lt;p>这时候我们回来看 WPF，比如 &lt;code>Control&lt;/code> 类就包含了多种不同的实现，包括 &lt;code>Button&lt;/code>、&lt;code>Label&lt;/code>、&lt;code>TextBox&lt;/code> 等；同时，它们又都包含 &lt;code>Background&lt;/code>、&lt;code>Foreground&lt;/code> 等属性，用于控制它们实际的外观。这是否就和我们上面的例子不谋而合了？&lt;/p>
+&lt;p>所以，WPF 的 &lt;code>Control&lt;/code> 类就是一个典型的桥接模式的实现。它将控件的外观（如样式、模板）和行为（如事件、命令）分离开来，使得我们可以独立地对这两个维度进行扩展。当然，体现桥接模式的不仅仅是 &lt;code>Control&lt;/code> 类，其他很多控件也都遵循了这一模式。&lt;/p>
+&lt;h2 id="装饰器模式">
+装饰器模式
+&lt;a href="#%e8%a3%85%e9%a5%b0%e5%99%a8%e6%a8%a1%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>装饰器模式（Decorator Pattern）是一种结构性设计模式，它允许在不改变对象自身的情况下，动态地给对象添加一些额外的职责。装饰器模式通常用于遵循开闭原则（对扩展开放，对修改关闭）。&lt;/p>
+&lt;p>在 WPF 中，装饰器模式的一个典型应用就是附加属性和行为了。通过附加属性，我们可以在不修改原有控件的情况下，为其添加新的功能。例如，我们可以为一个 &lt;code>TextBox&lt;/code> 控件添加一个附加属性，用于控制其是否显示占位符文本。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;TextBox&lt;/span> &lt;span class="na">local:TextBoxHelper.Placeholder=&lt;/span>&lt;span class="s">&amp;#34;请输入内容&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在这个例子中，&lt;code>TextBoxHelper&lt;/code> 就是一个提供了附加属性的类，它可以为任意 &lt;code>TextBox&lt;/code> 控件添加占位符文本（&lt;code>Placeholder&lt;/code>）属性。然后我们就可以在 &lt;code>TextBox&lt;/code> 的 &lt;code>Style&lt;/code> 或 &lt;code>Template&lt;/code> 中响应这个附加属性，从而真的为文本框添加占位符。&lt;/p>
+&lt;p>行为也类似，而且行为本质上也是附加属性，或者说就是依靠附加属性来实现的。所以这里不再赘述。&lt;/p>
+&lt;p>所以我们可以说，附加属性利用了装饰器模式。不仅如此，其实它还体现出了其他一些设计模式，比如我们开头提到的观察者模式，此外还有享元模式（附加属性与依赖属性为同一类型的控件提供了相同的属性元数据）、中介者模式（比如一些与布局相关的附加属性，如 &lt;code>DockPanel.Dock&lt;/code>、&lt;code>Grid.Row&lt;/code> 等）等等。&lt;/p>
+&lt;h2 id="适配器模式">
+适配器模式
+&lt;a href="#%e9%80%82%e9%85%8d%e5%99%a8%e6%a8%a1%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在 WPF 的绑定中，我们常常会利用到值转换器（&lt;code>ValueConverter&lt;/code>），它就是适配器模式的典型体现。&lt;/p>
+&lt;p>这里我们看一个最典型的例子：我们要将一个布尔属性绑定到控件的 &lt;code>Visibility&lt;/code> 属性上。为了能够实现源类型（&lt;code>bool&lt;/code>）到目标类型（&lt;code>Visibility&lt;/code>）的转换，最常见的方式就是借助 &lt;code>BooleanToVisibilityConverter&lt;/code> 了：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Window.Resources&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;BooleanToVisibilityConverter&lt;/span> &lt;span class="na">x:Key=&lt;/span>&lt;span class="s">&amp;#34;BooleanToVisibilityConverter&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/Window.Resources&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Grid&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;TextBlock&lt;/span> &lt;span class="na">Text=&lt;/span>&lt;span class="s">&amp;#34;Hello, World!&amp;#34;&lt;/span> &lt;span class="na">Visibility=&lt;/span>&lt;span class="s">&amp;#34;{Binding IsTextVisible, Converter={StaticResource BooleanToVisibilityConverter}}&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/Grid&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>另外，值转换器不仅体现出了适配器模式，还体现出了一定程度的策略模式。它们把“如何将一个值转换成另一个值”的算法抽象成一个接口（&lt;code>IValueConverter&lt;/code>），并通过不同的实现类来提供具体的转换逻辑，这正是策略模式的核心思想——把一系列可互换的算法封装为独立的策略对象，并在运行时根据需要选择使用哪一个策略。&lt;/p>
+&lt;h2 id="责任链模式">
+责任链模式
+&lt;a href="#%e8%b4%a3%e4%bb%bb%e9%93%be%e6%a8%a1%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>前面我们提到，控件的事件体现出了观察者模式。其实不仅如此，WPF 在传统 C# 事件的基础上，还引入了路由事件（&lt;code>RoutedEvent&lt;/code>）这一概念。&lt;/p>
+&lt;p>路由事件允许事件在控件的视觉树中沿着特定的路径进行传播，这种传播机制使得我们可以在父级控件中处理子级控件的事件，或者反过来。具体要看路由的方式是冒泡（Bubble）还是隧道（Tunnel）。&lt;/p>
+&lt;p>但不管哪一种方式，我们都可以在事件的处理过程中形成一个责任链。对于这一点，最明显的体现方式就是对于 &lt;code>e.Handled&lt;/code> 的使用。比如我们触发了一个鼠标事件，并且希望在某个父级控件中处理这个事件，那么我们可以在到达该控件时将 &lt;code>e.Handled&lt;/code> 设置为 &lt;code>true&lt;/code>，从而阻止事件继续向上传播。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">private&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">OnMouseDown&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">object&lt;/span> &lt;span class="n">sender&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">MouseButtonEventArgs&lt;/span> &lt;span class="n">e&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">sender&lt;/span> &lt;span class="k">is&lt;/span> &lt;span class="n">Border&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 处理边框的鼠标按下事件&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">e&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Handled&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kc">true&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="c1">// 阻止事件继续向上传播&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这一操作就和责任链模式不谋而合：我们可以将事件的处理过程看作是一个链条，每个处理节点都可以选择是否将事件继续传递下去，从而形成一个灵活的事件处理机制。&lt;/p>
+&lt;h2 id="其他设计模式">
+其他设计模式
+&lt;a href="#%e5%85%b6%e4%bb%96%e8%ae%be%e8%ae%a1%e6%a8%a1%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>除了上面这些典型的例子外，WPF 还体现出了很多其他的设计模式，比如：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>状态模式&lt;/strong>：控件的视觉状态（如鼠标悬停、按下等）可以通过 VisualStateManager 进行管理，这实际上就是一种状态模式的应用。&lt;/li>
+&lt;li>&lt;strong>组合模式&lt;/strong>：WPF 的控件树结构使得我们可以将多个控件组合成一个复合控件，这正是组合模式的体现。&lt;/li>
+&lt;li>&lt;strong>单例模式&lt;/strong>：&lt;code>Application.Current&lt;/code> 就是一个单例模式的实现。&lt;/li>
+&lt;li>&lt;strong>原型模式&lt;/strong>：WPF 中资源的 &lt;code>Freezable&lt;/code> 以及 &lt;code>Style&lt;/code> 被多个控件使用，都体现出了对于原型实例的“克隆”。&lt;/li>
+&lt;/ul>
+&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在软件开发中，设计模式为我们提供了高效、灵活的解决方案，帮助提升代码的可维护性和可扩展性。本文通过分析 WPF 中的几个经典设计模式，如观察者模式、桥接模式、装饰器模式、适配器模式和责任链模式，展示了这些模式如何在 WPF 框架中得以体现。&lt;/p>
+&lt;p>通过控件的事件机制、依赖属性、附加属性等机制，WPF 为开发者提供了丰富的设计模式支持，帮助开发者更好地组织和扩展应用程序。除此之外，WPF 还体现了状态模式、组合模式、单例模式等其他设计模式，为开发者提供了多种优秀的架构思想。&lt;/p></description></item></channel></rss>

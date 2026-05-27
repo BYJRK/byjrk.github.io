@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>window on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/window/</link><description>Recent content in window on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Tue, 26 May 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/window/index.xml" rel="self" type="application/rss+xml"/><item><title>如何正确使用 WPF 中 Application 的 MainWindow 及 ShutdownMode 属性</title><link>https://blog.coldwind.top/posts/correct-way-to-use-mainwindow/</link><pubDate>Tue, 26 May 2026 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/correct-way-to-use-mainwindow/</guid><description>&lt;p>提起 &lt;code>MainWindow&lt;/code>，很多人的第一反应都是在创建 WPF 项目后，默认生成的那个 &lt;code>MainWindow&lt;/code> 类。但其实我们这次要讨论的，是 &lt;code>Application&lt;/code> 类中的 &lt;code>MainWindow&lt;/code> 属性，或者大家更熟悉的访问方式是 &lt;code>Application.Current.MainWindow&lt;/code>。可能有些人还不太清楚，但实际上它也是有一点使用技巧的，尤其是在与 &lt;code>ShutDownMode&lt;/code> 配合使用时。&lt;/p>
+&lt;h2 id="单例模式">
+单例模式
+&lt;a href="#%e5%8d%95%e4%be%8b%e6%a8%a1%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>首先，这个 &lt;code>MainWindow&lt;/code> 属性是一个单例模式的实现，所以我们可以在项目中的任何地方通过 &lt;code>Application.Current.MainWindow&lt;/code> 来访问它。这个功能非常方便，尤其是在需要在多个地方访问主窗口的情况下，比如在视图模型中或者其他服务类中。我们可以直接通过 &lt;code>Application.Current.MainWindow&lt;/code> 来获取主窗口的引用，而不需要想尽办法来获取或传递它的引用。这样的需求常见于需要在主界面展示消息、弹窗、导航等操作时。&lt;/p>
+&lt;p>不过这里有一个稍微需要注意的地方，就是虽然它与我们的 &lt;code>MainWindow&lt;/code> 类同名，但它本身是一个 &lt;code>Window&lt;/code> 类型的属性，所以我们在使用时需要进行类型转换，这样才能拿到我们定义的 &lt;code>MainWindow&lt;/code> 类中的特定方法和属性，或者有名字的界面控件。&lt;/p>
+&lt;h2 id="配合-shutdownmode-使用">
+配合 ShutDownMode 使用
+&lt;a href="#%e9%85%8d%e5%90%88-shutdownmode-%e4%bd%bf%e7%94%a8" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>这部分才是我们今天讨论的重点。WPF 开发者在刚入门的时候，可能会理所当然地认为，&lt;code>MainWindow&lt;/code> 就一定是 &lt;code>Application.Current.MainWindow&lt;/code> 的实例，并且主窗口关闭了，程序就应该退出了，这是天经地义的。但实际上这个事情恐怕没这么简单。&lt;/p>
+&lt;h3 id="为什么-mainwindow-属性通常就是-mainwindow">
+为什么 MainWindow 属性通常就是 MainWindow？
+&lt;a href="#%e4%b8%ba%e4%bb%80%e4%b9%88-mainwindow-%e5%b1%9e%e6%80%a7%e9%80%9a%e5%b8%b8%e5%b0%b1%e6%98%af-mainwindow" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>一个简单的 WPF 程序中，我们通常可以在 &lt;code>App.xaml&lt;/code> 中看到类似这样的代码：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Application&lt;/span> &lt;span class="na">x:Class=&lt;/span>&lt;span class="s">&amp;#34;WpfApp.App&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="err">...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">StartupUri=&lt;/span>&lt;span class="s">&amp;#34;MainWindow.xaml&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ...
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/Application&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这段代码的意思是，当应用程序启动时，自动创建一个 &lt;code>MainWindow&lt;/code> 的实例，并将它设置为 &lt;code>Application.Current.MainWindow&lt;/code>。所以在这种情况下，&lt;code>MainWindow&lt;/code> 属性确实就是我们定义的 &lt;code>MainWindow&lt;/code> 类的实例。&lt;/p>
+&lt;p>或者如果我们不希望 &lt;code>App&lt;/code> 自动帮我们创建主窗口，比如我们希望在程序刚开始的时候读取配置，为 DI 容器注册服务，或者做一些其他的初始化工作，我们可能会删掉 &lt;code>App.xaml&lt;/code> 中的 &lt;code>StartupUri&lt;/code>，并在 &lt;code>App.xaml.cs&lt;/code> 的 &lt;code>OnStartup&lt;/code> 方法中手动创建主窗口：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">protected&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">OnStartup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">StartupEventArgs&lt;/span> &lt;span class="n">e&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">base&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnStartup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">e&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 这里我们手动创建 MainWindow 实例&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">mainWindow&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">MainWindow&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">mainWindow&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Show&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>在这种情况下，我们同样可以通过 &lt;code>Application.Current.MainWindow&lt;/code> 来访问这个主窗口，因为 WPF 默认会自动将第一个显示的窗口设置为 &lt;code>MainWindow&lt;/code> 属性的值。&lt;/p>
+&lt;h3 id="shutdownmode-是什么">
+ShutdownMode 是什么？
+&lt;a href="#shutdownmode-%e6%98%af%e4%bb%80%e4%b9%88" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>&lt;code>ShutdownMode&lt;/code> 是 &lt;code>Application&lt;/code> 类中的一个属性，它决定了当应用程序应该退出的条件。它有三个选项：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>OnLastWindowClose&lt;/code>：当最后一个窗口关闭时，应用程序退出。这是默认值。&lt;/li>
+&lt;li>&lt;code>OnMainWindowClose&lt;/code>：当主窗口关闭时，应用程序退出。&lt;/li>
+&lt;li>&lt;code>OnExplicitShutdown&lt;/code>：只有当调用 &lt;code>Shutdown()&lt;/code> 方法时，应用程序才会退出。&lt;/li>
+&lt;/ul>
+&lt;p>虽然它的默认值是 &lt;code>OnLastWindowClose&lt;/code>，但实际上往往 &lt;code>OnMainWindowClose&lt;/code> 更加符合我们的预期，因为我们通常希望当主窗口关闭时，整个应用程序就退出了，而不需要担心其他窗口是否还在。因此主窗口本身还常常承载着很多善后工作，例如在 &lt;code>Closed&lt;/code> 事件中进行资源清理、保存数据和配置等操作。&lt;/p>
+&lt;p>如果我们在主窗口的 &lt;code>Closed&lt;/code> 事件中再去额外调用 &lt;code>Application.Current.Shutdown()&lt;/code> 来保证其他窗口也会被关闭，这显然是不高明的。所以更好的做法是，直接将 &lt;code>ShutdownMode&lt;/code> 设置为 &lt;code>OnMainWindowClose&lt;/code>，这样当主窗口关闭时，整个应用程序就会自动退出了。我们只需要在 &lt;code>App.xaml&lt;/code> 或 &lt;code>App.xaml.cs&lt;/code> 中显式设置即可。&lt;/p>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">&lt;p>关于 &lt;code>Application.Current.Shutdown()&lt;/code> 方法，还有一些值得提及的细节：&lt;/p>
+&lt;ol>
+&lt;li>通过调用它来关闭所有窗口，正常情况下是可以触发每个窗口的 &lt;code>Closing&lt;/code> 及 &lt;code>Closed&lt;/code> 事件的。&lt;/li>
+&lt;li>如果窗口还订阅了 &lt;code>Closing&lt;/code> 事件，那么即便里面有 &lt;code>e.Cancel = true&lt;/code> 的代码逻辑，也不会阻止窗口的关闭。&lt;/li>
+&lt;li>如果在 &lt;code>Closing&lt;/code> 事件中抛出了未经捕获的异常，可能会干扰事件链，导致 &lt;code>Closed&lt;/code> 事件不被触发。&lt;/li>
+&lt;/ol>&lt;/div>
+&lt;/div>
+&lt;h3 id="第一个窗口不是-mainwindow-该怎么办">
+第一个窗口不是 &lt;code>MainWindow&lt;/code> 该怎么办？
+&lt;a href="#%e7%ac%ac%e4%b8%80%e4%b8%aa%e7%aa%97%e5%8f%a3%e4%b8%8d%e6%98%af-mainwindow-%e8%af%a5%e6%80%8e%e4%b9%88%e5%8a%9e" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>有时候，主窗口可能并不是第一个弹出的窗口。一个典型的例子是，我们在应用程序启动时，先弹出一个登录窗口，用户登录成功后才显示主窗口。在这种情况下，&lt;code>Application.Current.MainWindow&lt;/code> 可能会指向登录窗口，而不是我们真正的主窗口。那么此时我们该如何使用 &lt;code>OnMainWindowClose&lt;/code> 来确保主窗口关闭时应用程序退出呢？&lt;/p>
+&lt;p>一个并不十分优雅，但也足够应付这个问题的方案是，我们先设置 &lt;code>ShutdownMode&lt;/code> 为 &lt;code>OnExplicitShutdown&lt;/code>，然后在登录窗口关闭后，再将 &lt;code>ShutdownMode&lt;/code> 设置为 &lt;code>OnMainWindowClose&lt;/code>，并且在登录窗口关闭时手动将主窗口设置为 &lt;code>Application.Current.MainWindow&lt;/code>。这样就能保证当主窗口关闭时，应用程序能够正确退出了。比如在 &lt;code>App.xaml.cs&lt;/code> 中：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">protected&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">OnStartup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">StartupEventArgs&lt;/span> &lt;span class="n">e&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">base&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnStartup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">e&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 先设置 ShutdownMode 为 OnExplicitShutdown&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ShutdownMode&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">ShutdownMode&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnExplicitShutdown&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 显示登录窗口&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">loginWindow&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">LoginWindow&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">result&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">loginWindow&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ShowDialog&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">result&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="kc">true&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 登录成功，创建主窗口&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">mainWindow&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">MainWindow&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">mainWindow&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Show&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 将主窗口设置为 MainWindow 属性&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">MainWindow&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">mainWindow&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 设置 ShutdownMode 为 OnMainWindowClose&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ShutdownMode&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">ShutdownMode&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnMainWindowClose&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">else&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 登录失败，直接退出应用程序&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Shutdown&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这个方法不够优雅的地方在于，我们需要在登录窗口关闭后，手动设置 &lt;code>MainWindow&lt;/code> 属性，并且多次切换 &lt;code>ShutdownMode&lt;/code> 的值，从而让它们两个正确配合。&lt;/p>
+&lt;h3 id="更优雅的方式">
+更优雅的方式
+&lt;a href="#%e6%9b%b4%e4%bc%98%e9%9b%85%e7%9a%84%e6%96%b9%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>一个更优雅的方式为，我们可以先创建 &lt;code>MainWindow&lt;/code> 的实例，并且赋值给 &lt;code>Application.Current.MainWindow&lt;/code>，但不立即显示它。然后我们先显示登录窗口，等用户登录成功后，再显示主窗口。这样就能保证 &lt;code>MainWindow&lt;/code> 属性始终指向我们真正的主窗口了，同时也不需要频繁切换 &lt;code>ShutdownMode&lt;/code> 的值了。比如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">protected&lt;/span> &lt;span class="kd">override&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">OnStartup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">StartupEventArgs&lt;/span> &lt;span class="n">e&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">base&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnStartup&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">e&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 先创建 MainWindow 实例，但不显示&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">MainWindow&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">MainWindow&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ShutdownMode&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">ShutdownMode&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnMainWindowClose&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 显示登录窗口（省略判断登录成功的逻辑）&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">loginWindow&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">LoginWindow&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">loginWindow&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ShowDialog&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 登录成功后显示主窗口&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">MainWindow&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Show&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>但这时候肯定会有人会问：如果登录失败，那么 &lt;code>MainWindow&lt;/code> 不就白创建了？尤其是如果 &lt;code>MainWindow&lt;/code> 中包含巨量的初始化逻辑，会不会导致很大的开销，甚至让登录窗口都出现不流畅的情况？&lt;/p>
+&lt;p>如果你有这样的担忧，那么很有可能是因为你的 &lt;code>MainWindow&lt;/code> 的实现方式并不合理，尤其是你将初始化逻辑直接放在了构造函数中。一般来说，我们应该将初始化逻辑放在 &lt;code>Loaded&lt;/code> 事件中，或者通过一些惰性加载的方式来实现，这样就能避免在创建 &lt;code>MainWindow&lt;/code> 实例时就进行大量的初始化工作了。&lt;/p>
+&lt;p>或者，如果我们的项目采用了 MVVM 模式，那么我们可以将初始化逻辑放在 &lt;code>MainViewModel&lt;/code> 中，并在合适的时机（通常仍然是主窗口的 &lt;code>Loaded&lt;/code> 事件）调用它。这样同样可以避免上面的担忧。具体的做法可以是：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kd">partial&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">MainWindow&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">Window&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">MainWindow&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">InitializeComponent&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Loaded&lt;/span> &lt;span class="p">+=&lt;/span> &lt;span class="n">MainWindow_Loaded&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">private&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">MainWindow_Loaded&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">object&lt;/span> &lt;span class="n">sender&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">RoutedEventArgs&lt;/span> &lt;span class="n">e&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 在这里进行初始化逻辑&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">viewModel&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">MainViewModel&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="k">this&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">DataContext&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">viewModel&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Initialize&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>或者如果你不想在 &lt;code>.xaml.cs&lt;/code> 文件里面写太多逻辑，还可以用行为库：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Window&lt;/span> &lt;span class="err">...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">xmlns:i=&lt;/span>&lt;span class="s">&amp;#34;http://schemas.microsoft.com/xaml/behaviors&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;i:Interaction.Triggers&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;i:EventTrigger&lt;/span> &lt;span class="na">EventName=&lt;/span>&lt;span class="s">&amp;#34;Loaded&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;i:InvokeCommandAction&lt;/span> &lt;span class="na">Command=&lt;/span>&lt;span class="s">&amp;#34;{Binding InitializeCommand}&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/i:EventTrigger&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/i:Interaction.Triggers&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> ...
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/Window&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">除了将视图模型中的 &lt;code>Initialize&lt;/code> 方法包装为 &lt;code>ICommand&lt;/code> 来调用，还可以使用行为库中的 &lt;code>CallMethodAction&lt;/code> 来直接调用视图模型中的方法。不过不太推荐这样做，因为 &lt;code>ICommand&lt;/code>，尤其是 CommunityToolkit MVVM 中的 &lt;code>AsyncRelayCommand&lt;/code>，可以更好地处理异步操作、错误处理和命令状态管理等问题，而直接调用方法则需要我们自己来处理这些细节了。&lt;/div>
+&lt;/div>
+&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>总的来说，&lt;code>Application.Current.MainWindow&lt;/code> 是一个非常方便的属性，可以让我们在项目中的任何地方访问主窗口的实例。但我们需要注意它与 &lt;code>ShutDownMode&lt;/code> 的配合使用，尤其是在一些特殊的场景下，比如登录窗口和主窗口的关系。通过合理地设置 &lt;code>ShutdownMode&lt;/code> 和正确地初始化主窗口，我们就能确保当主窗口关闭时，整个应用程序能够正确退出了。&lt;/p></description></item></channel></rss>
