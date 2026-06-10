@@ -1,13 +1,19 @@
-version: '3'
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+silent: true
 
 tasks:
-  default:
+  serve:
     cmds:
       - hugo serve -D
-    silent: true
 
   new:
     cmds:
       - hugo new content post/{{.CLI_ARGS}}.md
-    silent: true
     desc: Create a new post.
+
+  default:
+    cmds:
+      - task: serve
