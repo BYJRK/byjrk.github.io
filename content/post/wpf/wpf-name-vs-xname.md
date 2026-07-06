@@ -7,6 +7,8 @@ date: 2024-10-10
 tags:
     - dotnet
     - wpf
+categories:
+    - WPF
 ---
 
 在 WPF 开发中，我们可以给控件添加 `Name` 或 `x:Name` 属性。这样做的目的通常是希望在代码后台能够访问这个控件，或者我们在写 `Binding` 表达式时，希望使用 `ElementName` 的方式绑定某个控件。那么这二者究竟是什么区别呢？本文就来简单探讨一下。

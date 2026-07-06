@@ -12,6 +12,9 @@ tags:
     - collection
     - observable
     - notification
+categories:
+    - WPF
+    - MVVM
 ---
 
 如果大家在做基于 C# 的 WPF、Avalonia、Win UI 等开发，尤其是遵循 MVVM 模式时，遇到过下面的这些烦恼：

@@ -8,6 +8,8 @@ tags:
     - dotnet
     - csharp
     - wpf
+categories:
+    - WPF
 ---
 
 本篇文章对应的教学视频链接：[WPF中值转换器（ValueConverter）的一些实用技巧](https://www.bilibili.com/video/BV1ThkHYnEgi)

@@ -9,6 +9,8 @@ tags:
     - efcore
     - orm
     - wpf
+categories:
+    - MVVM
 ---
 
 Entity Framework Core (EF Core) 是一个强大的对象关系映射（ORM）框架，通常用于服务器端应用程序中与数据库交互。通常我们会将它用于 ASP.NET Core 应用程序，并且它的配置方式也绝对可以说是相当成熟了。但有时候我们在做本地客户端应用程序（例如 WPF、WinForms 或 Avalonia 应用程序）时，也希望利用 EF Core 来简化数据访问层的开发。那么我们需要注意些什么？最佳实践是怎样的？这篇文章我们就来探讨这个问题。

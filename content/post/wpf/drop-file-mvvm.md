@@ -9,6 +9,9 @@ tags:
     - mvvm
     - csharp
     - dotnet
+categories:
+    - WPF
+    - MVVM
 ---
 
 本篇文章对应的教学视频链接：[WPF中如何实现符合MVVM模式的文件拖入功能](https://www.bilibili.com/video/BV1NF4m1A7SD/)

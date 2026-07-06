@@ -7,6 +7,8 @@ tags:
     - dotnet
     - csharp
     - wpf
+categories:
+    - WPF
 ---
 
 标题中提到的 `ContentControl` 和 `ContentPresenter` 都是 WPF 中较为常见的显示内容的控件，它们有各自的用途。但有的时候，开发者可能会搞不清楚它们之间的区别，导致选错了控件（却往往又因为效果实现了而忽视这一问题）。本文将简单介绍一下这两个控件的异同。

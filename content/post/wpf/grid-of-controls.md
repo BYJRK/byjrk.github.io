@@ -8,6 +8,8 @@ tags:
     - dotnet
     - csharp
     - wpf
+categories:
+    - WPF
 ---
 
 这次我们来探讨一个 WPF 中的简单而又不简单的布局问题：如何实现下图中的效果？

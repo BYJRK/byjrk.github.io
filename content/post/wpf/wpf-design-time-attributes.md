@@ -7,6 +7,8 @@ date: 2024-09-07
 tags:
     - dotnet
     - wpf
+categories:
+    - WPF
 ---
 
 > 本文有对应的视频教程：[哔哩哔哩](https://www.bilibili.com/video/BV17kptetEQV/)

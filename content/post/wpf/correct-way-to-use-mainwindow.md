@@ -8,6 +8,8 @@ tags:
   - csharp
   - dotnet
   - window
+categories:
+  - WPF
 ---
 
 提起 `MainWindow`，很多人的第一反应都是在创建 WPF 项目后，默认生成的那个 `MainWindow` 类。但其实我们这次要讨论的，是 `Application` 类中的 `MainWindow` 属性，或者大家更熟悉的访问方式是 `Application.Current.MainWindow`。可能有些人还不太清楚，但实际上它也是有一点使用技巧的，尤其是在与 `ShutDownMode` 配合使用时。
