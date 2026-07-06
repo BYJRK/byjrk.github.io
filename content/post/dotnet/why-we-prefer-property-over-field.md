@@ -8,6 +8,8 @@ tags:
     - csharp
     - dotnet
     - syntax
+categories:
+    - C#
 ---
 
 > 本文有对应的视频教程：[哔哩哔哩](https://www.bilibili.com/video/BV1ci421v7Uc/)

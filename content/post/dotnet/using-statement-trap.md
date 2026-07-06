@@ -8,6 +8,8 @@ tags:
     - dotnet
     - csharp
     - syntax
+categories:
+    - .NET
 ---
 
 `using` 语句在 C# 中有很多种用法，比如引入命名空间，为类型起别名，或者释放资源等。这篇文章我们主要讨论 `using` 语句在释放资源时的陷阱。

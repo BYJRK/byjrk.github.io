@@ -8,6 +8,9 @@ tags:
     - csharp
     - dotnet
     - syntax
+categories:
+    - .NET
+    - C#
 ---
 
 ## 什么是“鸭子类型”？

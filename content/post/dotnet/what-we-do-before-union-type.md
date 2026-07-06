@@ -7,6 +7,9 @@ tags:
     - dotnet
     - csharp
     - union
+categories:
+    - .NET
+    - C#
 ---
 
 截止到目前，.NET 11 已经出了三个预览版了，并且也为我们带来了万众期待的 Union 类型。关于这个类型，有不少大佬已经讨论过了，这里贴两个供大家参考：
