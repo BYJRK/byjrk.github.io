@@ -1,0 +1,852 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>serialization on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/serialization/</link><description>Recent content in serialization on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Mon, 06 Jul 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/serialization/index.xml" rel="self" type="application/rss+xml"/><item><title>System.Text.Json：.NET 内置的 JSON 库</title><link>https://blog.coldwind.top/posts/introduce-built-in-json/</link><pubDate>Mon, 06 Jul 2026 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/introduce-built-in-json/</guid><description>&lt;p>在 .NET 平台上提到 JSON 序列化，很多人第一时间想到的还是 Newtonsoft.Json。这款诞生于 2006 年的第三方库长期占据 NuGet 下载量榜首，一度几乎是 .NET 项目的&amp;quot;标配&amp;quot;。但自 .NET Core 3.0 起，框架已经内置了 System.Text.Json 这款现代化的 JSON 库，并在 ASP.NET Core 中将其设为默认序列化器。&lt;/p>
+&lt;p>本文就来系统地梳理一下 System.Text.Json 的历史背景、基本用法、Record 支持、JsonNode 动态 DOM 以及源生成器等特性，帮助你全面了解这款内置 JSON 库。&lt;/p>
+&lt;h2 id="历史">
+历史
+&lt;a href="#%e5%8e%86%e5%8f%b2" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;h3 id="早期的官方库">
+早期的官方库
+&lt;a href="#%e6%97%a9%e6%9c%9f%e7%9a%84%e5%ae%98%e6%96%b9%e5%ba%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>.NET 早期有两个官方 JSON 库，但均是面向特定框架的延伸，而非通用解决方案：&lt;/p>
+&lt;p>&lt;strong>&lt;code>JavaScriptSerializer&lt;/code>&lt;/strong>（&lt;code>System.Web.Script.Serialization&lt;/code>，.NET 3.5）随 ASP.NET AJAX 一同引入。功能相当原始，不支持 LINQ、不支持复杂类型映射，而且锁在 &lt;code>System.Web&lt;/code> 程序集内，非 Web 项目根本无法引用。&lt;/p>
+&lt;p>&lt;strong>&lt;code>DataContractJsonSerializer&lt;/code>&lt;/strong>（&lt;code>System.Runtime.Serialization.Json&lt;/code>，.NET 3.0）面向 WCF 设计，序列化行为由 &lt;code>[DataContract]&lt;/code> / &lt;code>[DataMember]&lt;/code> 特性驱动。它对类型结构有严格要求，对字典、匿名类型等常见场景支持有限，且不与 Web API 路径对齐。&lt;/p>
+&lt;h3 id="newtonsoftjson-的崛起">
+Newtonsoft.Json 的崛起
+&lt;a href="#newtonsoftjson-%e7%9a%84%e5%b4%9b%e8%b5%b7" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>正是因为官方库的局限，&lt;code>Newtonsoft.Json&lt;/code> 应运而生。它实现了当时官方库所缺少的一切：灵活的转换器体系、LINQ to JSON（&lt;code>JObject&lt;/code>/&lt;code>JArray&lt;/code>）、丰富的序列化选项，以及对动态类型和跟踪引用等复杂场景的良好支持。它很快成为 .NET 生态中最流行的第三方库，长期占据 NuGet 下载量榜首。微软也在 ASP.NET Web API 和早期的 ASP.NET Core（直到 2.x）中采用它作为默认序列化器。&lt;/p>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">&lt;code>Newtonsoft.Json&lt;/code> 由 James Newton-King 于 2006 年创建。包名中的 &amp;ldquo;Newtonsoft&amp;rdquo; 取自作者姓氏 Newton-King，而 Json.NET 则是它更广为人知的别称。&lt;/div>
+&lt;/div>
+&lt;h3 id="现代化的挑战">
+现代化的挑战
+&lt;a href="#%e7%8e%b0%e4%bb%a3%e5%8c%96%e7%9a%84%e6%8c%91%e6%88%98" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>然而，Newtonsoft.Json 的设计根植于早期 .NET，随着 .NET 的现代化，它的两个先天缺陷逐渐显现：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>高度依赖反射&lt;/strong>：内部大量使用 &lt;code>string&lt;/code>（UTF-16）中间表示，在高并发、低延迟场景下内存分配和 GC 压力成为瓶颈&lt;/li>
+&lt;li>&lt;strong>阻碍裁剪和 NativeAOT&lt;/strong>：反射阻止编译器静态分析代码依赖，导致裁剪无法移除未使用的成员；NativeAOT 所需的部分反射 API 直接不可用&lt;/li>
+&lt;/ul>
+&lt;h3 id="systemtextjson-的诞生">
+System.Text.Json 的诞生
+&lt;a href="#systemtextjson-%e7%9a%84%e8%af%9e%e7%94%9f" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>2019 年 9 月，随 .NET Core 3.0 发布，微软推出了内置库 &lt;code>System.Text.Json&lt;/code>。它以 UTF-8 字节流为核心，从设计层面就为低分配、高吞吐量而优化，序列化性能在大多数场景下从第一个版本起就超过了 Newtonsoft.Json。ASP.NET Core 3.0 同步将默认序列化器从 Newtonsoft.Json 切换为 System.Text.Json，并将 Newtonsoft.Json 从共享框架中移除。&lt;/p>
+&lt;p>不过，初版的功能覆盖局限相当明显，许多 Newtonsoft 用户习以为常的特性都不支持。此后多个版本持续补齐：&lt;/p>
+&lt;ul>
+&lt;li>（.NET 5）支持公共字段的序列化&lt;/li>
+&lt;li>（.NET 5）支持通过带参数的构造函数创建不可变对象（包括 C# 9 record）&lt;/li>
+&lt;li>（.NET 6）支持源生成器，避免使用反射，更好地支持 NativeAOT 发布&lt;/li>
+&lt;li>（.NET 6）JsonNode（可变 DOM），类似 JObject&lt;/li>
+&lt;li>（.NET 8）内置命名策略新增 &lt;code>SnakeCaseLower&lt;/code>、&lt;code>SnakeCaseUpper&lt;/code>、&lt;code>KebabCaseLower&lt;/code>、&lt;code>KebabCaseUpper&lt;/code>（&lt;code>CamelCase&lt;/code> 从 .NET Core 3.0 起即可用）&lt;/li>
+&lt;/ul>
+&lt;h2 id="基本用法">
+基本用法
+&lt;a href="#%e5%9f%ba%e6%9c%ac%e7%94%a8%e6%b3%95" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>了解了它的来龙去脉之后，我们来看看实际该怎么用。&lt;/p>
+&lt;h3 id="序列化与反序列化">
+序列化与反序列化
+&lt;a href="#%e5%ba%8f%e5%88%97%e5%8c%96%e4%b8%8e%e5%8f%8d%e5%ba%8f%e5%88%97%e5%8c%96" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>&lt;code>JsonSerializer&lt;/code> 是主要入口，提供 &lt;code>Serialize&lt;/code> / &lt;code>Deserialize&lt;/code> 静态方法：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">person&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Person&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Age&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">30&lt;/span> &lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">json&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Serialize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">person&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// {&amp;#34;Name&amp;#34;:&amp;#34;Alice&amp;#34;,&amp;#34;Age&amp;#34;:30}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">Person&lt;/span>&lt;span class="p">?&lt;/span> &lt;span class="n">result&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Deserialize&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Person&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="n">json&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果需要与 &lt;code>Stream&lt;/code> 或网络 I/O 直接交互，可以用 UTF-8 字节数组的重载，避免中间字符串分配：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">byte&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="n">bytes&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SerializeToUtf8Bytes&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">person&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">Person&lt;/span>&lt;span class="p">?&lt;/span> &lt;span class="n">result&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Deserialize&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Person&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="n">bytes&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 也支持直接读写 Stream&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">await&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SerializeAsync&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">stream&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">person&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">Person&lt;/span>&lt;span class="p">?&lt;/span> &lt;span class="n">result&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">await&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">DeserializeAsync&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Person&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="n">stream&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="配置jsonserializeroptions">
+配置（JsonSerializerOptions）
+&lt;a href="#%e9%85%8d%e7%bd%aejsonserializeroptions" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>通过 &lt;code>JsonSerializerOptions&lt;/code> 控制序列化行为。由于首次构造时会做元数据缓存，建议&lt;strong>声明为静态字段复用&lt;/strong>，避免重复开销：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">private&lt;/span> &lt;span class="kd">static&lt;/span> &lt;span class="k">readonly&lt;/span> &lt;span class="n">JsonSerializerOptions&lt;/span> &lt;span class="n">s_options&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">WriteIndented&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kc">true&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">PropertyNamingPolicy&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonNamingPolicy&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CamelCase&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">json&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Serialize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">person&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">s_options&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>常用选项一览：&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>选项&lt;/th>
+&lt;th>说明&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>WriteIndented&lt;/code>&lt;/td>
+&lt;td>输出带缩进的格式化 JSON&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>PropertyNamingPolicy&lt;/code>&lt;/td>
+&lt;td>属性名转换策略（见下文）&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>PropertyNameCaseInsensitive&lt;/code>&lt;/td>
+&lt;td>反序列化时属性名大小写不敏感&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>DefaultIgnoreCondition&lt;/code>&lt;/td>
+&lt;td>全局忽略条件，如统一忽略所有 null 值&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>IncludeFields&lt;/code>&lt;/td>
+&lt;td>将公共字段也纳入序列化（.NET 5+）&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>AllowTrailingCommas&lt;/code>&lt;/td>
+&lt;td>允许 JSON 末尾多余的逗号&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>ReadCommentHandling&lt;/code>&lt;/td>
+&lt;td>允许读取 JSON 中的注释&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h4 id="命名策略">
+命名策略
+&lt;a href="#%e5%91%bd%e5%90%8d%e7%ad%96%e7%95%a5" class="anchor">&amp;para;&lt;/a>
+&lt;/h4>&lt;p>&lt;code>PropertyNamingPolicy&lt;/code> 统一转换所有属性名的大小写风格：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// camelCase → {&amp;#34;firstName&amp;#34;:&amp;#34;Alice&amp;#34;}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">PropertyNamingPolicy&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonNamingPolicy&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CamelCase&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// snake_case（.NET 8+）→ {&amp;#34;first_name&amp;#34;:&amp;#34;Alice&amp;#34;}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">PropertyNamingPolicy&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonNamingPolicy&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SnakeCaseLower&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// SCREAMING_SNAKE_CASE（.NET 8+）→ {&amp;#34;FIRST_NAME&amp;#34;:&amp;#34;Alice&amp;#34;}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">PropertyNamingPolicy&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonNamingPolicy&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SnakeCaseUpper&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">&lt;code>PropertyNamingPolicy&lt;/code> 只影响&lt;strong>序列化输出&lt;/strong>的键名。如果希望反序列化时也能匹配不同大小写的 JSON 键，还需要开启 &lt;code>PropertyNameCaseInsensitive = true&lt;/code>。&lt;/div>
+&lt;/div>
+&lt;h4 id="web-预设net-5">
+Web 预设（.NET 5+）
+&lt;a href="#web-%e9%a2%84%e8%ae%benet-5" class="anchor">&amp;para;&lt;/a>
+&lt;/h4>&lt;p>&lt;code>JsonSerializerDefaults.Web&lt;/code> 是专为 Web API 场景准备的快捷预设，一次性启用 camelCase + 大小写不敏感 + 数字可来自字符串：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">options&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">JsonSerializerOptions&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">JsonSerializerDefaults&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Web&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>ASP.NET Core 的 JSON 配置默认就使用该预设。&lt;/p>
+&lt;h3 id="特性标注">
+特性标注
+&lt;a href="#%e7%89%b9%e6%80%a7%e6%a0%87%e6%b3%a8" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>当需要对个别成员做精细控制时，可以在属性或字段上标注特性，优先级高于全局选项。&lt;/p>
+&lt;h4 id="jsonpropertyname">
+&lt;code>[JsonPropertyName]&lt;/code>
+&lt;a href="#jsonpropertyname" class="anchor">&amp;para;&lt;/a>
+&lt;/h4>&lt;p>指定该成员在 JSON 中使用的键名，不受命名策略影响：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">Person&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [JsonPropertyName(&amp;#34;full_name&amp;#34;)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// → {&amp;#34;full_name&amp;#34;:&amp;#34;Alice&amp;#34;}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="jsonignore">
+&lt;code>[JsonIgnore]&lt;/code>
+&lt;a href="#jsonignore" class="anchor">&amp;para;&lt;/a>
+&lt;/h4>&lt;p>排除某个成员，不参与序列化和反序列化：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">User&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Name&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [JsonIgnore]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">PasswordHash&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>用 &lt;code>Condition&lt;/code> 参数可以做条件忽略，而不是始终忽略：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="na">[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kt">string?&lt;/span> &lt;span class="n">Nickname&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">Score&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span> &lt;span class="c1">// 值为 0 时不输出&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>与之等效的全局写法：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">new&lt;/span> &lt;span class="n">JsonSerializerOptions&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">DefaultIgnoreCondition&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonIgnoreCondition&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WhenWritingNull&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h4 id="jsonincludenet-5">
+&lt;code>[JsonInclude]&lt;/code>（.NET 5+）
+&lt;a href="#jsonincludenet-5" class="anchor">&amp;para;&lt;/a>
+&lt;/h4>&lt;p>默认只处理公共属性（property）。要将&lt;strong>公共字段&lt;/strong>（field）也纳入序列化，有两种方式：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;span class="lnt">9
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 方式一：逐个标注&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">Point&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [JsonInclude]&lt;/span> &lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">X&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [JsonInclude]&lt;/span> &lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">Y&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 方式二：全局开启（适合字段较多时）&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">new&lt;/span> &lt;span class="n">JsonSerializerOptions&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="n">IncludeFields&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kc">true&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">虽然可以全局开启 &lt;code>IncludeFields&lt;/code>，但公共字段在现代 C# 中并不常用，全局开启会让所有类型的序列化行为都受到影响。更推荐的做法是为涉及字段的特殊类型单独创建一个专用的 &lt;code>JsonSerializerOptions&lt;/code> 实例，按需传入即可。&lt;/div>
+&lt;/div>
+&lt;h4 id="jsonpropertyordernet-6">
+&lt;code>[JsonPropertyOrder]&lt;/code>（.NET 6+）
+&lt;a href="#jsonpropertyordernet-6" class="anchor">&amp;para;&lt;/a>
+&lt;/h4>&lt;p>控制属性在 JSON 输出中的排列顺序，数值越小越靠前，默认值为 &lt;code>0&lt;/code>：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">ApiResponse&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [JsonPropertyOrder(-1)]&lt;/span> &lt;span class="c1">// 排在最前&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="n">Success&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Message&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span> &lt;span class="c1">// 默认 0&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [JsonPropertyOrder(1)]&lt;/span> &lt;span class="c1">// 排在最后&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">object?&lt;/span> &lt;span class="n">Data&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="k">set&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="record-类型">
+Record 类型
+&lt;a href="#record-%e7%b1%bb%e5%9e%8b" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>前面介绍的特性标注都是在&amp;quot;可变类型&amp;quot;上做精细控制。但现代 C# 中，我们越来越倾向于使用不可变的数据模型——这就轮到 record 出场了。&lt;/p>
+&lt;p>从 .NET 5 起，&lt;code>System.Text.Json&lt;/code> 支持通过带参数的构造函数反序列化，这使 record 成为 JSON 数据模型的理想选择——不需要任何额外代码，就能同时拥有不可变性和完整的序列化支持。&lt;/p>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">默认的反序列化路径是先调用无参构造函数创建实例，再通过属性 setter 赋值。但 record 的属性通常是只读的（init setter），且 record 通常只暴露带参构造函数、没有无参构造函数，这条默认路径自然走不通。因此序列化器需要通过带参构造函数，在创建对象的同时把值注入进去。否则恐怕就只能借助反射了。&lt;/div>
+&lt;/div>
+&lt;h3 id="位置-record">
+位置 Record
+&lt;a href="#%e4%bd%8d%e7%bd%ae-record" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>最简洁的形式是位置 record（positional record），声明即可直接使用：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">record&lt;/span> &lt;span class="nc">Person&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span> &lt;span class="n">Name&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">Age&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>序列化与普通类型完全一致：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">person&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Person&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">30&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">json&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Serialize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">person&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// {&amp;#34;Name&amp;#34;:&amp;#34;Alice&amp;#34;,&amp;#34;Age&amp;#34;:30}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>反序列化时，&lt;code>System.Text.Json&lt;/code> 会自动定位主构造函数，将 JSON 中的键按名称注入对应参数：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="n">Person&lt;/span> &lt;span class="n">p&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Deserialize&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Person&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="s">&amp;#34;&amp;#34;&amp;#34;{&amp;#34;&lt;/span>&lt;span class="n">Name&lt;/span>&lt;span class="s">&amp;#34;:&amp;#34;&lt;/span>&lt;span class="n">Alice&lt;/span>&lt;span class="s">&amp;#34;,&amp;#34;&lt;/span>&lt;span class="n">Age&lt;/span>&lt;span class="s">&amp;#34;:30}&amp;#34;&amp;#34;&amp;#34;&lt;/span>&lt;span class="p">)!;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="选择构造函数jsonconstructor">
+选择构造函数：&lt;code>[JsonConstructor]&lt;/code>
+&lt;a href="#%e9%80%89%e6%8b%a9%e6%9e%84%e9%80%a0%e5%87%bd%e6%95%b0jsonconstructor" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>如果不使用上述最简单的 record 声明方式，那么就需要提供带参构造函数来实现反序列化了。当类型有多个构造函数时，必须用 &lt;code>[JsonConstructor]&lt;/code> 明确指定反序列化使用哪一个：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">record&lt;/span> &lt;span class="nc">Point&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">X&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">Y&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [JsonConstructor]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">Point&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">y&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">X&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">Y&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">y&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">Point&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="k">this&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">x&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>只有单个构造函数时无需标注：有唯一的有参构造函数则自动选择它，只有无参构造函数则走属性赋值路径。&lt;/p>
+&lt;h3 id="参数名匹配">
+参数名匹配
+&lt;a href="#%e5%8f%82%e6%95%b0%e5%90%8d%e5%8c%b9%e9%85%8d" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>反序列化时，JSON 键与构造函数参数名做&lt;strong>大小写不敏感&lt;/strong>匹配，因此下面三种写法都能正确反序列化到 &lt;code>Person(string Name, int Age)&lt;/code>：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-json" data-lang="json">&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span> &lt;span class="nt">&amp;#34;Name&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s2">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nt">&amp;#34;Age&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">30&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span> &lt;span class="nt">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s2">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nt">&amp;#34;age&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">30&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span> &lt;span class="nt">&amp;#34;NAME&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s2">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="nt">&amp;#34;AGE&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="mi">30&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如需映射到不同的 JSON 键名，在位置 record 上使用 &lt;code>[property: JsonPropertyName(...)]&lt;/code>（&lt;code>property:&lt;/code> 前缀是为了将特性作用到自动生成的属性上，而非构造函数参数）：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">record&lt;/span> &lt;span class="nc">Person&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [property: JsonPropertyName(&amp;#34;full_name&amp;#34;)]&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">Name&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">Age&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 序列化 → {&amp;#34;full_name&amp;#34;:&amp;#34;Alice&amp;#34;,&amp;#34;Age&amp;#34;:30}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 反序列化匹配键 &amp;#34;full_name&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>非位置 record 或普通 class 则直接标注在属性上即可，无需 &lt;code>property:&lt;/code> 前缀。&lt;/p>
+&lt;h2 id="jsonnode">
+JsonNode
+&lt;a href="#jsonnode" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>到目前为止，我们都是在&amp;quot;提前知道 JSON 结构&amp;quot;的前提下做序列化。但实际开发中，经常会遇到结构不固定的 JSON——比如配置文件、第三方 API 返回的动态数据等。这种时候就需要 &lt;code>JsonNode&lt;/code> 出场了。&lt;/p>
+&lt;p>&lt;code>JsonNode&lt;/code> 是 .NET 6 引入的&lt;strong>可变 DOM&lt;/strong>，适用于不方便预定义类型的场景：处理结构不固定的 JSON、只需读写其中几个字段、或者动态拼装 JSON 请求体等。&lt;/p>
+&lt;p>它由四个类型组成，与 Newtonsoft 的类型一一对应：&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>System.Text.Json&lt;/th>
+&lt;th>Newtonsoft.Json&lt;/th>
+&lt;th>说明&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>&lt;code>JsonNode&lt;/code>&lt;/td>
+&lt;td>&lt;code>JToken&lt;/code>&lt;/td>
+&lt;td>所有节点的抽象基类&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>JsonObject&lt;/code>&lt;/td>
+&lt;td>&lt;code>JObject&lt;/code>&lt;/td>
+&lt;td>JSON 对象 &lt;code>{ }&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>JsonArray&lt;/code>&lt;/td>
+&lt;td>&lt;code>JArray&lt;/code>&lt;/td>
+&lt;td>JSON 数组 &lt;code>[ ]&lt;/code>&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>&lt;code>JsonValue&lt;/code>&lt;/td>
+&lt;td>&lt;code>JValue&lt;/code>&lt;/td>
+&lt;td>标量值（字符串、数字、布尔等）&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;h3 id="解析与读取">
+解析与读取
+&lt;a href="#%e8%a7%a3%e6%9e%90%e4%b8%8e%e8%af%bb%e5%8f%96" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">json&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;&amp;#34;&amp;#34;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="s">&lt;/span> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;age&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="m">30&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;scores&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="p">[&lt;/span>&lt;span class="m">95&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">87&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">92&lt;/span>&lt;span class="p">],&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;address&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="s">&amp;#34;city&amp;#34;&lt;/span>&lt;span class="p">:&lt;/span> &lt;span class="s">&amp;#34;Beijing&amp;#34;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;&amp;#34;&amp;#34;;
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="s">&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">JsonNode&lt;/span> &lt;span class="n">root&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonNode&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Parse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">json&lt;/span>&lt;span class="p">)!;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">]!.&lt;/span>&lt;span class="n">GetValue&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;();&lt;/span> &lt;span class="c1">// &amp;#34;Alice&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">city&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;address&amp;#34;&lt;/span>&lt;span class="p">]![&lt;/span>&lt;span class="s">&amp;#34;city&amp;#34;&lt;/span>&lt;span class="p">]!.&lt;/span>&lt;span class="n">GetValue&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;();&lt;/span> &lt;span class="c1">// &amp;#34;Beijing&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">int&lt;/span> &lt;span class="n">first&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;scores&amp;#34;&lt;/span>&lt;span class="p">]![&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">]!.&lt;/span>&lt;span class="n">GetValue&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">&amp;gt;();&lt;/span> &lt;span class="c1">// 95&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Newtonsoft 的等效写法几乎相同，仅取值方法有差异：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="n">JObject&lt;/span> &lt;span class="n">root&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JObject&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Parse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">json&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">]!.&lt;/span>&lt;span class="n">Value&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">city&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;address&amp;#34;&lt;/span>&lt;span class="p">]![&lt;/span>&lt;span class="s">&amp;#34;city&amp;#34;&lt;/span>&lt;span class="p">]!.&lt;/span>&lt;span class="n">Value&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">int&lt;/span> &lt;span class="n">first&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">root&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;scores&amp;#34;&lt;/span>&lt;span class="p">]![&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">]!;&lt;/span> &lt;span class="c1">// JToken 支持隐式转换&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">&lt;code>JsonNode&lt;/code> 的索引器返回 &lt;code>JsonNode?&lt;/code>（可空），所以读取链中常见 &lt;code>!&lt;/code>。Newtonsoft 的 &lt;code>JToken&lt;/code> 在类型转换上更宽松，支持隐式转换运算符，但代价是运行时类型错误更难察觉。&lt;/div>
+&lt;/div>
+&lt;h3 id="构建-json">
+构建 JSON
+&lt;a href="#%e6%9e%84%e5%bb%ba-json" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>&lt;code>JsonObject&lt;/code> 支持像 &lt;code>Dictionary&lt;/code> 那样初始化，同时 &lt;code>JsonArray&lt;/code> 支持集合初始化器语法：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">node&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">JsonObject&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [&amp;#34;name&amp;#34;]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [&amp;#34;age&amp;#34;]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">30&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [&amp;#34;scores&amp;#34;]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">JsonArray&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">95&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">87&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">92&lt;/span>&lt;span class="p">),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [&amp;#34;address&amp;#34;]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">JsonObject&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> [&amp;#34;city&amp;#34;]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Beijing&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">json&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">node&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToJsonString&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// {&amp;#34;name&amp;#34;:&amp;#34;Alice&amp;#34;,&amp;#34;age&amp;#34;:30,&amp;#34;scores&amp;#34;:[95,87,92],&amp;#34;address&amp;#34;:{&amp;#34;city&amp;#34;:&amp;#34;Beijing&amp;#34;}}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// ToJsonString 方法支持传入 options&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>与 Newtonsoft 的 &lt;code>new JObject { [&amp;quot;key&amp;quot;] = value }&lt;/code> 语法几乎相同，&lt;code>ToJsonString()&lt;/code> 对应 Newtonsoft 的 &lt;code>ToString()&lt;/code>。&lt;/p>
+&lt;h3 id="修改-dom">
+修改 DOM
+&lt;a href="#%e4%bf%ae%e6%94%b9-dom" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="n">JsonNode&lt;/span> &lt;span class="n">root&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonNode&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Parse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">json&lt;/span>&lt;span class="p">)!;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 添加 / 修改&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">root&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;email&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;alice@example.com&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">root&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;age&amp;#34;&lt;/span>&lt;span class="p">]&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">31&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 删除属性&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">root&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AsObject&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">Remove&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;address&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 向数组追加元素&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">root&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;scores&amp;#34;&lt;/span>&lt;span class="p">]!.&lt;/span>&lt;span class="n">AsArray&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">100&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Newtonsoft 可以直接将 &lt;code>JToken&lt;/code> 强转为 &lt;code>JObject&lt;/code> 或 &lt;code>JArray&lt;/code>，而 &lt;code>JsonNode&lt;/code> 需要调用 &lt;code>.AsObject()&lt;/code> / &lt;code>.AsArray()&lt;/code> 方法显式转换。&lt;/p>
+&lt;h3 id="与强类型对象互转">
+与强类型对象互转
+&lt;a href="#%e4%b8%8e%e5%bc%ba%e7%b1%bb%e5%9e%8b%e5%af%b9%e8%b1%a1%e4%ba%92%e8%bd%ac" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">person&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Person&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Alice&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">30&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 强类型 → JsonNode&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">JsonNode&lt;/span> &lt;span class="n">node&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SerializeToNode&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">person&lt;/span>&lt;span class="p">)!;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// JsonNode → 强类型&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">Person&lt;/span>&lt;span class="p">?&lt;/span> &lt;span class="n">p&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">node&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Deserialize&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Person&lt;/span>&lt;span class="p">&amp;gt;();&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>Newtonsoft 对应的是 &lt;code>JObject.FromObject(person)&lt;/code> 和 &lt;code>obj.ToObject&amp;lt;Person&amp;gt;()&lt;/code>。&lt;/p>
+&lt;h3 id="遍历">
+遍历
+&lt;a href="#%e9%81%8d%e5%8e%86" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 遍历对象的所有键值对&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">key&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">value&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AsObject&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">$&amp;#34;{key}: {value}&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 遍历数组&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">JsonNode&lt;/span>&lt;span class="p">?&lt;/span> &lt;span class="n">item&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;scores&amp;#34;&lt;/span>&lt;span class="p">]!.&lt;/span>&lt;span class="n">AsArray&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">item&lt;/span>&lt;span class="p">!.&lt;/span>&lt;span class="n">GetValue&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">int&lt;/span>&lt;span class="p">&amp;gt;());&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="只读场景jsondocument">
+只读场景：JsonDocument
+&lt;a href="#%e5%8f%aa%e8%af%bb%e5%9c%ba%e6%99%afjsondocument" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>如果只需要读取、不需要修改，可以使用更早引入（.NET Core 3.0）的 &lt;code>JsonDocument&lt;/code> / &lt;code>JsonElement&lt;/code>。它在解析时使用池化缓冲区（pooled buffer）来存储数据，读取性能更高，但节点不可修改，且需要手动 &lt;code>Dispose&lt;/code> 以归还缓冲区：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">JsonDocument&lt;/span> &lt;span class="n">doc&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonDocument&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Parse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">json&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">JsonElement&lt;/span> &lt;span class="n">root&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">doc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">RootElement&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetProperty&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;name&amp;#34;&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">GetString&lt;/span>&lt;span class="p">()!;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">int&lt;/span> &lt;span class="n">age&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">root&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetProperty&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;age&amp;#34;&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">GetInt32&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">需要修改或构建 JSON → 用 &lt;code>JsonNode&lt;/code>；只需读取且追求极致性能 → 考虑 &lt;code>JsonDocument&lt;/code>。&lt;/div>
+&lt;/div>
+&lt;h2 id="源生成器">
+源生成器
+&lt;a href="#%e6%ba%90%e7%94%9f%e6%88%90%e5%99%a8" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>无论是强类型的 &lt;code>JsonSerializer&lt;/code>，还是动态的 &lt;code>JsonNode&lt;/code>，它们在底层都依赖同一套机制——反射。而反射在性能和 NativeAOT 场景下都有隐患，源生成器就是为解决这个问题而生的。&lt;/p>
+&lt;p>默认情况下，&lt;code>System.Text.Json&lt;/code> 依赖反射在运行时读取类型的属性和构造函数信息。这存在两个问题：&lt;/p>
+&lt;ol>
+&lt;li>&lt;strong>首次调用时有预热开销&lt;/strong>，序列化器需要通过多层反射逐一检查所有类型并缓存元数据&lt;/li>
+&lt;li>&lt;strong>阻碍裁剪（trimming）和 NativeAOT&lt;/strong>，编译器无法静态分析哪些成员会被访问，只能保留全部代码&lt;/li>
+&lt;/ol>
+&lt;p>&lt;strong>源生成器&lt;/strong>（Source Generator）在编译期分析类型并生成序列化代码，完全绕开反射。&lt;/p>
+&lt;h3 id="基本配置">
+基本配置
+&lt;a href="#%e5%9f%ba%e6%9c%ac%e9%85%8d%e7%bd%ae" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>创建一个继承自 &lt;code>JsonSerializerContext&lt;/code> 的 &lt;code>partial&lt;/code> 类，用 &lt;code>[JsonSerializable]&lt;/code> 注册需要处理的顶层类型：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="na">[JsonSerializable(typeof(Person))]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">[JsonSerializable(typeof(List&amp;lt;Person&amp;gt;))]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">internal&lt;/span> &lt;span class="kd">partial&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">AppJsonContext&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">JsonSerializerContext&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>编译器会自动生成这个类的实现部分。&lt;/p>
+&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">只需注册&lt;strong>顶层类型&lt;/strong>（即直接传入 &lt;code>JsonSerializer&lt;/code> 的那个）。成员的类型会自动递归处理，无需单独注册。但集合类型必须明确注册，如 &lt;code>List&amp;lt;Person&amp;gt;&lt;/code> 和 &lt;code>Person&lt;/code> 需要分别注册。&lt;/div>
+&lt;/div>
+&lt;h3 id="使用方式">
+使用方式
+&lt;a href="#%e4%bd%bf%e7%94%a8%e6%96%b9%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>通过 &lt;code>AppJsonContext.Default&lt;/code> 访问生成的上下文单例：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 传入 JsonTypeInfo&amp;lt;T&amp;gt;（推荐）&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">json&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Serialize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">person&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">AppJsonContext&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Default&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Person&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">Person&lt;/span>&lt;span class="p">?&lt;/span> &lt;span class="n">p&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Deserialize&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">Person&lt;/span>&lt;span class="p">&amp;gt;(&lt;/span>&lt;span class="n">json&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">AppJsonContext&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Default&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Person&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 传入 JsonSerializerContext（适合泛型 / 运行时才知道类型的场景）&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">object&lt;/span> &lt;span class="n">obj&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">person&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">json&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">JsonSerializer&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Serialize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">obj&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">person&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetType&lt;/span>&lt;span class="p">(),&lt;/span> &lt;span class="n">AppJsonContext&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Default&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>两种方式均不使用反射。第一种将类型信息完全确定在编译期，还能走序列化优化路径（见下文），是首选。&lt;/p>
+&lt;h3 id="配置选项">
+配置选项
+&lt;a href="#%e9%85%8d%e7%bd%ae%e9%80%89%e9%a1%b9" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>序列化选项通过 &lt;code>[JsonSourceGenerationOptions]&lt;/code> 在编译期指定，等效于运行时的 &lt;code>JsonSerializerOptions&lt;/code>：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="na">[JsonSourceGenerationOptions(
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> WriteIndented = true,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na"> DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">[JsonSerializable(typeof(Person))]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">internal&lt;/span> &lt;span class="kd">partial&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">AppJsonContext&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">JsonSerializerContext&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">&lt;code>PropertyNamingPolicy&lt;/code> 这里使用的是 &lt;code>JsonKnownNamingPolicy&lt;/code>（枚举），而非运行时的 &lt;code>JsonNamingPolicy&lt;/code>（类）。&lt;/div>
+&lt;/div>
+&lt;h3 id="两种生成模式">
+两种生成模式
+&lt;a href="#%e4%b8%a4%e7%a7%8d%e7%94%9f%e6%88%90%e6%a8%a1%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>源生成器有两种工作模式，默认同时启用：&lt;/p>
+&lt;p>&lt;strong>元数据模式&lt;/strong>（&lt;code>JsonSourceGenerationMode.Metadata&lt;/code>）：生成 JSON 契约元数据，支持反序列化、循环引用、多态等复杂场景。&lt;/p>
+&lt;p>&lt;strong>序列化优化模式&lt;/strong>（&lt;code>JsonSourceGenerationMode.Serialization&lt;/code>）：直接生成调用 &lt;code>Utf8JsonWriter&lt;/code> 的序列化代码（又称 fast-path），跳过运行时选项检查，序列化性能最高。&lt;strong>但它不支持反序列化。&lt;/strong>&lt;/p>
+&lt;p>可以在单个类型上指定模式：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="na">[JsonSerializable(typeof(Person), GenerationMode = JsonSourceGenerationMode.Serialization)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">[JsonSerializable(typeof(Order), GenerationMode = JsonSourceGenerationMode.Metadata)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">internal&lt;/span> &lt;span class="kd">partial&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">AppJsonContext&lt;/span> &lt;span class="p">:&lt;/span> &lt;span class="n">JsonSerializerContext&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="nativeaot-与裁剪">
+NativeAOT 与裁剪
+&lt;a href="#nativeaot-%e4%b8%8e%e8%a3%81%e5%89%aa" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>发布 NativeAOT 时，由于反射 API 不可用，&lt;strong>必须&lt;/strong>使用源生成器。建议同时显式关闭默认反射（&lt;code>JsonSerializerIsReflectionEnabledByDefault=false&lt;/code>），这样在开发调试阶段就能提前发现仍走反射路径的代码，而不是等到发布时才报错：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;PropertyGroup&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;PublishAot&amp;gt;&lt;/span>true&lt;span class="nt">&amp;lt;/PublishAot&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;JsonSerializerIsReflectionEnabledByDefault&amp;gt;&lt;/span>false&lt;span class="nt">&amp;lt;/JsonSerializerIsReflectionEnabledByDefault&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/PropertyGroup&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">如果你只是启用裁剪（&lt;code>PublishTrimmed=true&lt;/code>）而非 NativeAOT，.NET 8 起会&lt;strong>自动&lt;/strong>将 &lt;code>JsonSerializerIsReflectionEnabledByDefault&lt;/code> 设为 &lt;code>false&lt;/code>，无需手动配置。但显式设置仍然有助于在调试阶段尽早发现问题。&lt;/div>
+&lt;/div>
+&lt;h3 id="与-aspnet-core-集成">
+与 ASP.NET Core 集成
+&lt;a href="#%e4%b8%8e-aspnet-core-%e9%9b%86%e6%88%90" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>ASP.NET Core 内部的 JSON 序列化可以通过 &lt;code>TypeInfoResolverChain&lt;/code> 接入源生成上下文：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="n">builder&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Services&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ConfigureHttpJsonOptions&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">options&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">options&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">SerializerOptions&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">TypeInfoResolverChain&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Insert&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">AppJsonContext&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Default&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">});&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>&lt;code>TypeInfoResolverChain&lt;/code>（.NET 8+）支持链接多个上下文：当一个上下文找不到某个类型的信息时，会自动尝试链中的下一个。这在将多个库的上下文合并使用时尤为有用。&lt;/p>
+&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>System.Text.Json 是 .NET 平台上现代化的 JSON 序列化方案。相比 Newtonsoft.Json，它在性能、内存分配和 NativeAOT 支持上都有显著优势，并且自 .NET Core 3.0 起就作为框架内置库随附，无需额外引入第三方依赖。&lt;/p>
+&lt;p>如果你正在从 Newtonsoft.Json 迁移，本文梳理的 JsonNode、Record 支持和特性标注等内容应该能覆盖大多数日常场景。而对于追求极致性能或需要 NativeAOT 发布的项目，源生成器则是必选项。随着 .NET 的持续演进，System.Text.Json 的功能覆盖已经相当完善，完全可以在大多数项目中替代 Newtonsoft.Json。&lt;/p></description></item></channel></rss>

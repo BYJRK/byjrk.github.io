@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>networking on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/networking/</link><description>Recent content in networking on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Thu, 15 Jan 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/networking/index.xml" rel="self" type="application/rss+xml"/><item><title>如何在 C# 中获取本机真实 IP 地址？</title><link>https://blog.coldwind.top/posts/how-to-get-real-local-ip-address/</link><pubDate>Thu, 15 Jan 2026 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/how-to-get-real-local-ip-address/</guid><description>&lt;p>获取本机 IP
+地址听起来是一个非常简单的需求，但实际操作起来却并不容易。虚拟网卡、IPv6、APIPA
+地址等因素会让我们获取到一大堆 IP，而如何从中筛选出真正想要的局域网 IP
+才是我们要解决的问题。&lt;/p>
+&lt;h2 id="常见的坑">
+常见的坑
+&lt;a href="#%e5%b8%b8%e8%a7%81%e7%9a%84%e5%9d%91" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;h3 id="1-获取到一堆-ip-地址">
+1. 获取到一堆 IP 地址
+&lt;a href="#1-%e8%8e%b7%e5%8f%96%e5%88%b0%e4%b8%80%e5%a0%86-ip-%e5%9c%b0%e5%9d%80" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>最直接的想法可能是使用 &lt;code>Dns.GetHostAddresses&lt;/code> 或 &lt;code>Dns.GetHostEntry&lt;/code>
+来获取本机所有的 IP 地址：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">hostName&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Dns&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetHostName&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">ipAddresses&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Dns&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetHostEntry&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">hostName&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">AddressList&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="n">ip&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">ipAddresses&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ip&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>运行后你可能会看到类似这样的输出：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-fallback" data-lang="fallback">&lt;span class="line">&lt;span class="cl">192.168.1.100
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">169.254.123.45
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">172.17.0.1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">10.0.75.1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">192.168.56.1
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">fe80::1234:5678:abcd:ef01%12
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">::1
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这么多 IP 地址，到底哪个才是我们想要的真实局域网 IP？&lt;/p>
+&lt;h3 id="2-虚拟网卡的干扰">
+2. 虚拟网卡的干扰
+&lt;a href="#2-%e8%99%9a%e6%8b%9f%e7%bd%91%e5%8d%a1%e7%9a%84%e5%b9%b2%e6%89%b0" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>现代计算机上通常会存在多种类型的网络适配器：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>物理网卡&lt;/strong>：真实的以太网卡或 Wi-Fi 适配器&lt;/li>
+&lt;li>&lt;strong>虚拟网卡&lt;/strong>：
+&lt;ul>
+&lt;li>VMware、VirtualBox、Hyper-V 等虚拟机软件创建的虚拟网卡&lt;/li>
+&lt;li>Docker Desktop 创建的虚拟网卡（如 vEthernet）&lt;/li>
+&lt;li>VPN 软件创建的虚拟适配器&lt;/li>
+&lt;li>WSL2 创建的虚拟网卡&lt;/li>
+&lt;li>蓝牙适配器&lt;/li>
+&lt;li>回环地址（Loopback）&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>这些虚拟网卡都会有自己的 IP 地址，导致我们获取到一大堆无用的地址。&lt;/p>
+&lt;h3 id="3-ipv4-vs-ipv6">
+3. IPv4 vs IPv6
+&lt;a href="#3-ipv4-vs-ipv6" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>除了虚拟网卡的问题，还有 IPv4 和 IPv6 的区别：&lt;/p>
+&lt;ul>
+&lt;li>&lt;strong>IPv4&lt;/strong>：如 &lt;code>192.168.1.100&lt;/code>（我们通常想要的）&lt;/li>
+&lt;li>&lt;strong>IPv6&lt;/strong>：如 &lt;code>fe80::1234:5678:abcd:ef01%12&lt;/code>（链路本地地址）&lt;/li>
+&lt;li>&lt;strong>IPv6 本地回环&lt;/strong>：&lt;code>::1&lt;/code>（相当于 IPv4 的 &lt;code>127.0.0.1&lt;/code>）&lt;/li>
+&lt;/ul>
+&lt;p>在大多数局域网场景中，我们想要的是 IPv4 地址。&lt;/p>
+&lt;h2 id="解决方案">
+解决方案
+&lt;a href="#%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;h3 id="方法一使用-networkinterface-获取">
+方法一：使用 NetworkInterface 获取
+&lt;a href="#%e6%96%b9%e6%b3%95%e4%b8%80%e4%bd%bf%e7%94%a8-networkinterface-%e8%8e%b7%e5%8f%96" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>这个方法通过 &lt;code>NetworkInterface&lt;/code>
+获取所有网络接口，过滤出正在运行的网卡，排除虚拟网卡，然后根据接口索引排序选择最佳
+IP。下面的例子中排除了 VMware 虚拟网卡：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="kt">string?&lt;/span> &lt;span class="n">GetBestIPByMetric&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">bestIp&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">NetworkInterface&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetAllNetworkInterfaces&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Where&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">n&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">n&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OperationalStatus&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">OperationalStatus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Up&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Where&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">n&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">!&lt;/span>&lt;span class="n">n&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Description&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToLower&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;vmware&amp;#34;&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="c1">// 排除 VMware 虚拟网卡&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">SelectMany&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">n&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">n&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetIPProperties&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">UnicastAddresses&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Where&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">a&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Address&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AddressFamily&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">System&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Net&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Sockets&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AddressFamily&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">InterNetwork&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Select&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">a&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="k">new&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">IP&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Address&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToString&lt;/span>&lt;span class="p">(),&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Description&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">n&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Description&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 获取网卡的 IPv4 接口指标&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Metric&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">n&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetIPProperties&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">GetIPv4Properties&lt;/span>&lt;span class="p">()?.&lt;/span>&lt;span class="n">Index&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">OrderBy&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">x&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Metric&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="c1">// 索引通常反映了绑定顺序&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">FirstOrDefault&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">bestIp&lt;/span>&lt;span class="p">?.&lt;/span>&lt;span class="n">IP&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这个方法的优点是精确可控，可以根据需求添加过滤条件，且不依赖路由表。缺点是需要手动维护虚拟网卡的排除列表，不同虚拟网卡的名称和描述可能不同。&lt;/p>
+&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">接口索引（Index）通常反映了网卡的绑定顺序和优先级，索引越小优先级越高。通过
+&lt;code>GetIPv4Properties().Index&lt;/code> 可以获取这个值。&lt;/div>
+&lt;/div>
+&lt;h3 id="方法二使用-socket-连接外部地址">
+方法二：使用 Socket 连接外部地址
+&lt;a href="#%e6%96%b9%e6%b3%95%e4%ba%8c%e4%bd%bf%e7%94%a8-socket-%e8%bf%9e%e6%8e%a5%e5%a4%96%e9%83%a8%e5%9c%b0%e5%9d%80" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>这是一个非常经典且巧妙的方法。通过创建一个 UDP Socket 并&amp;quot;连接&amp;quot;到外部地址（如
+Google DNS 的 8.8.8.8），让操作系统根据路由表自动选择最合适的本地 IP。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="kt">string?&lt;/span> &lt;span class="n">GetLocalIp&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">using&lt;/span> &lt;span class="nn">Socket&lt;/span> &lt;span class="n">socket&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Socket&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">AddressFamily&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">InterNetwork&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">SocketType&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Dgram&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">try&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 这里使用一个伪造的外部地址。&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 即使断网，系统也会根据路由表返回最匹配的物理网卡 IP&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">socket&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Connect&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;8.8.8.8&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">65530&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">endPoint&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">socket&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">LocalEndPoint&lt;/span> &lt;span class="k">as&lt;/span> &lt;span class="n">IPEndPoint&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">endPoint&lt;/span>&lt;span class="p">?.&lt;/span>&lt;span class="n">Address&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToString&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">catch&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 如果没有任何网卡连接，会进入这里&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="s">&amp;#34;127.0.0.1&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">这里使用的是 UDP 协议（&lt;code>SocketType.Dgram&lt;/code>），&lt;code>Connect&lt;/code>
+方法只是设置默认目标地址，&lt;strong>不会真正发送数据包&lt;/strong>。因此即使断网也能正常工作，系统会根据路由表返回最匹配的本地
+IP。&lt;/div>
+&lt;/div>
+&lt;p>这个方法代码最简洁，能自动避开虚拟网卡。但如果局域网与外网完全隔离，路由表中没有相应路由时可能失效。&lt;/p>
+&lt;h3 id="方法三使用-wmi-查询物理网卡">
+方法三：使用 WMI 查询物理网卡
+&lt;a href="#%e6%96%b9%e6%b3%95%e4%b8%89%e4%bd%bf%e7%94%a8-wmi-%e6%9f%a5%e8%af%a2%e7%89%a9%e7%90%86%e7%bd%91%e5%8d%a1" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>这个方法利用 Windows Management Instrumentation (WMI)
+来查询系统中标记为物理适配器的网卡，然后与 &lt;code>NetworkInterface&lt;/code> 的 DeviceID
+进行匹配，从而准确过滤出物理网卡的 IP。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">GetRealIP&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 使用 WMI 查询物理网卡&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">searcher&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">ManagementObjectSearcher&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;SELECT * FROM Win32_NetworkAdapter WHERE PhysicalAdapter = True&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">physicalIds&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">searcher&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Get&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Cast&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="n">ManagementBaseObject&lt;/span>&lt;span class="p">&amp;gt;()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Select&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">x&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="s">&amp;#34;DeviceID&amp;#34;&lt;/span>&lt;span class="p">].&lt;/span>&lt;span class="n">ToString&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">ToList&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">interfaces&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">NetworkInterface&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetAllNetworkInterfaces&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="n">ni&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">interfaces&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 匹配物理网卡 ID 并且状态为 Up&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">physicalIds&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">ni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Id&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">&amp;amp;&amp;amp;&lt;/span> &lt;span class="n">ni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OperationalStatus&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">OperationalStatus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Up&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">props&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">ni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetIPProperties&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">ipv4&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">props&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">UnicastAddresses&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">FirstOrDefault&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">x&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">x&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Address&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AddressFamily&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">System&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Net&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Sockets&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AddressFamily&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">InterNetwork&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ipv4&lt;/span> &lt;span class="p">!=&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// 排除掉 169.254.x.x (自动配置地址)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ipv4&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Address&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToString&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">StartsWith&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;169.254&amp;#34;&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="k">continue&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">$&amp;#34;网卡名称: {ni.Description}&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">$&amp;#34;真实局域网 IP: {ipv4.Address}&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这个方法从准确性来说是最可靠的，能从操作系统底层识别物理网卡。但它有明显的局限性：&lt;/p>
+&lt;ul>
+&lt;li>需要引用 &lt;code>System.Management&lt;/code> NuGet 包&lt;/li>
+&lt;li>只能在 Windows 平台使用，不支持跨平台&lt;/li>
+&lt;li>WMI 查询相对较慢，性能敏感场景需要缓存结果&lt;/li>
+&lt;/ul>
+&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">&lt;code>169.254.x.x&lt;/code> 是 APIPA（Automatic Private IP
+Addressing）地址段，当 DHCP 服务器不可用时，Windows
+会自动分配这个范围的地址。这通常不是我们想要的真实局域网地址。&lt;/div>
+&lt;/div>
+&lt;h3 id="方法四networkinterface-评分机制终极方案">
+方法四：NetworkInterface 评分机制（终极方案）
+&lt;a href="#%e6%96%b9%e6%b3%95%e5%9b%9bnetworkinterface-%e8%af%84%e5%88%86%e6%9c%ba%e5%88%b6%e7%bb%88%e6%9e%81%e6%96%b9%e6%a1%88" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>兜兜转转尝试了各种方法后，发现还是回到 &lt;code>NetworkInterface&lt;/code>
+最简单且有效。下面这个方案相当于 &lt;a class="link" href="#%e6%96%b9%e6%b3%95%e4%b8%80%e4%bd%bf%e7%94%a8-networkinterface-%e8%8e%b7%e5%8f%96" >方法一&lt;/a>
+的增强版，通过更全面的过滤条件和评分机制来选择最佳 IP 地址：&lt;/p>
+&lt;ul>
+&lt;li>排除更多种类的虚拟网卡（Clash、ZeroTier、Tailscale、WireGuard、VMware、Docker
+等）&lt;/li>
+&lt;li>排除特殊 IP 段（Docker 的 172.16-31.x.x、网络基准测试的 198.18.x.x、APIPA 的
+169.254.x.x）&lt;/li>
+&lt;li>使用评分系统综合评估：有网关 +100 分，以太网/无线网卡 +50
+分，知名厂商（Intel、Realtek 等）+30 分&lt;/li>
+&lt;/ul>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;span class="lnt">29
+&lt;/span>&lt;span class="lnt">30
+&lt;/span>&lt;span class="lnt">31
+&lt;/span>&lt;span class="lnt">32
+&lt;/span>&lt;span class="lnt">33
+&lt;/span>&lt;span class="lnt">34
+&lt;/span>&lt;span class="lnt">35
+&lt;/span>&lt;span class="lnt">36
+&lt;/span>&lt;span class="lnt">37
+&lt;/span>&lt;span class="lnt">38
+&lt;/span>&lt;span class="lnt">39
+&lt;/span>&lt;span class="lnt">40
+&lt;/span>&lt;span class="lnt">41
+&lt;/span>&lt;span class="lnt">42
+&lt;/span>&lt;span class="lnt">43
+&lt;/span>&lt;span class="lnt">44
+&lt;/span>&lt;span class="lnt">45
+&lt;/span>&lt;span class="lnt">46
+&lt;/span>&lt;span class="lnt">47
+&lt;/span>&lt;span class="lnt">48
+&lt;/span>&lt;span class="lnt">49
+&lt;/span>&lt;span class="lnt">50
+&lt;/span>&lt;span class="lnt">51
+&lt;/span>&lt;span class="lnt">52
+&lt;/span>&lt;span class="lnt">53
+&lt;/span>&lt;span class="lnt">54
+&lt;/span>&lt;span class="lnt">55
+&lt;/span>&lt;span class="lnt">56
+&lt;/span>&lt;span class="lnt">57
+&lt;/span>&lt;span class="lnt">58
+&lt;/span>&lt;span class="lnt">59
+&lt;/span>&lt;span class="lnt">60
+&lt;/span>&lt;span class="lnt">61
+&lt;/span>&lt;span class="lnt">62
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">GetRealLocalIP&lt;/span>&lt;span class="p">()&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">allInterfaces&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">NetworkInterface&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetAllNetworkInterfaces&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">candidates&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">List&lt;/span>&lt;span class="p">&amp;lt;(&lt;/span>&lt;span class="n">IPAddress&lt;/span> &lt;span class="n">Ip&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">Score&lt;/span>&lt;span class="p">)&amp;gt;();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="n">ni&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">allInterfaces&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OperationalStatus&lt;/span> &lt;span class="p">!=&lt;/span> &lt;span class="n">OperationalStatus&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Up&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">continue&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">NetworkInterfaceType&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">NetworkInterfaceType&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Loopback&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">continue&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">NetworkInterfaceType&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">NetworkInterfaceType&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Tunnel&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">continue&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">string&lt;/span> &lt;span class="n">desc&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">ni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Description&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToLower&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">string&lt;/span> &lt;span class="n">name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">ni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Name&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToLower&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;wintun&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;clash&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;virtual&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;vmware&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;vbox&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;hyper-v&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;zerotier&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;tailscale&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;wireguard&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;docker&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">name&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;vethernet&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">name&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;wsl&amp;#34;&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">continue&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">ipProps&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">ni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetIPProperties&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">ipv4Addrs&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">ipProps&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">UnicastAddresses&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">.&lt;/span>&lt;span class="n">Where&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">a&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">a&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Address&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AddressFamily&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">AddressFamily&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">InterNetwork&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="n">addr&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">ipv4Addrs&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">string&lt;/span> &lt;span class="n">ipStr&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">addr&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Address&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToString&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ipStr&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">StartsWith&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;169.254&amp;#34;&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="k">continue&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ipStr&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">StartsWith&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;198.18.&amp;#34;&lt;/span>&lt;span class="p">))&lt;/span> &lt;span class="k">continue&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ipStr&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">StartsWith&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;172.&amp;#34;&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">parts&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">ipStr&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Split&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;.&amp;#39;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">parts&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Length&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="m">4&lt;/span> &lt;span class="p">&amp;amp;&amp;amp;&lt;/span> &lt;span class="kt">int&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">TryParse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">parts&lt;/span>&lt;span class="p">[&lt;/span>&lt;span class="m">1&lt;/span>&lt;span class="p">],&lt;/span> &lt;span class="k">out&lt;/span> &lt;span class="kt">int&lt;/span> &lt;span class="n">secondOctet&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">secondOctet&lt;/span> &lt;span class="p">&amp;gt;=&lt;/span> &lt;span class="m">16&lt;/span> &lt;span class="p">&amp;amp;&amp;amp;&lt;/span> &lt;span class="n">secondOctet&lt;/span> &lt;span class="p">&amp;lt;=&lt;/span> &lt;span class="m">31&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="k">continue&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">score&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ipProps&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GatewayAddresses&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Any&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">g&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">!&lt;/span>&lt;span class="n">g&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Address&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToString&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">Equals&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;0.0.0.0&amp;#34;&lt;/span>&lt;span class="p">)))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">score&lt;/span> &lt;span class="p">+=&lt;/span> &lt;span class="m">100&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">ni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">NetworkInterfaceType&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">NetworkInterfaceType&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Ethernet&lt;/span> &lt;span class="p">||&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ni&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">NetworkInterfaceType&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">NetworkInterfaceType&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Wireless80211&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">score&lt;/span> &lt;span class="p">+=&lt;/span> &lt;span class="m">50&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;intel&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;realtek&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;atheros&amp;#34;&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">||&lt;/span> &lt;span class="n">desc&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;broadcom&amp;#34;&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">score&lt;/span> &lt;span class="p">+=&lt;/span> &lt;span class="m">30&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">candidates&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Add&lt;/span>&lt;span class="p">((&lt;/span>&lt;span class="n">addr&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Address&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">score&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">candidates&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Count&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="s">&amp;#34;192.168.1.100&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">candidates&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OrderByDescending&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">c&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">c&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Score&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">First&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">Ip&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToString&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这个版本覆盖了几乎所有常见场景，通过多维度评分确保选择的是真正在使用的物理网卡
+IP。评分机制比简单的索引排序或依赖路由表更智能，能适应各种复杂网络环境。&lt;/p>
+&lt;div class="notice warning">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-triangle" aria-hidden="true">&lt;/i>Warning
+&lt;/div>
+&lt;div class="notice-content">虽然这个方法提供了最大的灵活性和准确性，但代码较长，维护成本相对较高。需要根据实际遇到的虚拟网卡类型持续更新过滤列表。&lt;/div>
+&lt;/div>
+&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>获取本机真实 IP 地址看似简单，实则需要处理虚拟网卡、特殊 IP
+段、多网卡等复杂情况。本文介绍了四种方法，各有优劣：&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>方法&lt;/th>
+&lt;th>优点&lt;/th>
+&lt;th>缺点&lt;/th>
+&lt;th>适用场景&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>方法一（基础 NetworkInterface）&lt;/td>
+&lt;td>可控性强，代码相对简单&lt;/td>
+&lt;td>需要手动维护排除列表&lt;/td>
+&lt;td>一般场景&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>方法二（Socket 连接）&lt;/td>
+&lt;td>代码最简洁，自动选择&lt;/td>
+&lt;td>完全隔离网络可能失效&lt;/td>
+&lt;td>快速实现&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>方法三（WMI 查询）&lt;/td>
+&lt;td>最准确，系统层面识别&lt;/td>
+&lt;td>仅限 Windows，性能较慢&lt;/td>
+&lt;td>Windows 专用&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>方法四（评分机制）&lt;/td>
+&lt;td>最灵活准确，覆盖全面&lt;/td>
+&lt;td>代码较长，维护成本高&lt;/td>
+&lt;td>复杂网络环境&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>大家可以根据自己的实际需求选择合适的方法，或者结合多种方法以获得最佳效果。&lt;/p></description></item></channel></rss>

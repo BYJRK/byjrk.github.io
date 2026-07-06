@@ -1,0 +1,315 @@
+<!doctype html><html lang=zh-cn dir=ltr><head><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=description content=".NET 11 的预览版为我们提前剧透了 Union 类型的到来，那么在这个类型正式发布之前，我们都是怎么模拟它的能力的？我们又是如何解决相关问题的？本文我们就来回顾一下在 C# 中模拟 Union 类型的各种方案，以及它们各自的优缺点。"><title>在 C# 15 的 Union 类型到来之前我们都是怎么过的？</title>
+<link rel=canonical href=https://blog.coldwind.top/posts/what-we-do-before-union-type/><link rel=stylesheet href=/scss/style.min.e5e73594e070d9646bf09518a8b459c3f8c19c6ca92a47d90b9cb43bd1bcd3c8.css><meta property='og:title' content="在 C# 15 的 Union 类型到来之前我们都是怎么过的？"><meta property='og:description' content=".NET 11 的预览版为我们提前剧透了 Union 类型的到来，那么在这个类型正式发布之前，我们都是怎么模拟它的能力的？我们又是如何解决相关问题的？本文我们就来回顾一下在 C# 中模拟 Union 类型的各种方案，以及它们各自的优缺点。"><meta property='og:url' content='https://blog.coldwind.top/posts/what-we-do-before-union-type/'><meta property='og:site_name' content='寒流の编程笔记'><meta property='og:type' content='article'><meta property='article:section' content='Post'><meta property='article:tag' content='dotnet'><meta property='article:tag' content='csharp'><meta property='article:tag' content='union'><meta property='article:published_time' content='2026-05-09T00:00:00+00:00'><meta property='article:modified_time' content='2026-05-09T00:00:00+00:00'><meta name=twitter:title content="在 C# 15 的 Union 类型到来之前我们都是怎么过的？"><meta name=twitter:description content=".NET 11 的预览版为我们提前剧透了 Union 类型的到来，那么在这个类型正式发布之前，我们都是怎么模拟它的能力的？我们又是如何解决相关问题的？本文我们就来回顾一下在 C# 中模拟 Union 类型的各种方案，以及它们各自的优缺点。"><link rel="shortcut icon" href=/favicon.png><link href=/css/fontawesome.min.css rel=stylesheet><link href=/css/brands.min.css rel=stylesheet><link href=/css/solid.min.css rel=stylesheet><link href=/css/regular.min.css rel=stylesheet></head><body class=article-page><script>(function(){const e="StackColorScheme";localStorage.getItem(e)||localStorage.setItem(e,"auto")})()</script><script>(function(){const t="StackColorScheme",e=localStorage.getItem(t),n=window.matchMedia("(prefers-color-scheme: dark)").matches===!0;e=="dark"||e==="auto"&&n?document.documentElement.dataset.scheme="dark":document.documentElement.dataset.scheme="light"})()</script><div class="container main-container flex on-phone--column extended"><aside class="sidebar left-sidebar sticky"><button class="hamburger hamburger--spin" type=button id=toggle-menu aria-label=切换菜单>
+<span class=hamburger-box><span class=hamburger-inner></span></span></button><header><figure class=site-avatar><a href=/><img src=/img/avatar_hu16872897465854023674.png width=300 height=300 class=site-logo loading=lazy alt=Avatar>
+</a><span class=emoji>☘️</span></figure><div class=site-meta><h1 class=site-name><a href=/>寒流の编程笔记</a></h1><h2 class=site-description>记录那些稍纵即逝的编程心得。</h2></div></header><ol class=menu-social><li><a href=https://github.com/BYJRK target=_blank title=GitHub rel=me><svg class="icon icon-tabler icon-tabler-brand-github" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6.0 00-1.3-3.2 4.2 4.2.0 00-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3.0 00-6.2.0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2.0 00-.1 3.2A4.6 4.6.0 004 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21"/></svg></a></li><li><a href=https://space.bilibili.com/600592 target=_blank title=Bilibili rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-brand-bilibili"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 10a4 4 0 014-4h10a4 4 0 014 4v6a4 4 0 01-4 4H7a4 4 0 01-4-4v-6z"/><path d="M8 3l2 3"/><path d="M16 3l-2 3"/><path d="M9 13v-2"/><path d="M15 11v2"/></svg></a></li><li><a href=/index.xml target=_blank title=RSS rel=me><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-rss"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 19m-1 0a1 1 0 102 0 1 1 0 10-2 0"/><path d="M4 4a16 16 0 0116 16"/><path d="M4 11a9 9 0 019 9"/></svg></a></li></ol><ol class=menu id=main-menu><li><a href=/><svg class="icon icon-tabler icon-tabler-home" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><polyline points="5 12 3 12 12 3 21 12 19 12"/><path d="M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/><path d="M9 21v-6a2 2 0 012-2h2a2 2 0 012 2v6"/></svg>
+<span>主页</span></a></li><li><a href=/archives/><svg class="icon icon-tabler icon-tabler-archive" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><rect x="3" y="4" width="18" height="4" rx="2"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+<span>归档</span></a></li><li><a href=/search/><svg class="icon icon-tabler icon-tabler-search" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="10" cy="10" r="7"/><line x1="21" y1="21" x2="15" y2="15"/></svg>
+<span>搜索</span></a></li><li><a href=/about/><svg class="icon icon-tabler icon-tabler-link" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M10 14a3.5 3.5.0 005 0l4-4a3.5 3.5.0 00-5-5l-.5.5"/><path d="M14 10a3.5 3.5.0 00-5 0l-4 4a3.5 3.5.0 005 5l.5-.5"/></svg>
+<span>关于我</span></a></li><li class=menu-bottom-section><ol class=menu><li id=dark-mode-toggle><svg class="icon icon-tabler icon-tabler-toggle-left" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="8" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<svg class="icon icon-tabler icon-tabler-toggle-right" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="16" cy="12" r="2"/><rect x="2" y="6" width="20" height="12" rx="6"/></svg>
+<span>暗色模式</span></li></ol></li></ol></aside><aside class="sidebar right-sidebar sticky"><section class="widget archives"><h2 class="widget-title section-title" style=font-size:2rem>目录</h2><div class=widget--toc><nav id=TableOfContents><ol><li><a href=#union-类型的核心目标>Union 类型的核心目标</a></li><li><a href=#枚举类型-enum>枚举类型 enum</a></li><li><a href=#包含多个属性的类>包含多个属性的类</a></li><li><a href=#object-类型>object 类型</a></li><li><a href=#空的抽象基类或接口>空的抽象基类或接口</a></li><li><a href=#oneof-第三方库>OneOf 第三方库</a><ol><li><a href=#缺乏语言级别的语法糖>缺乏语言级别的语法糖</a></li><li><a href=#代码繁杂>代码繁杂</a></li><li><a href=#缺乏领域签名>缺乏领域签名</a></li><li><a href=#泛型参数顺序泄露到-api-设计里>泛型参数顺序泄露到 API 设计里</a></li></ol></li><li><a href=#union-类型的到来>Union 类型的到来</a><ol><li><a href=#底层原理>底层原理</a></li></ol></li><li><a href=#总结>总结</a></li></ol></nav></div></section></aside><main class="main full-width"><article class=main-article><header class=article-header><div class=article-details><div class=article-title-wrapper><h2 class=article-title><a href=/posts/what-we-do-before-union-type/>在 C# 15 的 Union 类型到来之前我们都是怎么过的？</a></h2><h3 class=article-subtitle>.NET 11 的预览版为我们提前剧透了 Union 类型的到来，那么在这个类型正式发布之前，我们都是怎么模拟它的能力的？我们又是如何解决相关问题的？本文我们就来回顾一下在 C# 中模拟 Union 类型的各种方案，以及它们各自的优缺点。</h3></div><footer class=article-time><div><svg class="icon icon-tabler icon-tabler-calendar-time" width="56" height="56" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><path d="M11.795 21H5a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v4"/><circle cx="18" cy="18" r="4"/><path d="M15 3v4"/><path d="M7 3v4"/><path d="M3 11h16"/><path d="M18 16.496V18l1 1"/></svg>
+<time class=article-time--published datetime=2026-05-09T00:00:00Z>May 09, 2026</time></div><div><svg class="icon icon-tabler icon-tabler-clock" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>
+<time class=article-time--reading>阅读时长: 6 分钟</time></div></footer></div></header><section class=article-content><p>截止到目前，.NET 11 已经出了三个预览版了，并且也为我们带来了万众期待的 Union 类型。关于这个类型，有不少大佬已经讨论过了，这里贴两个供大家参考：</p><ul><li><a class=link href=https://zhuanlan.zhihu.com/p/2029276293867258416 target=_blank rel=noopener>hez2010 的知乎文章</a></li><li><a class=link href=https://www.youtube.com/live/C5mozkE5x20 target=_blank rel=noopener>Nick Chapsas 视频</a></li></ul><p>所以这里我们就不赘述关于 Union 类型的语法、作用、底层原理之类的内容了。我们这次要聊一聊的是，在 Union 类型到来之前，我们都是怎么过的，或者说我们面临的问题都是如何解决的。通过对以往方式的讨论，我们或许会更加意识到 Union 类型有多么棒。</p><h2 id=union-类型的核心目标>Union 类型的核心目标
+<a href=#union-%e7%b1%bb%e5%9e%8b%e7%9a%84%e6%a0%b8%e5%bf%83%e7%9b%ae%e6%a0%87 class=anchor>&para;</a></h2><p>在回顾旧方案之前，我们先明确一下 Union 类型想要解决的核心问题：</p><ol><li><strong>归类某些类型，但是不必共享行为</strong>：我们希望把几种相关的类型归为一组，但它们之间不需要有继承关系或共同的接口实现。</li><li><strong>在编译时能够穷尽各种情况</strong>：当我们对一个联合类型的值进行处理时，编译器能够检查我们是否覆盖了所有可能的情况。</li><li><strong>减少心智负担和运行时错误</strong>：类型系统应该在编译期就帮我们排除掉"忘记处理某种情况"的隐患。</li><li><strong>锦上添花，最好还能减少装箱的开销</strong>。</li></ol><p>带着这些目标，我们来看看过去 C# 开发者们是怎么做的。</p><h2 id=枚举类型-enum>枚举类型 enum
+<a href=#%e6%9e%9a%e4%b8%be%e7%b1%bb%e5%9e%8b-enum class=anchor>&para;</a></h2><p>在了解 Union 类型时，我们常常会看到诸如返回不同状态的代码，比如：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>public</span> <span class=n>union</span> <span class=n>Result</span><span class=p>(</span><span class=n>Success</span><span class=p>,</span> <span class=n>Error</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=n>Result</span> <span class=n>GetResult</span><span class=p>()</span> <span class=p>{</span> <span class=cm>/* 最终返回 Result 中的某种具体类型的实例 */</span> <span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>在没有 Union 类型的时候，很多人第一反应就是使用枚举：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>public</span> <span class=kd>enum</span> <span class=n>Status</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>Success</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>Failed</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=n>Status</span> <span class=n>GetResult</span><span class=p>()</span> <span class=p>{</span> <span class=cm>/* ... */</span> <span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>枚举类型本质上是值类型，只能包含单个分类，<strong>不能包含更多的内部信息</strong>。如果 <code>Success</code> 需要携带返回数据，<code>Failed</code> 需要携带错误信息，枚举就无能为力了。你不得不额外定义配套的字段或类来传递这些信息，导致数据和状态分离，增加了维护成本。</p><h2 id=包含多个属性的类>包含多个属性的类
+<a href=#%e5%8c%85%e5%90%ab%e5%a4%9a%e4%b8%aa%e5%b1%9e%e6%80%a7%e7%9a%84%e7%b1%bb class=anchor>&para;</a></h2><p>既然枚举无法携带数据，很自然的想法就是定义一个"大而全"的类，把所有可能用到的属性都放进去：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>class</span> <span class=nc>Result</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>T</span><span class=p>?</span> <span class=n>Data</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=k>set</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>Exception</span><span class=p>?</span> <span class=n>Error</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=k>set</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kt>bool</span> <span class=n>IsSuccess</span> <span class=p>=&gt;</span> <span class=n>Error</span> <span class=k>is</span> <span class=kc>null</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样的类型无法限制类成员之间的关系，只能依靠人为的约束和尽可能多的防御性编程。</p><p>比如上面这个例子，可能会出现 <code>Data</code> 和 <code>Error</code> 同时存在的情况，导致 <code>IsSuccess</code> 不可靠。如果成员变多，会更加不可控，势必会出现更多人为的检查：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kt>var</span> <span class=n>result</span> <span class=p>=</span> <span class=n>GetResult</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=p>(</span><span class=n>result</span><span class=p>.</span><span class=n>IsSuccess</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// 编译器无法保证 result.Data 不为 null</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// 我们只能祈祷调用方遵守约定</span>
+</span></span><span class=line><span class=cl>    <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=n>result</span><span class=p>.</span><span class=n>Data</span><span class=p>!.</span><span class=n>ToString</span><span class=p>());</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>类型系统在这里完全帮不上忙，正确性全靠程序员的自觉和代码审查。</p><h2 id=object-类型>object 类型
+<a href=#object-%e7%b1%bb%e5%9e%8b class=anchor>&para;</a></h2><p>将变量声明为 <code>object</code> 类型确实可以一定程度上实现表示多种类型的能力，并且借助模式匹配及 <code>switch</code> 语法可以实现灵活的功能：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kt>object</span> <span class=n>result</span> <span class=p>=</span> <span class=n>GetSomething</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>switch</span> <span class=p>(</span><span class=n>result</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>case</span> <span class=kt>int</span> <span class=n>i</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>$&#34;Integer: {i}&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>break</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>case</span> <span class=kt>string</span> <span class=n>s</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>$&#34;String: {s}&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>        <span class=k>break</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=k>default</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=k>throw</span> <span class=k>new</span> <span class=n>NotSupportedException</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>但有几个明显的问题：</p><ol><li><strong>编译时无法得知变量类型，缺乏代码提示</strong>：<code>object</code> 可以表示任何东西，IDE 无法给出有意义的智能提示。</li><li><strong>难以涵盖所有情况</strong>：编译器不会检查你是否处理了所有可能的类型，必须手动提供兜底方案（<code>default</code> 分支）。</li><li><strong>可能存在装箱拆箱的开销</strong>：值类型赋值给 <code>object</code> 时会发生装箱，带来额外的性能开销。</li><li><strong>类型安全性差</strong>：任何类型都可以赋值进去，运行时出错的风险很高。</li></ol><h2 id=空的抽象基类或接口>空的抽象基类或接口
+<a href=#%e7%a9%ba%e7%9a%84%e6%8a%bd%e8%b1%a1%e5%9f%ba%e7%b1%bb%e6%88%96%e6%8e%a5%e5%8f%a3 class=anchor>&para;</a></h2><p>比 <code>object</code> 类型稍微好一点的做法是定义一个空的抽象基类或接口：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>public</span> <span class=kd>abstract</span> <span class=k>class</span> <span class=nc>Result</span> <span class=p>{</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>Success</span><span class=p>&lt;</span><span class=n>T</span><span class=p>&gt;</span> <span class=p>:</span> <span class=n>Result</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>T</span> <span class=n>Data</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>Success</span><span class=p>(</span><span class=n>T</span> <span class=n>data</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=n>Data</span> <span class=p>=</span> <span class=n>data</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=k>class</span> <span class=nc>Error</span> <span class=p>:</span> <span class=n>Result</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kt>string</span> <span class=n>Message</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>Error</span><span class=p>(</span><span class=kt>string</span> <span class=n>message</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=n>Message</span> <span class=p>=</span> <span class=n>message</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>这样可以一定程度上限制可能性，提高编译时期的严谨性，但仍然有几个问题：</p><ol><li><strong>必须保证所有类型都继承自该抽象类</strong>：对于内置类型（如 <code>int</code>、<code>string</code>）或者来自第三方库的类型，我们完全无能为力，无法把它们纳入这个联合体系。</li><li><strong>仍然需要提供兜底方案</strong>：<code>switch</code> 表达式中编译器不知道有哪些派生类，所以 exhaustive check 无从谈起。</li><li><strong>无法保证封闭性</strong>：其他开发者随时可以写出新的继承该抽象类的类型，而你无法阻止。这就破坏了"有限种可能"的语义。</li></ol><h2 id=oneof-第三方库>OneOf 第三方库
+<a href=#oneof-%e7%ac%ac%e4%b8%89%e6%96%b9%e5%ba%93 class=anchor>&para;</a></h2><p>在 C# 社区中，<a class=link href=https://github.com/mcintyre321/OneOf target=_blank rel=noopener>OneOf</a> 是一个非常流行的用于模拟 Union 类型的库。它的基本用法如下：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=k>using</span> <span class=nn>OneOf</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=n>OneOf</span><span class=p>&lt;</span><span class=n>User</span><span class=p>,</span> <span class=n>NotFound</span><span class=p>,</span> <span class=n>ValidationError</span><span class=p>&gt;</span> <span class=n>GetUser</span><span class=p>(</span><span class=kt>int</span> <span class=n>id</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>id</span> <span class=p>&lt;=</span> <span class=m>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=k>new</span> <span class=n>ValidationError</span><span class=p>(</span><span class=s>&#34;Invalid ID&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>user</span> <span class=p>=</span> <span class=n>_db</span><span class=p>.</span><span class=n>FindUser</span><span class=p>(</span><span class=n>id</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>user</span> <span class=k>is</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=k>new</span> <span class=n>NotFound</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>user</span><span class=p>;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 使用</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>result</span> <span class=p>=</span> <span class=n>GetUser</span><span class=p>(</span><span class=m>42</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=n>result</span><span class=p>.</span><span class=n>Match</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=n>user</span> <span class=p>=&gt;</span> <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=n>user</span><span class=p>.</span><span class=n>Name</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=n>notFound</span> <span class=p>=&gt;</span> <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=s>&#34;User not found&#34;</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=n>error</span> <span class=p>=&gt;</span> <span class=n>Console</span><span class=p>.</span><span class=n>WriteLine</span><span class=p>(</span><span class=n>error</span><span class=p>.</span><span class=n>Message</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><p>这个库确实可以实现类型的联合，以及编译时的穷尽检查（通过 <code>Match</code> 方法要求你处理所有类型）。但存在一些弊端：</p><h3 id=缺乏语言级别的语法糖>缺乏语言级别的语法糖
+<a href=#%e7%bc%ba%e4%b9%8f%e8%af%ad%e8%a8%80%e7%ba%a7%e5%88%ab%e7%9a%84%e8%af%ad%e6%b3%95%e7%b3%96 class=anchor>&para;</a></h3><p>它不是语言特性，无法享受 C# 语法糖带来的便捷。你只能用它自己的 <code>Match</code> 等方法，<strong>不能用原生的 <code>switch</code> 语句、模式匹配等</strong>：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=c1>// 这是做不到的：</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>result</span> <span class=p>=</span> <span class=n>GetUser</span><span class=p>(</span><span class=m>42</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>message</span> <span class=p>=</span> <span class=n>result</span> <span class=k>switch</span>  <span class=c1>// ❌ 编译错误</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>User</span> <span class=n>u</span> <span class=p>=&gt;</span> <span class=n>u</span><span class=p>.</span><span class=n>Name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>NotFound</span> <span class=n>_</span> <span class=p>=&gt;</span> <span class=s>&#34;Not found&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>ValidationError</span> <span class=n>e</span> <span class=p>=&gt;</span> <span class=n>e</span><span class=p>.</span><span class=n>Message</span>
+</span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=代码繁杂>代码繁杂
+<a href=#%e4%bb%a3%e7%a0%81%e7%b9%81%e6%9d%82 class=anchor>&para;</a></h3><p>当联合的类型较多时，代码会显得繁杂。类型声明变成 <code>OneOf&lt;T1, T2, ..., Tn></code>，而 <code>Match</code> 语法中需要大量的 lambda 表达式：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=n>OneOf</span><span class=p>&lt;</span><span class=kt>int</span><span class=p>,</span> <span class=kt>string</span><span class=p>,</span> <span class=kt>double</span><span class=p>,</span> <span class=kt>bool</span><span class=p>,</span> <span class=n>DateTime</span><span class=p>&gt;</span> <span class=k>value</span> <span class=p>=</span> <span class=p>...;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>value</span><span class=p>.</span><span class=n>Match</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=n>i</span> <span class=p>=&gt;</span> <span class=n>HandleInt</span><span class=p>(</span><span class=n>i</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=n>s</span> <span class=p>=&gt;</span> <span class=n>HandleString</span><span class=p>(</span><span class=n>s</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=n>d</span> <span class=p>=&gt;</span> <span class=n>HandleDouble</span><span class=p>(</span><span class=n>d</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=n>b</span> <span class=p>=&gt;</span> <span class=n>HandleBool</span><span class=p>(</span><span class=n>b</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=n>dt</span> <span class=p>=&gt;</span> <span class=n>HandleDateTime</span><span class=p>(</span><span class=n>dt</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>);</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=缺乏领域签名>缺乏领域签名
+<a href=#%e7%bc%ba%e4%b9%8f%e9%a2%86%e5%9f%9f%e7%ad%be%e5%90%8d class=anchor>&para;</a></h3><p><code>OneOf&lt;User, NotFound, ValidationError></code> 这样的类型虽然能表达联合，但缺乏语义上的清晰度。每次看到这个类型，你都需要在脑海中翻译一遍它的含义。</p><p>相比之下，<code>union Result(User, NotFound, ValidationError)</code> 这样的语法更直观，能够直接从类型定义中理解它的用途和意义。</p><p><code>OneOf&lt;int, string></code> 则更是难以理解它的用途——它到底表示什么业务含义？无法从类型定义中推断出它的意义。</p><h3 id=泛型参数顺序泄露到-api-设计里>泛型参数顺序泄露到 API 设计里
+<a href=#%e6%b3%9b%e5%9e%8b%e5%8f%82%e6%95%b0%e9%a1%ba%e5%ba%8f%e6%b3%84%e9%9c%b2%e5%88%b0-api-%e8%ae%be%e8%ae%a1%e9%87%8c class=anchor>&para;</a></h3><p><code>OneOf&lt;User, NotFound></code> 和 <code>OneOf&lt;NotFound, User></code> 是两个<strong>不同的类型</strong>，虽然它们表达的语义是一样的。这意味着如果你在一个地方用了 <code>OneOf&lt;A, B></code>，另一个地方用了 <code>OneOf&lt;B, A></code>，它们之间无法直接兼容，这会给 API 设计带来不必要的约束和混乱。</p><h2 id=union-类型的到来>Union 类型的到来
+<a href=#union-%e7%b1%bb%e5%9e%8b%e7%9a%84%e5%88%b0%e6%9d%a5 class=anchor>&para;</a></h2><p>现在，让我们看看 C# 15 的 Union 类型如何解决上述所有问题：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span><span class=lnt>12
+</span><span class=lnt>13
+</span><span class=lnt>14
+</span><span class=lnt>15
+</span><span class=lnt>16
+</span><span class=lnt>17
+</span><span class=lnt>18
+</span><span class=lnt>19
+</span><span class=lnt>20
+</span><span class=lnt>21
+</span><span class=lnt>22
+</span><span class=lnt>23
+</span><span class=lnt>24
+</span><span class=lnt>25
+</span><span class=lnt>26
+</span><span class=lnt>27
+</span><span class=lnt>28
+</span><span class=lnt>29
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>public</span> <span class=k>record</span> <span class=nc>class</span> <span class=n>User</span><span class=p>(</span><span class=kt>string</span> <span class=n>Name</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=k>record</span> <span class=nc>class</span> <span class=n>NotFound</span><span class=p>();</span>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=k>record</span> <span class=nc>class</span> <span class=n>ValidationError</span><span class=p>(</span><span class=kt>string</span> <span class=n>Message</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=n>union</span> <span class=n>Result</span><span class=p>(</span><span class=n>User</span><span class=p>,</span> <span class=n>NotFound</span><span class=p>,</span> <span class=n>ValidationError</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=n>Result</span> <span class=n>GetUser</span><span class=p>(</span><span class=kt>int</span> <span class=n>id</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>id</span> <span class=p>&lt;=</span> <span class=m>0</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=k>new</span> <span class=n>ValidationError</span><span class=p>(</span><span class=s>&#34;Invalid ID&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=kt>var</span> <span class=n>user</span> <span class=p>=</span> <span class=n>_db</span><span class=p>.</span><span class=n>FindUser</span><span class=p>(</span><span class=n>id</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=p>(</span><span class=n>user</span> <span class=k>is</span> <span class=kc>null</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=k>new</span> <span class=n>NotFound</span><span class=p>();</span>
+</span></span><span class=line><span class=cl>    
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=n>user</span><span class=p>;</span> <span class=c1>// 隐式转换</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// 使用</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>result</span> <span class=p>=</span> <span class=n>GetUser</span><span class=p>(</span><span class=m>42</span><span class=p>);</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1>// ✅ 原生支持 switch 表达式和模式匹配</span>
+</span></span><span class=line><span class=cl><span class=kt>var</span> <span class=n>message</span> <span class=p>=</span> <span class=n>result</span> <span class=k>switch</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>User</span> <span class=n>u</span> <span class=p>=&gt;</span> <span class=s>$&#34;Found: {u.Name}&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>NotFound</span> <span class=n>_</span> <span class=p>=&gt;</span> <span class=s>&#34;User not found&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>ValidationError</span> <span class=n>e</span> <span class=p>=&gt;</span> <span class=s>$&#34;Error: {e.Message}&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// 不需要兜底分支！编译器知道只有这三种可能</span>
+</span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span></code></pre></td></tr></table></div></div><h3 id=底层原理>底层原理
+<a href=#%e5%ba%95%e5%b1%82%e5%8e%9f%e7%90%86 class=anchor>&para;</a></h3><p>本质上，Union 类型是编译器帮你生成的一个结构体，加上一个 <code>object?</code> 字段和隐式转换。当声明 <code>union Pet(Cat, Dog, Bird)</code> 时，实际上编译器后台会生成类似下面的代码：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt> 1
+</span><span class=lnt> 2
+</span><span class=lnt> 3
+</span><span class=lnt> 4
+</span><span class=lnt> 5
+</span><span class=lnt> 6
+</span><span class=lnt> 7
+</span><span class=lnt> 8
+</span><span class=lnt> 9
+</span><span class=lnt>10
+</span><span class=lnt>11
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=na>[System.Runtime.CompilerServices.Union]</span>
+</span></span><span class=line><span class=cl><span class=kd>public</span> <span class=k>struct</span> <span class=nc>Pet</span> <span class=p>:</span> <span class=n>System</span><span class=p>.</span><span class=n>Runtime</span><span class=p>.</span><span class=n>CompilerServices</span><span class=p>.</span><span class=n>IUnion</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=c1>// 为每个情况类型生成构造函数</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>Pet</span><span class=p>(</span><span class=n>Cat</span> <span class=k>value</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=n>Value</span> <span class=p>=</span> <span class=k>value</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>Pet</span><span class=p>(</span><span class=n>Dog</span> <span class=k>value</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=n>Value</span> <span class=p>=</span> <span class=k>value</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=n>Pet</span><span class=p>(</span><span class=n>Bird</span> <span class=k>value</span><span class=p>)</span> <span class=p>=&gt;</span> <span class=n>Value</span> <span class=p>=</span> <span class=k>value</span><span class=p>;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=c1>// 核心存储：单个 object? 字段</span>
+</span></span><span class=line><span class=cl>    <span class=kd>public</span> <span class=kt>object?</span> <span class=n>Value</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>核心组件是 <code>IUnion</code> 接口，以及 <code>[Union]</code> 特性：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=kd>public</span> <span class=k>interface</span> <span class=nc>IUnion</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=kt>object?</span> <span class=n>Value</span> <span class=p>{</span> <span class=k>get</span><span class=p>;</span> <span class=p>}</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></td></tr></table></div></div><p>编译器会借助隐式转换等方式，在后台实现相关逻辑：</p><div class=highlight><div class=chroma><table class=lntable><tr><td class=lntd><pre tabindex=0 class=chroma><code><span class=lnt>1
+</span><span class=lnt>2
+</span><span class=lnt>3
+</span><span class=lnt>4
+</span><span class=lnt>5
+</span><span class=lnt>6
+</span><span class=lnt>7
+</span><span class=lnt>8
+</span><span class=lnt>9
+</span></code></pre></td><td class=lntd><pre tabindex=0 class=chroma><code class=language-csharp data-lang=csharp><span class=line><span class=cl><span class=n>Pet</span> <span class=n>pet</span> <span class=p>=</span> <span class=k>new</span> <span class=n>Dog</span><span class=p>(</span><span class=s>&#34;Rex&#34;</span><span class=p>);</span>
+</span></span><span class=line><span class=cl><span class=c1>// 实际上是 new Pet(new Dog(&#34;Rex&#34;))</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>pet</span> <span class=k>switch</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=n>Dog</span> <span class=n>d</span> <span class=p>=&gt;</span> <span class=n>d</span><span class=p>.</span><span class=n>Name</span><span class=p>,</span>  <span class=c1>// 编译器检查：pet.Value is Dog d</span>
+</span></span><span class=line><span class=cl>    <span class=n>Cat</span> <span class=n>c</span> <span class=p>=&gt;</span> <span class=n>c</span><span class=p>.</span><span class=n>Name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>Bird</span> <span class=n>b</span> <span class=p>=&gt;</span> <span class=n>b</span><span class=p>.</span><span class=n>Name</span><span class=p>,</span>
+</span></span><span class=line><span class=cl><span class=p>};</span>
+</span></span></code></pre></td></tr></table></div></div><div class="notice tip"><div class=notice-title><i class="fa-solid fa-lightbulb" aria-hidden=true></i>Tip</div><div class=notice-content>如果你现在就想体验 Union 类型，可以下载 .NET 11 预览版 SDK。不过需要注意的是，早期预览版中 <code>UnionAttribute</code> 和 <code>IUnion</code> 尚未内置在运行时中，需要手动添加 Polyfill 代码。</div></div><h2 id=总结>总结
+<a href=#%e6%80%bb%e7%bb%93 class=anchor>&para;</a></h2><p>回顾过去，C# 开发者为了模拟 Union 类型的能力，尝试过枚举、&ldquo;大而全"的类、<code>object</code>、抽象基类、第三方库等各种方案。但它们各自都有明显的缺陷：要么无法携带数据，要么缺乏类型安全，要么语法繁琐，要么语义不清晰。</p><p>C# 15 引入的原生 Union 类型，不仅提供了简洁优雅的语法，更重要的是它让类型系统能够在编译期就帮我们保证正确性——穷尽检查、隐式转换、原生模式匹配支持，这些都是过去任何方案都无法同时满足的。</p><p>Union 类型的到来，标志着 C# 在类型系统上又迈出了一大步。对于那些熟悉 F#、Rust 或 TypeScript 中联合类型的开发者来说，绝对算得上等来了自己的“福报”。期待 C# 在未来能继续引入更多强大的类型特性，让我们的代码更安全、更简洁、更易维护。</p></section><footer class=article-footer><section class=article-tags><a href=/tags/dotnet/>dotnet</a>
+<a href=/tags/csharp/>csharp</a>
+<a href=/tags/union/>union</a></section><section class=article-copyright><svg class="icon icon-tabler icon-tabler-copyright" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentcolor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z"/><circle cx="12" cy="12" r="9"/><path d="M14.5 9a3.5 4 0 100 6"/></svg>
+<span>使用 CC BY-NC-SA 4.0 协议</span></section></footer></article><aside class=related-content--wrapper><h2 class=section-title>相关文章</h2><div class=related-content><div class="flex article-list--tile"><article><a href=/posts/introduce-built-in-json/><div class=article-details><h2 class=article-title>System.Text.Json：.NET 内置的 JSON 库</h2></div></a></article><article><a href=/posts/correct-way-to-use-mainwindow/><div class=article-details><h2 class=article-title>如何正确使用 WPF 中 Application 的 MainWindow 及 ShutdownMode 属性</h2></div></a></article><article><a href=/posts/introduce-di-tool-jab/><div class=article-details><h2 class=article-title>Jab：基于源生成器的编译时依赖注入容器</h2></div></a></article><article><a href=/posts/dont-easily-use-comprehensive-extension-libraries/><div class=article-details><h2 class=article-title>不要轻易使用大而全的扩展库</h2></div></a></article><article><a href=/posts/use-efcore-in-client-app/><div class=article-details><h2 class=article-title>如何在本地客户端使用 EF Core</h2></div></a></article></div></div></aside><script src=https://giscus.app/client.js data-repo=BYJRK/byjrk.github.io data-repo-id=R_kgDOLoIulQ data-category=Announcements data-category-id=DIC_kwDOLoIulc4CenQE data-mapping=pathname data-strict=0 data-reactions-enabled=1 data-emit-metadata=0 data-input-position=top data-theme=light data-lang=zh-CN data-loading=lazy crossorigin=anonymous async></script><script>function setGiscusTheme(e){let t=document.querySelector("iframe.giscus-frame");t&&t.contentWindow.postMessage({giscus:{setConfig:{theme:e}}},"https://giscus.app")}(function(){addEventListener("message",t=>{if(event.origin!=="https://giscus.app")return;e()}),window.addEventListener("onColorSchemeChange",e);function e(){setGiscusTheme(document.documentElement.dataset.scheme==="light"?"light":"dark")}})()</script><footer class=site-footer><section class=copyright>&copy;
+2023 -
+2026 寒流の编程笔记</section><section class=powerby>使用 <a href=https://gohugo.io/ target=_blank rel=noopener>Hugo</a> 构建<br>主题 <b><a href=https://github.com/CaiJimmy/hugo-theme-stack target=_blank rel=noopener data-version=3.33.0>Stack</a></b> 由 <a href=https://jimmycai.com target=_blank rel=noopener>Jimmy</a> 设计</section></footer><div class=pswp tabindex=-1 role=dialog aria-hidden=true><div class=pswp__bg></div><div class=pswp__scroll-wrap><div class=pswp__container><div class=pswp__item></div><div class=pswp__item></div><div class=pswp__item></div></div><div class="pswp__ui pswp__ui--hidden"><div class=pswp__top-bar><div class=pswp__counter></div><button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+<button class="pswp__button pswp__button--share" title=Share></button>
+<button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+<button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button><div class=pswp__preloader><div class=pswp__preloader__icn><div class=pswp__preloader__cut><div class=pswp__preloader__donut></div></div></div></div></div><div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap"><div class=pswp__share-tooltip></div></div><button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+</button>
+<button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button><div class=pswp__caption><div class=pswp__caption__center></div></div></div></div></div><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js integrity="sha256-ePwmChbbvXbsO02lbM3HoHbSHTHFAeChekF1xKJdleo=" crossorigin=anonymous defer></script><script src=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js integrity="sha256-UKkzOn/w1mBxRmLLGrSeyB4e1xbrp4xylgAWb3M42pU=" crossorigin=anonymous defer></script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.min.css crossorigin=anonymous><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.css crossorigin=anonymous></main></div><script src=https://cdn.jsdelivr.net/npm/node-vibrant@3.1.6/dist/vibrant.min.js integrity="sha256-awcR2jno4kI5X0zL8ex0vi2z+KMkF24hUW8WePSA9HM=" crossorigin=anonymous></script><script type=text/javascript src=/ts/main.c922af694cc257bf1ecc41c0dd7b0430f9114ec280ccf67cd2c6ad55f5316c4e.js defer></script><script>(function(){const e=document.createElement("link");e.href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap",e.type="text/css",e.rel="stylesheet",document.head.appendChild(e)})()</script></body></html>

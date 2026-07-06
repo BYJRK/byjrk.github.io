@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>xaml on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/xaml/</link><description>Recent content in xaml on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Thu, 23 Oct 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/xaml/index.xml" rel="self" type="application/rss+xml"/><item><title>分享一些针对 WPF 开发者的 Avalonia 开发技巧</title><link>https://blog.coldwind.top/posts/avalonia-tips-for-wpf-developers/</link><pubDate>Thu, 23 Oct 2025 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/avalonia-tips-for-wpf-developers/</guid><description>&lt;p>Avalonia 在设计上借鉴了 WPF 的许多概念，开发体验来说也有很多相似之处。比如 XAML 语法、数据绑定、样式与模板等等，这使得 WPF 开发者能够较快上手 Avalonia。然而，Avalonia 也有其独特之处和最佳实践。如果对这些不够了解，WPF 开发者可能会将一些 WPF 的习惯直接套用到 Avalonia 上，导致代码不够高效或难以维护。&lt;/p>
+&lt;p>本文将分享一些针对 WPF 开发者在使用 Avalonia 时的实用建议，帮助大家更好地适应和利用 Avalonia 的特性，从而提升开发效率和应用性能。&lt;/p>
+&lt;h2 id="布局控件的改良">
+布局控件的改良
+&lt;a href="#%e5%b8%83%e5%b1%80%e6%8e%a7%e4%bb%b6%e7%9a%84%e6%94%b9%e8%89%af" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;h3 id="子控件间距">
+子控件间距
+&lt;a href="#%e5%ad%90%e6%8e%a7%e4%bb%b6%e9%97%b4%e8%b7%9d" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>Avalonia 为一些常用的布局控件提供了方便好用的属性。其中最方便的就是与 &lt;code>Spacing&lt;/code> 相关的一些属性。在 WPF 中，如果想让控件之间有间距，通常需要使用 &lt;code>Margin&lt;/code> 属性，导致代码看起来非常冗长：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;StackPanel&lt;/span> &lt;span class="na">Orientation=&lt;/span>&lt;span class="s">&amp;#34;Horizontal&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Button 1&amp;#34;&lt;/span> &lt;span class="na">Margin=&lt;/span>&lt;span class="s">&amp;#34;0,0,10,0&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Button 2&amp;#34;&lt;/span> &lt;span class="na">Margin=&lt;/span>&lt;span class="s">&amp;#34;0,0,10,0&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Button 3&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/StackPanel&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>但是在 Avalonia 中，可以直接使用 &lt;code>Spacing&lt;/code> 属性来设置控件之间的间距，使代码更加简洁：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;StackPanel&lt;/span> &lt;span class="na">Orientation=&lt;/span>&lt;span class="s">&amp;#34;Horizontal&amp;#34;&lt;/span> &lt;span class="na">Spacing=&lt;/span>&lt;span class="s">&amp;#34;10&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Button 1&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Button 2&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Button 3&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/StackPanel&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>除了 &lt;code>StackPanel&lt;/code>，&lt;code>WrapPanel&lt;/code>、&lt;code>Grid&lt;/code> 和 &lt;code>UniformGrid&lt;/code> 也支持 &lt;code>Spacing&lt;/code> 属性。具体来说：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>StackPanel&lt;/code>：
+&lt;ul>
+&lt;li>&lt;code>Spacing&lt;/code>：设置子项之间的间距&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;code>WrapPanel&lt;/code>：
+&lt;ul>
+&lt;li>&lt;code>ItemSpacing&lt;/code>：设置子项之间的间距&lt;/li>
+&lt;li>&lt;code>LineSpacing&lt;/code>：设置行之间的间距&lt;/li>
+&lt;li>&lt;code>ItemsAlignment&lt;/code>：设置整行（或列，取决于方向）的对齐方式&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;code>Grid&lt;/code> 与 &lt;code>UniformGrid&lt;/code>：
+&lt;ul>
+&lt;li>&lt;code>RowSpacing&lt;/code>：设置行之间的间距&lt;/li>
+&lt;li>&lt;code>ColumnSpacing&lt;/code>：设置列之间的间距&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>使用这些属性可以让布局代码更加简洁易读，避免了大量的 &lt;code>Margin&lt;/code> 设置。&lt;/p>
+&lt;h3 id="grid-控件">
+&lt;code>Grid&lt;/code> 控件
+&lt;a href="#grid-%e6%8e%a7%e4%bb%b6" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>在 Avalonia 中，&lt;code>Grid&lt;/code> 也迎来了一些开发体验的优化。除了上面提到的 &lt;code>RowSpacing&lt;/code> 和 &lt;code>ColumnSpacing&lt;/code> 属性外，&lt;code>Grid&lt;/code> 还支持 &lt;code>RowDefinitions&lt;/code> 和 &lt;code>ColumnDefinitions&lt;/code> 的简化语法。我们现在可以用字符串的形式来快速定义行和列：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Grid&lt;/span> &lt;span class="na">ColumnDefinitions=&lt;/span>&lt;span class="s">&amp;#34;Auto,*,100&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c">&amp;lt;!-- WPF 的做法 --&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Grid.RowDefinitions&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;RowDefinition&lt;/span> &lt;span class="na">Height=&lt;/span>&lt;span class="s">&amp;#34;Auto&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;RowDefinition&lt;/span> &lt;span class="na">Height=&lt;/span>&lt;span class="s">&amp;#34;*&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;RowDefinition&lt;/span> &lt;span class="na">Height=&lt;/span>&lt;span class="s">&amp;#34;100&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/Grid.RowDefinitions&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/Grid&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">如果需要操作这些 &lt;code>Definition&lt;/code>，比如在运行时动态调整它们的可见性、尺寸等，那我们仍然需要使用传统的方式来定义。&lt;/div>
+&lt;/div>
+&lt;p>此外，如果我们的布局要求非常简单，比如并不会用到行与列，只是简单地将子控件堆叠在一起，最多是借助它们的 &lt;code>Alignment&lt;/code> 属性来调整位置，那么我们可以使用更加轻量的 &lt;code>Panel&lt;/code> 控件来替代 &lt;code>Grid&lt;/code>，以提升性能。而 WPF 因为缺乏这样的轻量级容器，往往会过度使用 &lt;code>Grid&lt;/code>，导致性能下降。也因此，不少第三方控件库提供了诸如 &lt;code>SimplePanel&lt;/code> 之类的轻量级容器来弥补这一缺陷。&lt;/p>
+&lt;h2 id="集合类型">
+集合类型
+&lt;a href="#%e9%9b%86%e5%90%88%e7%b1%bb%e5%9e%8b" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在 WPF 中，我们都知道，如果想要让前台的 &lt;code>ItemsControl&lt;/code>（及其子类，如 &lt;code>ListBox&lt;/code>、&lt;code>ComboBox&lt;/code> 等）能够响应集合的变化，我们需要使用 &lt;code>ObservableCollection&amp;lt;T&amp;gt;&lt;/code> 作为数据源，因为它实现了 &lt;code>INotifyCollectionChanged&lt;/code> 接口，能够在集合发生变化时通知 UI 更新。&lt;/p>
+&lt;p>而在 Avalonia 中，我们可以考虑使用它提供的 &lt;code>AvaloniaList&amp;lt;T&amp;gt;&lt;/code> 作为集合类型。简单来说，&lt;code>AvaloniaList&amp;lt;T&amp;gt;&lt;/code> 提供了以下几条额外的功能：&lt;/p>
+&lt;ol>
+&lt;li>可以设置 &lt;code>ResetBehavior&lt;/code> 属性来控制集合被清空时触发的是 &lt;code>NotifyCollectionChangedAction.Reset&lt;/code> 还是 &lt;code>Remove&lt;/code>：&lt;code>Reset&lt;/code> 仅通知，但事件参数不包含具体删除了哪些元素，而 &lt;code>Remove&lt;/code> 则会包含被删除的元素列表&lt;/li>
+&lt;li>提供了 &lt;code>Validate&lt;/code> 方法，可以在添加元素时进行验证&lt;/li>
+&lt;li>提供了 &lt;code>AddRange&lt;/code> 和 &lt;code>RemoveRange&lt;/code> 方法，可以一次性添加或移除多个元素&lt;/li>
+&lt;/ol>
+&lt;p>这些新功能可以说是显著提升了 &lt;code>ObservableCollection&amp;lt;T&amp;gt;&lt;/code> 的使用体验。&lt;/p>
+&lt;p>Avalonia 还提供了 &lt;code>AvaloniaDictionary&amp;lt;,&amp;gt;&lt;/code>，它是一个具备通知功能的字典类型。WPF 因为缺乏类似 &lt;code>ObservableDictionary&amp;lt;,&amp;gt;&lt;/code> 的类型，往往需要开发者自行实现，而 Avalonia 则直接提供了现成的解决方案供我们使用。&lt;/p>
+&lt;p>此外，对于 &lt;code>DataGrid&lt;/code> 控件，Avalonia 还提供了 &lt;code>DataGridCollectionView&lt;/code>，它是一个支持排序、过滤、分组等功能的集合视图类型，可以大大提高数据展示的灵活性。在 11.3.x 版本的 Avalonia 中，它被迁移到了 &lt;code>Avalonia.Controls.DataGrid&lt;/code> 包中，方便我们单独引用。&lt;/p>
+&lt;h2 id="值转换器">
+值转换器
+&lt;a href="#%e5%80%bc%e8%bd%ac%e6%8d%a2%e5%99%a8" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在 WPF 中，我们常常需要与值转换器（&lt;code>IValueConverter&lt;/code>）打交道，以便在数据绑定时对数据进行转换。WPF 原生几乎只提供了一个我们用得上的转换器——&lt;code>BooleanToVisibilityConverter&lt;/code>。其他的转换器通常需要我们自己实现。这同时也因为 WPF 的绑定语法不够灵活，导致连一个简单的布尔值取反都需要我们自己写转换器。&lt;/p>
+&lt;p>而在 Avalonia 中，情况则大不相同。甚至可以说，在遇到看似需要我们写值转换器的场景时，我们应该先考虑是否可以通过 Avalonia 提供的内置功能来实现，并且很多时候都是可以的。&lt;/p>
+&lt;h3 id="内置转换器">
+内置转换器
+&lt;a href="#%e5%86%85%e7%bd%ae%e8%bd%ac%e6%8d%a2%e5%99%a8" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>Avalonia 提供了丰富的内置值转换器，涵盖了常见的转换需求。比如：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>BoolConverters&lt;/code>
+&lt;ul>
+&lt;li>提供了一些多值转换器（&lt;code>IMultiValueConverter&lt;/code>），如 &lt;code>AndConverter&lt;/code>、&lt;code>OrConverter&lt;/code> 等，可用于 &lt;code>MultiBinding&lt;/code>&lt;/li>
+&lt;li>提供了布尔值的取反转换器 &lt;code>NotConverter&lt;/code>，但通常可以用绑定表达式的特殊语法来实现&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;code>StringConverters&lt;/code>
+&lt;ul>
+&lt;li>提供了一些与字符串有关的转换器，如 &lt;code>IsNullOrEmpty&lt;/code>、&lt;code>IsNullOrWhiteSpace&lt;/code> 等&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;li>&lt;code>ObjectConverters&lt;/code>
+&lt;ul>
+&lt;li>提供了一些与对象有关的转换器，如 &lt;code>IsNull&lt;/code>、&lt;code>IsNotNull&lt;/code>、&lt;code>Equal&lt;/code>、&lt;code>NotEqual&lt;/code> 等&lt;/li>
+&lt;/ul>
+&lt;/li>
+&lt;/ul>
+&lt;p>运用这些内置的转换器，我们可以轻易实现很多常见的需求，比如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="c">&amp;lt;!-- 只有当所有开关都打开时，提交按钮才可用 --&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;ToggleSwitch&lt;/span> &lt;span class="na">x:Name=&lt;/span>&lt;span class="s">&amp;#34;Toggle1&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;ToggleSwitch&lt;/span> &lt;span class="na">x:Name=&lt;/span>&lt;span class="s">&amp;#34;Toggle2&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;ToggleSwitch&lt;/span> &lt;span class="na">x:Name=&lt;/span>&lt;span class="s">&amp;#34;Toggle3&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Button&lt;/span> &lt;span class="na">Content=&lt;/span>&lt;span class="s">&amp;#34;Submit&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Button.IsEnabled&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;MultiBinding&lt;/span> &lt;span class="na">Converter=&lt;/span>&lt;span class="s">&amp;#34;{x:Static BoolConverters.AndConverter}&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Binding&lt;/span> &lt;span class="na">ElementName=&lt;/span>&lt;span class="s">&amp;#34;Toggle1&amp;#34;&lt;/span> &lt;span class="na">Path=&lt;/span>&lt;span class="s">&amp;#34;IsChecked&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Binding&lt;/span> &lt;span class="na">ElementName=&lt;/span>&lt;span class="s">&amp;#34;Toggle2&amp;#34;&lt;/span> &lt;span class="na">Path=&lt;/span>&lt;span class="s">&amp;#34;IsChecked&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Binding&lt;/span> &lt;span class="na">ElementName=&lt;/span>&lt;span class="s">&amp;#34;Toggle3&amp;#34;&lt;/span> &lt;span class="na">Path=&lt;/span>&lt;span class="s">&amp;#34;IsChecked&amp;#34;&lt;/span>&lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/MultiBinding&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/Button.IsEnabled&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/Button&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;ListBox&lt;/span> &lt;span class="na">x:Name=&lt;/span>&lt;span class="s">&amp;#34;MyListBox&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;TextBlock&lt;/span> &lt;span class="na">IsVisible=&lt;/span>&lt;span class="s">&amp;#34;{Binding #MyListBox.SelectedItem, Converter={x:Static ObjectConverters.IsNotNull}}&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> An item is selected
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/TextBlock&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h3 id="绑定表达式">
+绑定表达式
+&lt;a href="#%e7%bb%91%e5%ae%9a%e8%a1%a8%e8%be%be%e5%bc%8f" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>Avalonia 的绑定表达式语法也比 WPF 更加灵活强大。我们可以在绑定路径中直接使用一些特殊的语法来实现简单的转换需求，而无需借助值转换器。&lt;/p>
+&lt;p>比如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="c">&amp;lt;!-- 布尔值取反 --&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;ToggleSwitch&lt;/span> &lt;span class="na">x:Name=&lt;/span>&lt;span class="s">&amp;#34;MyToggle&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;TextBlock&lt;/span> &lt;span class="na">IsVisible=&lt;/span>&lt;span class="s">&amp;#34;{Binding #MyToggle.IsChecked, Path=!}&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> The toggle is off
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/TextBlock&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c">&amp;lt;!-- 字符串不为空 --&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;TextBox&lt;/span> &lt;span class="na">x:Name=&lt;/span>&lt;span class="s">&amp;#34;MyTextBox&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;TextBlock&lt;/span> &lt;span class="na">IsVisible=&lt;/span>&lt;span class="s">&amp;#34;{Binding !!#MyTextBox.Text}&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Text is not empty
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/TextBlock&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>通过这些内置的转换器和灵活的绑定表达式语法，我们可以大大减少自定义值转换器的编写，从而简化代码，提高开发效率。&lt;/p>
+&lt;h3 id="函数值转换器">
+函数值转换器
+&lt;a href="#%e5%87%bd%e6%95%b0%e5%80%bc%e8%bd%ac%e6%8d%a2%e5%99%a8" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>如果上面的这些方式还不能满足，那么或许依然不必急于去写值转换器。Avalonia 还提供了函数值转换器（&lt;code>FuncValueConverter&lt;/code>），它允许我们快速地在后台代码中定义一个转换函数，并将其直接用于绑定中，而无需创建一个完整的转换器类。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="k">class&lt;/span> &lt;span class="nc">MyViewModel&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kd">static&lt;/span> &lt;span class="n">FuncValueConverter&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">bool&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">StringToBoolConverter&lt;/span> &lt;span class="p">{&lt;/span> &lt;span class="k">get&lt;/span>&lt;span class="p">;&lt;/span> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">str&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">!&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IsNullOrEmpty&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">str&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;TextBox&lt;/span> &lt;span class="na">x:Name=&lt;/span>&lt;span class="s">&amp;#34;MyTextBox&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;TextBlock&lt;/span> &lt;span class="na">IsVisible=&lt;/span>&lt;span class="s">&amp;#34;{Binding #MyTextBox.Text, Converter={x:Static local:MyViewModel.StringToBoolConverter}}&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> Text is not empty
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/TextBlock&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>通过这种方式，我们可以快速地实现一些简单的转换逻辑，而无需编写冗长的转换器类，从而提高开发效率。如果希望传入参数（&lt;code>ConverterParameter&lt;/code>），它还有一个 &lt;code>FuncValueConverter&amp;lt;TIn, TParam, TOut&amp;gt;&lt;/code> 的重载版本，可以满足这一需求。此外，我们还有 &lt;code>FuncMultiValueConverter&lt;/code> 可供使用，适用于多值绑定的场景。&lt;/p>
+&lt;p>但需要注意，这种方式存在一定局限性：它只支持正向转换（&lt;code>Convert&lt;/code> 方法），不支持反向转换（&lt;code>ConvertBack&lt;/code> 方法）。因此，如果需要更复杂的转换逻辑，仍然需要编写完整的值转换器类。&lt;/p>
+&lt;h2 id="xmlns-命名空间">
+xmlns 命名空间
+&lt;a href="#xmlns-%e5%91%bd%e5%90%8d%e7%a9%ba%e9%97%b4" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在 WPF 中，如果我们想要引入一个程序集中的控件或类型，通常需要在 XAML 文件的开头使用 &lt;code>xmlns&lt;/code> 声明一个命名空间，并指定程序集名称：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Window&lt;/span> &lt;span class="na">xmlns:md=&lt;/span>&lt;span class="s">&amp;#34;http://materialdesigninxaml.net/winfx/xaml/themes&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">xmlns:local=&lt;/span>&lt;span class="s">&amp;#34;clr-namespace:MyApp.Controls&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">xmlns:classlib=&lt;/span>&lt;span class="s">&amp;#34;clr-namespace:ClassLibrary.Controls;assembly=ClassLibrary&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果在当前程序集，那么我们只需要 &lt;code>clr-namespace&lt;/code> 即可；如果是其他程序集，则需要加上 &lt;code>assembly&lt;/code> 部分。&lt;/p>
+&lt;p>这样的方式在 Avalonia 中同样适用，但 Avalonia 还提供了更加简洁的 &lt;code>using&lt;/code> 语法，允许我们直接使用程序集名称来引入命名空间：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Window&lt;/span> &lt;span class="na">xmlns:md=&lt;/span>&lt;span class="s">&amp;#34;http://materialdesigninxaml.net/winfx/xaml/themes&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">xmlns:local=&lt;/span>&lt;span class="s">&amp;#34;using:MyApp.Controls&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="na">xmlns:classlib=&lt;/span>&lt;span class="s">&amp;#34;using:ClassLibrary.Controls&amp;#34;&lt;/span> &lt;span class="nt">/&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>另外，Avalonia 的默认 &lt;code>x&lt;/code> 命名空间也为我们提供了不少便利。在 WPF 中，如果我们想在 XAML 中使用一些常见的类型，比如 &lt;code>String&lt;/code>、&lt;code>Int32&lt;/code>、&lt;code>Boolean&lt;/code> 等，通常需要显式地引入 &lt;code>System&lt;/code> 命名空间：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Window&lt;/span> &lt;span class="na">xmlns:sys=&lt;/span>&lt;span class="s">&amp;#34;clr-namespace:System;assembly=mscorlib&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Window.Resources&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;sys:String&lt;/span> &lt;span class="na">x:Key=&lt;/span>&lt;span class="s">&amp;#34;MyString&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>Hello, World!&lt;span class="nt">&amp;lt;/sys:String&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;sys:Int32&lt;/span> &lt;span class="na">x:Key=&lt;/span>&lt;span class="s">&amp;#34;MyInt&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>42&lt;span class="nt">&amp;lt;/sys:Int32&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;sys:Boolean&lt;/span> &lt;span class="na">x:Key=&lt;/span>&lt;span class="s">&amp;#34;MyBool&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>True&lt;span class="nt">&amp;lt;/sys:Boolean&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/Window.Resources&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/Window&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">&lt;p>对于 .NET Framework 项目，我们必须引入 &lt;code>mscorlib&lt;/code> 程序集；而对于 .NET 5+ 项目，我们还将多一些选择，比如：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>System.Core&lt;/code>&lt;/li>
+&lt;li>&lt;code>System.Runtime&lt;/code>&lt;/li>
+&lt;li>&lt;code>netstandard&lt;/code>&lt;/li>
+&lt;/ul>&lt;/div>
+&lt;/div>
+&lt;p>而在 Avalonia 中，我们可以直接使用 &lt;code>x&lt;/code> 命名空间来引用这些常见类型，无需额外的 &lt;code>xmlns&lt;/code> 声明：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-xml" data-lang="xml">&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;Window&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;Window.Resources&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;x:String&lt;/span> &lt;span class="na">x:Key=&lt;/span>&lt;span class="s">&amp;#34;MyString&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>Hello, World!&lt;span class="nt">&amp;lt;/x:String&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;x:Int32&lt;/span> &lt;span class="na">x:Key=&lt;/span>&lt;span class="s">&amp;#34;MyInt&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>42&lt;span class="nt">&amp;lt;/x:Int32&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;x:Boolean&lt;/span> &lt;span class="na">x:Key=&lt;/span>&lt;span class="s">&amp;#34;MyBool&amp;#34;&lt;/span>&lt;span class="nt">&amp;gt;&lt;/span>True&lt;span class="nt">&amp;lt;/x:Boolean&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="nt">&amp;lt;/Window.Resources&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="nt">&amp;lt;/Window&amp;gt;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="结语">
+结语
+&lt;a href="#%e7%bb%93%e8%af%ad" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>本文介绍了一些针对 WPF 开发者在使用 Avalonia 时的实用建议。通过了解和运用这些 Avalonia 的特性和最佳实践，WPF 开发者可以更好地适应 Avalonia 的开发环境，从而提升开发效率和应用性能。&lt;/p>
+&lt;p>我们在使用 Avalonia 时，应该充分利用其提供的丰富功能和灵活语法，避免简单地将 WPF 的习惯直接套用到 Avalonia 上。希望本文的内容能够帮助大家更好地理解和使用 Avalonia，打造出高质量的跨平台应用程序。&lt;/p></description></item></channel></rss>

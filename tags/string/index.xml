@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>string on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/string/</link><description>Recent content in string on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Sat, 27 Jul 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/string/index.xml" rel="self" type="application/rss+xml"/><item><title>C# 字符串操作实用技巧及新手易犯错误</title><link>https://blog.coldwind.top/posts/csharp-string-tips-tricks/</link><pubDate>Sat, 27 Jul 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/csharp-string-tips-tricks/</guid><description>&lt;img src="https://s2.loli.net/2024/07/29/nzM6Ya8AJDZNlhi.jpg" alt="Featured image of post C# 字符串操作实用技巧及新手易犯错误" />&lt;blockquote>
+&lt;p>本文有对应的视频教程：&lt;a class="link" href="https://www.bilibili.com/video/BV1mx4y1x7JR/" target="_blank" rel="noopener"
+>哔哩哔哩&lt;/a>&lt;/p>
+&lt;/blockquote>
+&lt;p>C# 为字符串相关的操作提供了很多实用的类，比如：&lt;/p>
+&lt;ul>
+&lt;li>&lt;code>string&lt;/code>&lt;/li>
+&lt;li>&lt;code>StringBuilder&lt;/code>&lt;/li>
+&lt;li>&lt;code>Encoding&lt;/code>&lt;/li>
+&lt;li>&lt;code>Regex&lt;/code>&lt;/li>
+&lt;/ul>
+&lt;p>它们的功能相当强大，但这也导致了我们可能并不足够了解它，导致我们可能并不熟悉某些方法的重载，或者不知道某些方法的性能问题，最终导致我们的代码效率低下（而且我们还常常察觉不到）。这篇文章我将为大家介绍一些 C# 字符串操作的实用技巧和易犯错误，希望能帮助大家更好地使用字符串。&lt;/p>
+&lt;h2 id="在可以使用字符的时候不要使用字符串">
+在可以使用字符的时候不要使用字符串
+&lt;a href="#%e5%9c%a8%e5%8f%af%e4%bb%a5%e4%bd%bf%e7%94%a8%e5%ad%97%e7%ac%a6%e7%9a%84%e6%97%b6%e5%80%99%e4%b8%8d%e8%a6%81%e4%bd%bf%e7%94%a8%e5%ad%97%e7%ac%a6%e4%b8%b2" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在 C# 中，声明一个字符与字符串，有一个很典型的区别，就是使用单引号和双引号。除此之外，它们二者也是区别很大的。字符串变量实际上是在堆上分配了一块内存空间，这个空间用来存储字符串的内容。而字符则是值类型，它存储在栈上，所以它的性能要比字符串要好很多。所以绝对不能把字符简单理解为长度为 1 的字符串，它们是完全不同的两种类型，效率也是很不相同的。&lt;/p>
+&lt;p>在 C# 中使用 &lt;code>string&lt;/code> 类型的某些方法时，我们就有机会使用字符而不是字符串，比如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">str&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Hello, World!&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">StartsWith&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;H&amp;#39;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">EndsWith&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;!&amp;#39;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;o&amp;#39;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IndexOf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;o&amp;#39;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Split&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;,&amp;#39;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这些方法都有重载，可以接受字符作为参数，这样我们就可以直接使用字符而不是字符串，这样可以提高代码的性能。&lt;/p>
+&lt;p>为什么要这么做呢？除了上面提到的引用类型和值类型的区别以外，它们还有其他一些区别。以 &lt;code>Contains&lt;/code> 为例，大家可以想象一下这个方法在底层是如何实现的。比如底层可能会是一个二层循环，第一层循环遍历字符串的每一个字符，第二层循环则在匹配到第一个字符后，再遍历后面的字符，看是否和我们要查找的子字符串相同。&lt;/p>
+&lt;p>为了保证算法的通用性，即便我们传入的字符串长度为 1，底层也会把它当做一个字符串来处理。这对应到 JIT 编译后的机器码，就会有一些额外的开销，比如判断循环的跳出条件，以及跳转等。而如果我们传入的是字符，那么底层就可以直接比较单个字符的值，这样就可以减少一些额外的开销。&lt;/p>
+&lt;h2 id="使用方法的重载减少不必要的调用">
+使用方法的重载，减少不必要的调用
+&lt;a href="#%e4%bd%bf%e7%94%a8%e6%96%b9%e6%b3%95%e7%9a%84%e9%87%8d%e8%bd%bd%e5%87%8f%e5%b0%91%e4%b8%8d%e5%bf%85%e8%a6%81%e7%9a%84%e8%b0%83%e7%94%a8" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>字符串类的很多方法都包含了大量的重载。正确使用这些重载，有利于我们减少一些额外的调用，以及所造成的资源浪费。比如下面几个例子：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">str&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34; Hello, World,, Good, Morning &amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 这里我们希望将上面的内容按照逗号分割，并去除空字符串&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 正确的做法是使用下面这个 Split 方法的重载&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">slices&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Split&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;,&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">StringSplitOptions&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">RemoveEmptyEntries&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">//假如我们不知道这个重载，我们可能会写出下面这样的代码&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">slices&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Split&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;,&amp;#39;&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">Where&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">s&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="p">!&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IsNullOrEmpty&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">s&lt;/span>&lt;span class="p">)).&lt;/span>&lt;span class="n">ToArray&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 还比如我们希望去除每个字符串的前后空格&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 正确的做法是使用下面这个 Split 方法的重载&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">slices&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Split&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;,&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">StringSplitOptions&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">TrimEntries&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 同样地，假如我们不知道这个重载，我们可能会写出下面这样的代码&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">slices&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Split&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;,&amp;#39;&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">Select&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">s&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">s&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Trim&lt;/span>&lt;span class="p">()).&lt;/span>&lt;span class="n">ToArray&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>每一次对字符串类型调用它的常见方法，都会产生额外的开销。&lt;/p>
+&lt;p>我们再来看另外一个例子：比较两个字符串是否相同。如果我们想要忽略大小写进行比较，我们可能会写出这样的代码：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">s1&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToLower&lt;/span>&lt;span class="p">()&lt;/span> &lt;span class="p">==&lt;/span> &lt;span class="n">s2&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToLower&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// ...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>但是实际上，我们有效率显著高于上面这种方式的方法 &lt;code>Equals&lt;/code>：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">s1&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Equals&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">s2&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">StringComparison&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OrdinalIgnoreCase&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="c1">// ...&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>是的，这个方法也拥有一些重载。这样我们就可以避免创建两个新的字符串，以及额外的比较操作。&lt;/p>
+&lt;h2 id="string-类的构造函数">
+string 类的构造函数
+&lt;a href="#string-%e7%b1%bb%e7%9a%84%e6%9e%84%e9%80%a0%e5%87%bd%e6%95%b0" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>相信大多数新手可能声明字符串的方式都是直接使用双引号，或者对其他字符串调用一些方法而得到，比如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">str&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Hello, World!&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">str2&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Substring&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">str3&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Replace&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;,&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34; &amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>但实际上，&lt;code>string&lt;/code> 类还有一些构造函数，可以帮助我们更好地创建字符串。相信用过 Python 的都知道，如果我们想在控制台输出一个长度为 20 个等号的分隔符，通常我们的做法是：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-python" data-lang="python">&lt;span class="line">&lt;span class="cl">&lt;span class="nb">print&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s1">&amp;#39;=&amp;#39;&lt;/span> &lt;span class="o">*&lt;/span> &lt;span class="mi">20&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>其实在 C# 中，我们也可以实现类似的效果：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">sep&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;=&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">20&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">sep&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>除此之外，如果我们有一个字符数组，我们也可以使用 &lt;code>string&lt;/code> 类的构造函数来创建字符串。这个技巧一般用不到，可一旦我们有了一个需要转为字符串的字符数组，这个方法就会显得非常有用。一个典型的例子是，如果我们想翻转一个字符串，那么在不借助 &lt;code>Span&lt;/code> 或 &lt;code>unsafe&lt;/code> 的情况下，效率最高的方式为：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">char&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="n">chars&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToCharArray&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">Array&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Reverse&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">chars&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">reversed&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">chars&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>如果不知道字符串的构造函数的用法，可能就会写出下面的代码了：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">reversed&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Join&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Reverse&lt;/span>&lt;span class="p">());&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>当然了，我们永远可以写出更加辣眼睛的代码，不是吗？&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// string reversed = new string(str.Reverse().ToArray());&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">char&lt;/span>&lt;span class="p">[]&lt;/span> &lt;span class="n">chars&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">str&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Select&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">c&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">c&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">ToArray&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">chars&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">chars&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Reverse&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">ToArray&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">reversed&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Join&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">chars&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="与操作系统有关的一些方法">
+与操作系统有关的一些方法
+&lt;a href="#%e4%b8%8e%e6%93%8d%e4%bd%9c%e7%b3%bb%e7%bb%9f%e6%9c%89%e5%85%b3%e7%9a%84%e4%b8%80%e4%ba%9b%e6%96%b9%e6%b3%95" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>由于 Windows 与 Unix 系统的一些区别，导致了两个时不常会让我们感到痛苦的事情：换行符和路径分隔符。在 Windows 系统中，换行符为 &lt;code>\r\n&lt;/code>（CRLF），而在 Unix 系统中，换行符为 &lt;code>\n&lt;/code>（LF）。而路径分隔符在 Windows 系统中为 &lt;code>\&lt;/code>，而在 Unix 系统中为 &lt;code>/&lt;/code>。&lt;/p>
+&lt;p>在面对这些问题时，我们其实是有一些技巧的。比如处理路径时，我们可以使用 &lt;code>Path&lt;/code> 类，它会根据当前操作系统的不同，返回不同的路径分隔符：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">folder&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;MyFolder&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">subfolder&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;MySubFolder/&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">filename&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;MyFile.txt&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">path&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Path&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Combine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">folder&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">subfolder&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">filename&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这个方法不仅可以帮助我们处理路径分隔符，还可以帮助我们处理路径的拼接，以及路径的规范化。比如上面的例子中，&lt;code>subfolder&lt;/code> 末尾多了一个 &lt;code>/&lt;/code>，但是 &lt;code>Path.Combine&lt;/code> 方法会自动帮我们去除这个多余的 &lt;code>/&lt;/code>。&lt;/p>
+&lt;p>类似地，面对换行符的问题，我们可以使用 &lt;code>Environment.NewLine&lt;/code> 来获取当前操作系统的换行符。比如我们可以用下面的方式拼接一个多行字符串：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">lines&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">[]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;Hello, World!&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="s">&amp;#34;Good, Morning!&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">};&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">text&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Join&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">Environment&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">NewLine&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">lines&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">类似 &lt;code>Environment.NewLine&lt;/code> 这样的属性，我们还有 &lt;code>Path.DirectorySeparatorChar&lt;/code>、&lt;code>Path.PathSeparator&lt;/code> 等，它们都可以帮助我们处理一些与操作系统有关的问题。&lt;/div>
+&lt;/div>
+&lt;p>不仅如此，.NET 6 还为我们提供了一个新方法：&lt;code>ReplaceLineEndings&lt;/code>。这个方法可以帮助我们将字符串中的换行符统一为当前操作系统的换行符：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">text&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;Hello, World!\r\nGood morning!\nGood night!&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 如果不传参，则默认将换行符替换为当前操作系统的换行符&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">normalized&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">text&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ReplaceLineEndings&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 如果传入参数，则将换行符替换为指定的换行符&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">normalized&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">text&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ReplaceLineEndings&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;\n&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">normalized&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">text&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ReplaceLineEndings&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;\t&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>其实很多时候，我们根本不需要显式地与换行符打交道。因为 .NET 的很多方法都会自动帮我们处理这些问题，比如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">lines&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">File&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ReadAllLines&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;file.txt&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">File&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteAllLines&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;file.txt&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">lines&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">WriteLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;...&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 在控制台输出文本，并自动换行&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">Console&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ReadLine&lt;/span>&lt;span class="p">();&lt;/span> &lt;span class="c1">// 读取用户输入，并自动处理换行符&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">sb&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">StringBuilder&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AppendLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Hello, World!&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>等等。这些方法的名称中都会包含 &lt;code>Line&lt;/code> 这个单词，大加可以多多留意。&lt;/p>
+&lt;h2 id="stringbuilder-的一些技巧">
+StringBuilder 的一些技巧
+&lt;a href="#stringbuilder-%e7%9a%84%e4%b8%80%e4%ba%9b%e6%8a%80%e5%b7%a7" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>&lt;code>StringBuilder&lt;/code> 可能是一个对于大家来说，既熟悉又陌生的类。熟悉是因为我们在处理大量字符串拼接时，都会用到它，陌生是因为我们可能并不了解它的所有功能。这里我就不多赘述了，我用一小段代码来展示 &lt;code>StringBuilder&lt;/code> 的一些技巧：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">sb&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">StringBuilder&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 添加字符串&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Hello, World!&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AppendLine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Hello, World!&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AppendFormat&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Hello, {0}!&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;World&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="sc">&amp;#39;H&amp;#39;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 添加 5 个 &amp;#39;H&amp;#39;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Insert&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;Hello, &amp;#34;&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 在指定位置插入字符串&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Replace&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Hello&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;Good&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 替换字符串&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Remove&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 删除指定位置的字符串&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Clear&lt;/span>&lt;span class="p">();&lt;/span> &lt;span class="c1">// 清空 StringBuilder&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToString&lt;/span>&lt;span class="p">();&lt;/span> &lt;span class="c1">// 将 StringBuilder 转为字符串&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ToString&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="m">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">5&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// 将 StringBuilder 的一部分转为字符串&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>没想到吧，连它的 &lt;code>ToString&lt;/code> 方法都包含一个类似 &lt;code>SubString&lt;/code> 的重载，方便我们减少一次不必要的内存开销。&lt;/p>
+&lt;h2 id="拥抱语法糖使用字符串内插">
+拥抱语法糖，使用字符串内插
+&lt;a href="#%e6%8b%a5%e6%8a%b1%e8%af%ad%e6%b3%95%e7%b3%96%e4%bd%bf%e7%94%a8%e5%ad%97%e7%ac%a6%e4%b8%b2%e5%86%85%e6%8f%92" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>在 C# 6 中，我们迎来了字符串内插（String interpolation）这个语法糖。这个语法糖可以帮助我们更加方便地拼接字符串，而且还可以在字符串中插入表达式。比如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;World&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">age&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">18&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">str&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">$&amp;#34;Hello, {name}! You are {age} years old.&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 在以前，我们可能会写出下面这样的代码&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">str&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="kt">string&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Format&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;Hello, {0}! You are {1} years old.&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">name&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">age&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>实际上，这个语法糖的作用远不止于此，它的性能是高于 &lt;code>string.Format&lt;/code> 的。甚至因为它性能的提升，我们在使用 &lt;code>StringBuilder&lt;/code> 时，都可以考虑使用字符串内插来代替 &lt;code>AppendFormat&lt;/code>。不过，对于这种情形，性能最高的方式是连续使用 &lt;code>Append&lt;/code> 方法，形如：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">id&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">123&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">name&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="s">&amp;#34;World&amp;#34;&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">age&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="m">18&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">sb&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">StringBuilder&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 使用 AppendFormat&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AppendFormat&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;ID: {0}, Name: {1}, Age: {2}&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">id&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">name&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">age&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 使用字符串内插&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">$&amp;#34;ID: {id}, Name: {name}, Age: {age}&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 使用连续的 Append 方法&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">sb&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;ID: &amp;#34;&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">Append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">id&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">Append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;, Name: &amp;#34;&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">Append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">name&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">Append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;, Age: &amp;#34;&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">Append&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">age&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>除此之外，字符串还有很多技巧，比如：&lt;/p>
+&lt;ol>
+&lt;li>原始字符串（Raw string）&lt;/li>
+&lt;li>&lt;code>StringPool&lt;/code> 与 &lt;code>string.Intern&lt;/code>&lt;/li>
+&lt;li>&lt;code>Span&amp;lt;char&amp;gt;&lt;/code>&lt;/li>
+&lt;li>文本编码（&lt;code>Encoding&lt;/code>）&lt;/li>
+&lt;li>一些与字符串有关的特性&lt;/li>
+&lt;/ol>
+&lt;p>但是因为篇幅的关系，我们这次就不展开了。希望大家能够通过这篇文章，了解到一些 C# 字符串操作的实用技巧和易犯错误。希望大家在以后的开发中，能够更加熟练地使用字符串，写出更加高效的代码。&lt;/p></description></item></channel></rss>

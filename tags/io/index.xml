@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>io on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/io/</link><description>Recent content in io on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Sat, 06 Sep 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/io/index.xml" rel="self" type="application/rss+xml"/><item><title>C# 获取文件大小的几种方式及它们的性能比较</title><link>https://blog.coldwind.top/posts/how-to-get-file-size/</link><pubDate>Sat, 06 Sep 2025 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/how-to-get-file-size/</guid><description>&lt;img src="https://s2.loli.net/2025/09/06/WBHdw1K6rio2hxP.jpg" alt="Featured image of post C# 获取文件大小的几种方式及它们的性能比较" />&lt;p>我们在操作文件时，经常需要获取文件的大小。相信大家都知道 &lt;code>FileInfo&lt;/code> 类有一个 &lt;code>Length&lt;/code> 属性可以获取文件大小，但实际上我们还有一些别的方式，并且其他方式可能比 &lt;code>FileInfo&lt;/code> 有更好的性能。这篇文章我们就来盘点一下 C# 中获取文件大小的几种方式，并简单比较一下它们的性能。&lt;/p>
+&lt;h2 id="使用-fileinfolength">
+使用 FileInfo.Length
+&lt;a href="#%e4%bd%bf%e7%94%a8-fileinfolength" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>这个是最常见的方式，&lt;code>FileInfo&lt;/code> 类提供了一个 &lt;code>Length&lt;/code> 属性，可以直接获取文件的大小，单位是字节（bytes）。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.IO&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">FileInfo&lt;/span> &lt;span class="n">fileInfo&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">FileInfo&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">filename&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">long&lt;/span> &lt;span class="n">fileSize&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">fileInfo&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Length&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这种方式的优点是代码简洁易懂，并且几乎适用于所有场景，包括跨平台开发。它唯一美中不足的地方在于，&lt;code>FileInfo&lt;/code> 在使用前需要实例化，这会带来一点 GC 开销。&lt;/p>
+&lt;p>另外，如果觉得返回的 &lt;code>long&lt;/code> 类型不够直观，我们也可以将其转换为更常见的单位，比如 KB、MB、GB 等。对于这个需求，除了自己写转换代码，我们还可以使用 &lt;a class="link" href="https://github.com/Humanizr/Humanizer" target="_blank" rel="noopener"
+>Humanizer&lt;/a> 这个库，它提供了非常方便的文件大小格式化功能。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">Humanizer&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="n">FileInfo&lt;/span> &lt;span class="n">fileInfo&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">FileInfo&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">filename&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">string&lt;/span> &lt;span class="n">humanizedSize&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">fileInfo&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Length&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Bytes&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">Humanize&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="s">&amp;#34;0.00&amp;#34;&lt;/span>&lt;span class="p">);&lt;/span> &lt;span class="c1">// e.g. &amp;#34;1.23 MB&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="使用-randomaccess">
+使用 RandomAccess
+&lt;a href="#%e4%bd%bf%e7%94%a8-randomaccess" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>&lt;code>RandomAccess&lt;/code> 是一个在。NET 6 中引入的静态类，旨在提供高性能、线程安全的文件随机访问 I/O 操作。它提供的 &lt;code>GetLength&lt;/code> 方法可以直接获取文件的大小。但稍微有些可惜的是，虽然它的 &lt;code>GetLength&lt;/code> 方法是静态且不需要创建对象的，但它需要传入一个文件句柄（file handle），而后者是一个 &lt;code>SafeFileHandle&lt;/code> 对象，这就不可避免地引入了 &lt;code>FileStream&lt;/code> 对象的创建开销。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.IO&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">var&lt;/span> &lt;span class="n">handle&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">File&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OpenHandle&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">filename&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FileMode&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Open&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FileAccess&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Read&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FileShare&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Read&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">FileOptions&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">RandomAccess&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">long&lt;/span> &lt;span class="n">fileSize&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">RandomAccess&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetLength&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">handle&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>那么实际上这个方式的效果怎么样呢？在后面的跑分环节会揭晓答案。&lt;/p>
+&lt;h2 id="使用-pinvoke-调用-windows-api">
+使用 P/Invoke 调用 Windows API
+&lt;a href="#%e4%bd%bf%e7%94%a8-pinvoke-%e8%b0%83%e7%94%a8-windows-api" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>当程序运行的平台是 Windows 时，我们还可以通过 P/Invoke 调用 Windows API 来获取文件大小。这个方式的好处是它不需要创建任何托管对象，因此理论上它的性能应该是最好的。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;span class="lnt">19
+&lt;/span>&lt;span class="lnt">20
+&lt;/span>&lt;span class="lnt">21
+&lt;/span>&lt;span class="lnt">22
+&lt;/span>&lt;span class="lnt">23
+&lt;/span>&lt;span class="lnt">24
+&lt;/span>&lt;span class="lnt">25
+&lt;/span>&lt;span class="lnt">26
+&lt;/span>&lt;span class="lnt">27
+&lt;/span>&lt;span class="lnt">28
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.IO&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.Runtime.InteropServices&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">System.Runtime.InteropServices.ComTypes&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">[DllImport(&amp;#34;kernel32.dll&amp;#34;, CharSet = CharSet.Auto, SetLastError = true)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="kd">extern&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="n">GetFileAttributesEx&lt;/span>&lt;span class="p">(&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">string&lt;/span> &lt;span class="n">lpFileName&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">int&lt;/span> &lt;span class="n">fInfoLevelId&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">out&lt;/span> &lt;span class="n">WIN32_FILE_ATTRIBUTE_DATA&lt;/span> &lt;span class="n">lpFileInformation&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kd">static&lt;/span> &lt;span class="kt">long&lt;/span> &lt;span class="n">GetFileSizeWin32&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span> &lt;span class="n">path&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(!&lt;/span>&lt;span class="n">GetFileAttributesEx&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">path&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="k">out&lt;/span> &lt;span class="kt">var&lt;/span> &lt;span class="n">data&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">throw&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">System&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ComponentModel&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Win32Exception&lt;/span>&lt;span class="p">();&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="p">((&lt;/span>&lt;span class="kt">long&lt;/span>&lt;span class="p">)&lt;/span>&lt;span class="n">data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">nFileSizeHigh&lt;/span> &lt;span class="p">&amp;lt;&amp;lt;&lt;/span> &lt;span class="m">32&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">+&lt;/span> &lt;span class="n">data&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">nFileSizeLow&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">
+&lt;/span>&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="na">[StructLayout(LayoutKind.Sequential)]&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">struct&lt;/span> &lt;span class="nc">WIN32_FILE_ATTRIBUTE_DATA&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">uint&lt;/span> &lt;span class="n">dwFileAttributes&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="n">FILETIME&lt;/span> &lt;span class="n">ftCreationTime&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ftLastAccessTime&lt;/span>&lt;span class="p">,&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">ftLastWriteTime&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kd">public&lt;/span> &lt;span class="kt">uint&lt;/span> &lt;span class="n">nFileSizeHigh&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">nFileSizeLow&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>然后我们就可以使用上面的 &lt;code>GetFileSizeWin32&lt;/code> 方法来获取文件大小了。&lt;/p>
+&lt;div class="notice info">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-circle" aria-hidden="true">&lt;/i>Info
+&lt;/div>
+&lt;div class="notice-content">如果是在 Linux 或 macOS 上运行的程序，那么虽然可以采用诸如引入 &lt;code>Mono.Posix&lt;/code> 之类的库来调用系统 API，但这样做的复杂度和维护成本会比较高，所以推荐直接使用 &lt;code>FileInfo&lt;/code>。&lt;/div>
+&lt;/div>
+&lt;h2 id="使用-visualbasicfileio">
+使用 VisualBasic.FileIO
+&lt;a href="#%e4%bd%bf%e7%94%a8-visualbasicfileio" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>最后这种方式可能有凑数的嫌疑，但是我们确实可以借助 &lt;code>Microsoft.VisualBasic&lt;/code> 命名空间下的 &lt;code>FileSystem&lt;/code> 类来获取文件大小。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">Microsoft.VisualBasic.FileIO&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">long&lt;/span> &lt;span class="n">fileSize&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">FileSystem&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">FileLen&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">filename&lt;/span>&lt;span class="p">).&lt;/span>&lt;span class="n">Length&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;h2 id="性能比较">
+性能比较
+&lt;a href="#%e6%80%a7%e8%83%bd%e6%af%94%e8%be%83" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>以上就是四种可行的获取文件大小的方式。接下来我们来比较一下它们的性能。结果如下：&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Method&lt;/th>
+&lt;th style="text-align: right">Mean&lt;/th>
+&lt;th style="text-align: right">Error&lt;/th>
+&lt;th style="text-align: right">StdDev&lt;/th>
+&lt;th style="text-align: right">Allocated&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>UseFileInfo&lt;/td>
+&lt;td style="text-align: right">7.888 μs&lt;/td>
+&lt;td style="text-align: right">0.0522 μs&lt;/td>
+&lt;td style="text-align: right">0.0462 μs&lt;/td>
+&lt;td style="text-align: right">96 B&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>UseWin32Api&lt;/td>
+&lt;td style="text-align: right">7.732 μs&lt;/td>
+&lt;td style="text-align: right">0.0740 μs&lt;/td>
+&lt;td style="text-align: right">0.0692 μs&lt;/td>
+&lt;td style="text-align: right">-&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>UseFileSystem&lt;/td>
+&lt;td style="text-align: right">15.779 μs&lt;/td>
+&lt;td style="text-align: right">0.2104 μs&lt;/td>
+&lt;td style="text-align: right">0.1968 μs&lt;/td>
+&lt;td style="text-align: right">96 B&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>UseRandomAccess&lt;/td>
+&lt;td style="text-align: right">10.627 μs&lt;/td>
+&lt;td style="text-align: right">0.1137 μs&lt;/td>
+&lt;td style="text-align: right">0.1063 μs&lt;/td>
+&lt;td style="text-align: right">72 B&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>从结果中我们不难得出以下几个结论：&lt;/p>
+&lt;ol>
+&lt;li>使用 Windows API 的方式性能最好，并且没有任何托管内存分配。但它只能在 Windows 平台使用。&lt;/li>
+&lt;li>使用 &lt;code>FileInfo&lt;/code> 的方式性能也不错，适用于绝大多数场景。&lt;/li>
+&lt;li>使用 &lt;code>RandomAccess&lt;/code> 的方式性能一般，虽然它不需要创建 &lt;code>FileInfo&lt;/code> 对象，但它需要创建 &lt;code>FileStream&lt;/code> 对象来获取文件句柄，这带来了无法避免的开销（虽然比 &lt;code>FileInfo&lt;/code> 少了一点）。&lt;/li>
+&lt;li>使用 &lt;code>VisualBasic.FileIO&lt;/code> 的方式性能最差，并且还会有内存分配，基本上没有任何优势。&lt;/li>
+&lt;/ol>
+&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>综上所述，几乎在任何情况下，我们都可以优先考虑使用 &lt;code>FileInfo.Length&lt;/code> 来获取文件大小。只有在对于性能有极致要求，并且程序运行的平台确定是 Windows 的情况下，才考虑使用 P/Invoke 调用 Windows API 的方式。&lt;/p></description></item><item><title>如何在 C# 中拷贝一个文件夹</title><link>https://blog.coldwind.top/posts/how-to-copy-folder/</link><pubDate>Wed, 11 Dec 2024 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/how-to-copy-folder/</guid><description>&lt;img src="https://s2.loli.net/2024/12/11/9swekVbJFzX3DfH.jpg" alt="Featured image of post 如何在 C# 中拷贝一个文件夹" />&lt;p>拷贝文件夹听起来是一个非常简单的任务，但是在 C# 中实现起来却并不是那么容易，因为 .NET 并没有提供内置的方法，所以通常我们只能自己来实现。&lt;/p>
+&lt;p>本文提供了三种拷贝文件夹的方式供大家参考。&lt;/p>
+&lt;h2 id="方法一使用递归">
+方法一：使用递归
+&lt;a href="#%e6%96%b9%e6%b3%95%e4%b8%80%e4%bd%bf%e7%94%a8%e9%80%92%e5%bd%92" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>使用递归是一个非常直观的方法，同时也是 &lt;a class="link" href="https://learn.microsoft.com/en-us/dotnet/standard/io/how-to-copy-directories" target="_blank" rel="noopener"
+>Microsoft Learn&lt;/a> 给出的示例。其原版的代码有些冗余和不必要的内存开销，所以这里贴一个相对简练且高效的版本：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;span class="lnt">15
+&lt;/span>&lt;span class="lnt">16
+&lt;/span>&lt;span class="lnt">17
+&lt;/span>&lt;span class="lnt">18
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">CopyDirectory&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span> &lt;span class="n">sourceFolderPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">targetFolderPath&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Directory&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CreateDirectory&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">targetFolderPath&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span> &lt;span class="n">filePath&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">Directory&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetFiles&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">sourceFolderPath&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">string&lt;/span> &lt;span class="n">fileName&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Path&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetFileName&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">filePath&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">string&lt;/span> &lt;span class="n">destinationPath&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Path&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Combine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">targetFolderPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">fileName&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">File&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Copy&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">filePath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">destinationPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kc">true&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span> &lt;span class="n">directoryPath&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">Directory&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetDirectories&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">sourceFolderPath&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">string&lt;/span> &lt;span class="n">directoryName&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Path&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetFileName&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">directoryPath&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">string&lt;/span> &lt;span class="n">destinationPath&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Path&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Combine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">targetFolderPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">directoryName&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">CopyDirectory&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">directoryPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">destinationPath&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>简单来说，这个方法会递归地拷贝源文件夹下的所有文件和子文件夹到目标文件夹中。对于子文件夹，会递归调用该方法进行拷贝。&lt;/p>
+&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">&lt;code>Directory.CreateDirectory&lt;/code> 是一个相当灵活的方法。如果目标文件夹不存在，它会自动创建；如果目标文件夹已经存在，它会忽略这个操作。同时，它还会沿途创建所有不存在的文件夹（类似 &lt;code>mkdir&lt;/code> 的 &lt;code>-p&lt;/code> 参数）。&lt;/div>
+&lt;/div>
+&lt;h2 id="方法二不使用递归">
+方法二：不使用递归
+&lt;a href="#%e6%96%b9%e6%b3%95%e4%ba%8c%e4%b8%8d%e4%bd%bf%e7%94%a8%e9%80%92%e5%bd%92" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>如果不希望使用递归，那么也可以通过相对路径的方式来实现。这个方法会递归搜索源文件夹下的所有文件，通过计算它与源文件夹的相对路径来得到它的目标路径，进而生成目标路径所在的文件夹。&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;span class="lnt">12
+&lt;/span>&lt;span class="lnt">13
+&lt;/span>&lt;span class="lnt">14
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">CopyDirectory&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span> &lt;span class="n">sourceFolderPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">targetFolderPath&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Directory&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CreateDirectory&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">targetFolderPath&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span> &lt;span class="n">filePath&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">Directory&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetFiles&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">sourceFolderPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="s">&amp;#34;*.*&amp;#34;&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">SearchOption&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">AllDirectories&lt;/span>&lt;span class="p">))&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">relativePath&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Path&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetRelativePath&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">sourceFolderPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">filePath&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">targetFilePath&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Path&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Combine&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">targetFolderPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">relativePath&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">subTargetFolderPath&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">Path&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">GetDirectoryName&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">targetFilePath&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">subTargetFolderPath&lt;/span> &lt;span class="p">!=&lt;/span> &lt;span class="kc">null&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">Directory&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CreateDirectory&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">subTargetFolderPath&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">File&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Copy&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">filePath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">targetFilePath&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">&lt;code>Path.GetDirectoryName&lt;/code> 方法有可能返回空。这一情况通常发生在文件位于根目录的情况（例如 Windows 的 &lt;code>C:\&lt;/code>，或 Unix 的 &lt;code>/&lt;/code>）。&lt;/div>
+&lt;/div>
+&lt;h2 id="使用-visualbasic-的内置方法">
+使用 VisualBasic 的内置方法
+&lt;a href="#%e4%bd%bf%e7%94%a8-visualbasic-%e7%9a%84%e5%86%85%e7%bd%ae%e6%96%b9%e6%b3%95" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>其实 .NET 也不是完全没有提供内置的方法。比如我们可以使用 VisualBasic 的 &lt;code>Microsoft.VisualBasic.Devices&lt;/code> 命名空间下的 &lt;code>Computer&lt;/code> 类上的 &lt;code>FileSystem&lt;/code> 成员的方法来实现拷贝文件夹的功能：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-csharp" data-lang="csharp">&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">Microsoft.VisualBasic.Devices&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="nn">Microsoft.VisualBasic.FileIO&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kd">static&lt;/span> &lt;span class="k">void&lt;/span> &lt;span class="n">CopyDirectory&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="kt">string&lt;/span> &lt;span class="n">sourceFolderPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">targetFolderPath&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">fs&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="k">new&lt;/span> &lt;span class="n">Computer&lt;/span>&lt;span class="p">().&lt;/span>&lt;span class="n">FileSystem&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="n">fs&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">CopyDirectory&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">sourceFolderPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">targetFolderPath&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">UIOption&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">OnlyErrorDialogs&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>可能有读者想说，作者你怎么不早点拿出这个方法呢？这方法多么地简单易用啊！&lt;/p>
+&lt;p>实际上，这个方法也是有显著缺点的：&lt;strong>需要使用 WinForms 相关的库&lt;/strong>。也就是说，你的项目需要 &lt;code>TargetFramework&lt;/code> 包含 &lt;code>-windows&lt;/code>，并且还要 &lt;code>UseWindowsForms&lt;/code>。&lt;/p>
+&lt;p>如果你在开发 WPF 或 WinForms 程序，那么这通常是可以接受的。但如果你是在开发控制台程序、ASP.NET 程序，又或者 Avalonia UI 等跨平台框架，那么这个方法显然就有些 unacceptable 了。&lt;/p>
+&lt;div class="notice tip">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-lightbulb" aria-hidden="true">&lt;/i>Tip
+&lt;/div>
+&lt;div class="notice-content">其实 &lt;code>VisualBasic&lt;/code> 还提供了一些别的实用功能，比如将文件移至回收站，就可以用 &lt;code>FileSystem.DeleteFile&lt;/code> 方法，并添加 &lt;code>RecycleOption.SendToRecycleBin&lt;/code> 参数来实现。这个方法会将文件移至回收站，而不是直接删除。&lt;/div>
+&lt;/div>
+&lt;h2 id="总结">
+总结
+&lt;a href="#%e6%80%bb%e7%bb%93" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>本文介绍了三种拷贝文件夹的方法，分别是使用递归、不使用递归、以及使用 VisualBasic 的内置方法。这三种方法各有优劣，读者可以根据自己的需求来选择适合的方法。&lt;/p>
+&lt;div class="notice warning">
+&lt;div class="notice-title">
+&lt;i class="fa-solid fa-exclamation-triangle" aria-hidden="true">&lt;/i>Warning
+&lt;/div>
+&lt;div class="notice-content">在拷贝文件夹时，一定要注意文件夹的权限问题。如果源文件夹或目标文件夹的权限不足，那么拷贝操作可能会失败。&lt;/div>
+&lt;/div></description></item></channel></rss>

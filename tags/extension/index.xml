@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>extension on 寒流の编程笔记</title><link>https://blog.coldwind.top/tags/extension/</link><description>Recent content in extension on 寒流の编程笔记</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Thu, 05 Feb 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://blog.coldwind.top/tags/extension/index.xml" rel="self" type="application/rss+xml"/><item><title>不要轻易使用大而全的扩展库</title><link>https://blog.coldwind.top/posts/dont-easily-use-comprehensive-extension-libraries/</link><pubDate>Thu, 05 Feb 2026 00:00:00 +0000</pubDate><guid>https://blog.coldwind.top/posts/dont-easily-use-comprehensive-extension-libraries/</guid><description>&lt;p>NuGet 上有很多大而全的 C# 扩展库。它们通常会为各种常用的类型提供相当多的扩展方法，从而辅助我们的开发。最常见的功能有：&lt;/p>
+&lt;ul>
+&lt;li>字符串处理&lt;/li>
+&lt;li>集合处理&lt;/li>
+&lt;li>文件操作&lt;/li>
+&lt;li>序列化与反序列化&lt;/li>
+&lt;li>网络请求&lt;/li>
+&lt;li>日期时间处理&lt;/li>
+&lt;/ul>
+&lt;p>等等。但我的建议是，&lt;strong>不要轻易使用这些大而全的扩展库&lt;/strong>。我们今天就来探讨一下这个问题。为了避免高级黑或者拉踩之类的嫌疑，这次我不会点名具体的库，但是会通过一些例子教大家如何判断一个库是否适合使用，以及该如何正确地学习和利用它们。&lt;/p>
+&lt;h2 id="原因一功能大多数用不上而且污染基本类型">
+原因一：功能大多数用不上，而且污染基本类型
+&lt;a href="#%e5%8e%9f%e5%9b%a0%e4%b8%80%e5%8a%9f%e8%83%bd%e5%a4%a7%e5%a4%9a%e6%95%b0%e7%94%a8%e4%b8%8d%e4%b8%8a%e8%80%8c%e4%b8%94%e6%b1%a1%e6%9f%93%e5%9f%ba%e6%9c%ac%e7%b1%bb%e5%9e%8b" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>首先最重要的一个原因就是，这些扩展库往往会提供上百个扩展方法，但是我们实际用得到的通常只有 10 个以内。而为了用这几个功能，我们却不得不引入整个库，从而导致我们的项目变得臃肿。&lt;/p>
+&lt;p>更糟糕的是，这些扩展库因为充分扩展了常见的数据类型（比如 &lt;code>string&lt;/code>、&lt;code>IEnumerable&amp;lt;T&amp;gt;&lt;/code>、&lt;code>DateTime&lt;/code> 等等），会导致代码补全时出现大量无关的扩展方法，影响开发效率。如果我们将这个库引入到团队项目中，那就更麻烦了，团队成员在编写代码时也会被这些无关的扩展方法干扰。&lt;/p>
+&lt;p>可能有人会说，这些扩展库都会将方法放在特定的命名空间下，我们只需要不引入这个命名空间就行了。理论上是这样没错，但实际上现在的 IDE 都相当智能。即便你没有引入命名空间，通常也会看到这些方法的提示，并且如果你不慎使用，IDE 还会自动帮你添加 &lt;code>using&lt;/code> 语句，从而引入了整个扩展库。所以只要你的项目添加了这个扩展库，就很难避免污染。&lt;/p>
+&lt;h2 id="原因二扩展库可能引入不必要的依赖">
+原因二：扩展库可能引入不必要的依赖
+&lt;a href="#%e5%8e%9f%e5%9b%a0%e4%ba%8c%e6%89%a9%e5%b1%95%e5%ba%93%e5%8f%af%e8%83%bd%e5%bc%95%e5%85%a5%e4%b8%8d%e5%bf%85%e8%a6%81%e7%9a%84%e4%be%9d%e8%b5%96" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>有些扩展库为了充分向前兼容，往往会使用一些比较老旧的实现方式，甚至现在已经被标记为过时的 .NET 内置方法。比如为了实现序列化反序列化，它可能会引入 &lt;code>Newtonsoft.Json&lt;/code>，而不是使用现在更推荐的 &lt;code>System.Text.Json&lt;/code>，甚至有的可能还在使用 &lt;code>System.Runtime.Serialization.Json&lt;/code> 命名空间下的老旧方法；又比如网络请求，它可能会使用 &lt;code>HttpWebRequest&lt;/code>，而不是现在更推荐的 &lt;code>HttpClient&lt;/code>。&lt;/p>
+&lt;p>这些都会导致我们的项目引入一些不必要的依赖，从而增加项目的复杂度和体积。&lt;/p>
+&lt;h2 id="原因三使用过时的标准库方法">
+原因三：使用过时的标准库方法
+&lt;a href="#%e5%8e%9f%e5%9b%a0%e4%b8%89%e4%bd%bf%e7%94%a8%e8%bf%87%e6%97%b6%e7%9a%84%e6%a0%87%e5%87%86%e5%ba%93%e6%96%b9%e6%b3%95" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>这些扩展库可能因为要兼容更早版本的 .NET，或因为过于庞杂难以更新，往往会使用一些已经过时的标准库方法，从而影响我们的代码质量和性能。&lt;/p>
+&lt;h3 id="案例一哈希">
+案例一：哈希
+&lt;a href="#%e6%a1%88%e4%be%8b%e4%b8%80%e5%93%88%e5%b8%8c" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>我见过一些情形，比如计算 MD5，它虽然使用了 .NET 内置的 &lt;code>MD5&lt;/code> 类，但却没有使用现在更推荐的方式：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;span class="lnt">5
+&lt;/span>&lt;span class="lnt">6
+&lt;/span>&lt;span class="lnt">7
+&lt;/span>&lt;span class="lnt">8
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 过时的用法&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="k">using&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="n">md5&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">MD5&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Create&lt;/span>&lt;span class="p">())&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="kt">var&lt;/span> &lt;span class="n">hash&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">md5&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">ComputeHash&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">data&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="c1">// 现代的用法&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="kt">var&lt;/span> &lt;span class="n">hash&lt;/span> &lt;span class="p">=&lt;/span> &lt;span class="n">MD5&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">HashData&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="n">data&lt;/span>&lt;span class="p">);&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这看起来可能没什么，但实际上这两种方式的性能差别还是很可观的。传统的 &lt;code>MD5.Create()&lt;/code> 会在托管堆上创建一个加密算法实例，而 .NET 5 新增的 &lt;code>MD5.HashData&lt;/code> 是静态方法，内部通常会复用或通过更底层（往往是无状态的）的方式直接调用操作系统或运行时的加密库。&lt;/p>
+&lt;p>不仅如此，&lt;code>HashData&lt;/code> 提供支持 &lt;code>ReadOnlySpan&amp;lt;byte&amp;gt;&lt;/code> 的重载。必要的情况下，我们可以将哈希值直接写入预先分配好的缓冲区（如 stackalloc 分配的栈内存），从而实现完全不分配堆内存。&lt;/p>
+&lt;p>简单跑一个分，可以看到新方法不仅效率高，而且几乎没有 GC 开销：&lt;/p>
+&lt;table>
+&lt;thead>
+&lt;tr>
+&lt;th>Method&lt;/th>
+&lt;th style="text-align: right">Mean&lt;/th>
+&lt;th style="text-align: right">Error&lt;/th>
+&lt;th style="text-align: right">StdDev&lt;/th>
+&lt;th style="text-align: right">Gen0&lt;/th>
+&lt;th style="text-align: right">Gen1&lt;/th>
+&lt;th style="text-align: right">Allocated&lt;/th>
+&lt;/tr>
+&lt;/thead>
+&lt;tbody>
+&lt;tr>
+&lt;td>ComputeHash&lt;/td>
+&lt;td style="text-align: right">335.7 ns&lt;/td>
+&lt;td style="text-align: right">35.04 ns&lt;/td>
+&lt;td style="text-align: right">1.92 ns&lt;/td>
+&lt;td style="text-align: right">0.0172&lt;/td>
+&lt;td style="text-align: right">0.0005&lt;/td>
+&lt;td style="text-align: right">216 B&lt;/td>
+&lt;/tr>
+&lt;tr>
+&lt;td>HashData&lt;/td>
+&lt;td style="text-align: right">192.1 ns&lt;/td>
+&lt;td style="text-align: right">11.67 ns&lt;/td>
+&lt;td style="text-align: right">0.64 ns&lt;/td>
+&lt;td style="text-align: right">0.0031&lt;/td>
+&lt;td style="text-align: right">0.0002&lt;/td>
+&lt;td style="text-align: right">40 B&lt;/td>
+&lt;/tr>
+&lt;/tbody>
+&lt;/table>
+&lt;p>因此，如果我们使用这些大而全的扩展库，可能会无意中引入一些过时的实现方式，影响我们的代码质量和性能。&lt;/p>
+&lt;h3 id="案例二字符串处理">
+案例二：字符串处理
+&lt;a href="#%e6%a1%88%e4%be%8b%e4%ba%8c%e5%ad%97%e7%ac%a6%e4%b8%b2%e5%a4%84%e7%90%86" class="anchor">&amp;para;&lt;/a>
+&lt;/h3>&lt;p>字符串处理也是一个重灾区。因为在最近几年，&lt;code>Span&lt;/code> 和 &lt;code>Memory&lt;/code> 的引入，.NET 在字符串处理方面有了很大的改进。很多以前需要分配堆内存的操作，现在都可以通过 &lt;code>Span&amp;lt;char&amp;gt;&lt;/code> 来实现零分配的高效处理。除此之外，现在的 .NET 底层还会利用 SIMD 指令集来加速字符串处理操作。&lt;/p>
+&lt;p>比如我见过有一个库提供了 &lt;code>ContainsAll&lt;/code> 方法，用于检查一个字符串是否包含多个子串。这个方法的实现是这样的：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt"> 1
+&lt;/span>&lt;span class="lnt"> 2
+&lt;/span>&lt;span class="lnt"> 3
+&lt;/span>&lt;span class="lnt"> 4
+&lt;/span>&lt;span class="lnt"> 5
+&lt;/span>&lt;span class="lnt"> 6
+&lt;/span>&lt;span class="lnt"> 7
+&lt;/span>&lt;span class="lnt"> 8
+&lt;/span>&lt;span class="lnt"> 9
+&lt;/span>&lt;span class="lnt">10
+&lt;/span>&lt;span class="lnt">11
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kd">static&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="n">ContainsAll&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">this&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">source&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IEnumerable&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">values&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">foreach&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="kt">var&lt;/span> &lt;span class="k">value&lt;/span> &lt;span class="k">in&lt;/span> &lt;span class="n">values&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">if&lt;/span> &lt;span class="p">(&lt;/span>&lt;span class="n">source&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">IndexOf&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">value&lt;/span>&lt;span class="p">)&lt;/span> &lt;span class="p">&amp;lt;&lt;/span> &lt;span class="m">0&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="kc">false&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="kc">true&lt;/span>&lt;span class="p">;&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>这是一个在现在看来比较糟糕的实现。对于判断是否包含子字符串这样的需求，用 &lt;code>Contains&lt;/code> 的效率是显著高于 &lt;code>IndexOf&lt;/code> 的，因为 &lt;code>Contains&lt;/code> 方法在底层已经做了很多优化，比如借助 &lt;code>Span&lt;/code>，以及利用 SIMD 指令集来加速搜索过程。这里就不贴跑分了，我在自己的设备上测出了超过 40 倍的性能提升。&lt;/p>
+&lt;p>所以一个更加高效的实现方式可以是：&lt;/p>
+&lt;div class="highlight">&lt;div class="chroma">
+&lt;table class="lntable">&lt;tr>&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code>&lt;span class="lnt">1
+&lt;/span>&lt;span class="lnt">2
+&lt;/span>&lt;span class="lnt">3
+&lt;/span>&lt;span class="lnt">4
+&lt;/span>&lt;/code>&lt;/pre>&lt;/td>
+&lt;td class="lntd">
+&lt;pre tabindex="0" class="chroma">&lt;code class="language-c#" data-lang="c#">&lt;span class="line">&lt;span class="cl">&lt;span class="kd">public&lt;/span> &lt;span class="kd">static&lt;/span> &lt;span class="kt">bool&lt;/span> &lt;span class="n">ContainsAll&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">this&lt;/span> &lt;span class="kt">string&lt;/span> &lt;span class="n">source&lt;/span>&lt;span class="p">,&lt;/span> &lt;span class="n">IEnumerable&lt;/span>&lt;span class="p">&amp;lt;&lt;/span>&lt;span class="kt">string&lt;/span>&lt;span class="p">&amp;gt;&lt;/span> &lt;span class="n">values&lt;/span>&lt;span class="p">)&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">{&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl"> &lt;span class="k">return&lt;/span> &lt;span class="n">values&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">All&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">value&lt;/span> &lt;span class="p">=&amp;gt;&lt;/span> &lt;span class="n">source&lt;/span>&lt;span class="p">.&lt;/span>&lt;span class="n">Contains&lt;/span>&lt;span class="p">(&lt;/span>&lt;span class="k">value&lt;/span>&lt;span class="p">));&lt;/span>
+&lt;/span>&lt;/span>&lt;span class="line">&lt;span class="cl">&lt;span class="p">}&lt;/span>
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/td>&lt;/tr>&lt;/table>
+&lt;/div>
+&lt;/div>&lt;p>是的，LINQ 在最近几个版本的 .NET 中也迎来了相当多的更新。许多常用的方法现在都可以做到没有 GC 开销。但遗憾的是，这些新变化在那些扩展库诞生的年代可能还没有出现，所以它们的实现方式往往比较落后。&lt;/p>
+&lt;h2 id="我的建议">
+我的建议
+&lt;a href="#%e6%88%91%e7%9a%84%e5%bb%ba%e8%ae%ae" class="anchor">&amp;para;&lt;/a>
+&lt;/h2>&lt;p>虽然我上面提到了这些问题，而且我确实不建议（至少是在现在）使用这些大而全的扩展库，但我并不是说它们完全没有价值。我们可以用下面几种方式来充分利用或学习它们：&lt;/p>
+&lt;ol>
+&lt;li>我们要面对的是很老的项目（例如 .NET Framework 4.x）。这种情况下，.NET 的后续很多优化和新的标准库方法都还没有出现，所以就更谈不上性能问题了。我们可以直接使用这些扩展库来提升开发效率，和弥补旧标准库缺失的一些功能。&lt;/li>
+&lt;li>我们可以学习和借鉴这些扩展库的设计思路和实现方式。虽然它们可能在性能上不够理想，但在功能设计和 API 设计上，还是有很多值得我们学习的地方的。&lt;/li>
+&lt;li>我们可以从这些扩展库中挑选出我们真正需要的功能，然后自己实现一个轻量级的版本，或者只是简单地复制粘贴到我们自己的项目中。这样既能满足我们的需求，又能避免引入不必要的依赖和性能问题。&lt;/li>
+&lt;/ol>
+&lt;p>总之，&lt;strong>不要轻易使用大而全的扩展库&lt;/strong>，我们应该根据自己的实际需求来选择和使用这些库，同时也要注意它们可能带来的性能和依赖问题。&lt;/p></description></item></channel></rss>
