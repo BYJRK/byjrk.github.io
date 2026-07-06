@@ -10,7 +10,7 @@ tags:
     - wpf
     - syntax
 categories:
-    - C#
+    - csharp
 ---
 
 > 本文有对应的视频教程：[哔哩哔哩](https://www.bilibili.com/video/BV1Ym421T7CS/)

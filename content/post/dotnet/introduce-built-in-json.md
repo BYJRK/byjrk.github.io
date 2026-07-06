@@ -10,7 +10,7 @@ tags:
     - serialization
     - source-generator
 categories:
-    - .NET
+    - dotnet
 ---
 
 在 .NET 平台上提到 JSON 序列化，很多人第一时间想到的还是 Newtonsoft.Json。这款诞生于 2006 年的第三方库长期占据 NuGet 下载量榜首，一度几乎是 .NET 项目的"标配"。但自 .NET Core 3.0 起，框架已经内置了 System.Text.Json 这款现代化的 JSON 库，并在 ASP.NET Core 中将其设为默认序列化器。
