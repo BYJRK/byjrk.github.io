@@ -9,8 +9,8 @@ tags:
     - dotnet
     - syntax
 categories:
-    - .NET
-    - C#
+    - dotnet
+    - csharp
 ---
 
 ## 什么是“鸭子类型”？

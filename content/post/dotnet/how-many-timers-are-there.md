@@ -10,7 +10,7 @@ tags:
     - threading
     - async
 categories:
-    - .NET
+    - dotnet
 ---
 
 相信很多 .NET 新手（甚至有几年经验的老手）都会搞不清楚这个问题：.NET 原生有哪些计时器（Timer）？它们分别是做什么用的？该如何选择以及如何正确地使用？
