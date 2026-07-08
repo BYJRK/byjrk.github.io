@@ -329,7 +329,7 @@ JsonNode root = JsonNode.Parse(json)!;
 
 string name  = root["name"]!.GetValue<string>();              // "Alice"
 string city  = root["address"]!["city"]!.GetValue<string>();  // "Beijing"
-int    first = root["scores"]![0]!.GetValue<int>();           // 95
+int    age   = (int)root["age"]!;                             // 30
 ```
 
 Newtonsoft 的等效写法几乎相同，仅取值方法有差异：
@@ -338,7 +338,7 @@ Newtonsoft 的等效写法几乎相同，仅取值方法有差异：
 JObject root = JObject.Parse(json);
 string name  = root["name"]!.Value<string>();
 string city  = root["address"]!["city"]!.Value<string>();
-int    first = (int)root["scores"]![0]!;  // JToken 支持隐式转换
+int    first = (int)root["scores"]![0]!;
 ```
 
 {{< notice tip >}}
