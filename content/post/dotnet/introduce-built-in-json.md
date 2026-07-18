@@ -258,7 +258,7 @@ Person p = JsonSerializer.Deserialize<Person>("""{"Name":"Alice","Age":30}""")!;
 
 ### 选择构造函数：`[JsonConstructor]`
 
-如果不使用上述最简单的 record 声明方式，那么就需要提供带参构造函数来实现反序列化了。当类型有多个构造函数时，必须用 `[JsonConstructor]` 明确指定反序列化使用哪一个：
+如果不使用上述最简单的 record 声明方式，并且部分属性有诸如 `private set` 甚至没有 setter 的情况，那么就需要提供带参构造函数来实现反序列化了。当类型有多个构造函数时，必须用 `[JsonConstructor]` 明确指定反序列化使用哪一个：
 
 ```csharp
 public record Point
@@ -432,6 +432,88 @@ int age     = root.GetProperty("age").GetInt32();
 需要修改或构建 JSON → 用 `JsonNode`；只需读取且追求极致性能 → 考虑 `JsonDocument`。
 {{< /notice >}}
 
+## 自定义转换器：JsonConverter
+
+前面介绍的特性标注、Record 支持都是在调整"结构化对象"的映射细节，但类型在 JSON 中终归还是以对象或数组的形式出现。如果某个类型期望的 JSON 表示形式和它的 C# 结构完全不同——比如一个只包裹了单个值的类型，希望直接序列化成该值本身，而不是嵌套对象——就需要继承 `JsonConverter<T>`，自己接管读写过程。
+
+自定义转换器需要重写两个方法：`Read` 从 `Utf8JsonReader` 中解析出目标类型，`Write` 通过 `Utf8JsonWriter` 输出目标格式。
+
+### 示例一：简化 Wrapper 类型
+
+强类型 ID 是很常见的 wrapper 类型，用于避免不同实体的主键在方法签名中被混用：
+
+```csharp
+public readonly record struct UserId(int Value);
+```
+
+默认序列化会得到一个嵌套对象，这通常不是我们想要的效果：
+
+```json
+{ "Value": 123 }
+```
+
+写一个转换器，让它直接以数字形式读写：
+
+```csharp
+public class UserIdJsonConverter : JsonConverter<UserId>
+{
+    public override UserId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => new UserId(reader.GetInt32());
+
+    public override void Write(Utf8JsonWriter writer, UserId value, JsonSerializerOptions options)
+        => writer.WriteNumberValue(value.Value);
+}
+```
+
+由于类型是自己定义的，可以直接用 `[JsonConverter]` 标注在类型上，之后无需在每个使用处重复指定：
+
+```csharp
+[JsonConverter(typeof(UserIdJsonConverter))]
+public readonly record struct UserId(int Value);
+```
+
+序列化结果变为：
+
+```json
+123
+```
+
+### 示例二：将 DateTime 转为时间戳
+
+`DateTime` 默认序列化为 ISO 8601 字符串（如 `"2026-07-18T00:00:00Z"`），但对接某些第三方接口时，可能需要 Unix 时间戳（自 1970-01-01 起的秒数）：
+
+```csharp
+public class UnixTimestampConverter : JsonConverter<DateTime>
+{
+    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        => DateTimeOffset.FromUnixTimeSeconds(reader.GetInt64()).UtcDateTime;
+
+    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+        => writer.WriteNumberValue(new DateTimeOffset(value, TimeSpan.Zero).ToUnixTimeSeconds());
+}
+```
+
+与 `UserId` 不同，`DateTime` 是内置类型，不能给它加特性，因此只能标注在具体的属性上：
+
+```csharp
+public class Order
+{
+    [JsonConverter(typeof(UnixTimestampConverter))]
+    public DateTime CreatedAt { get; set; }
+}
+```
+
+如果项目里所有 `DateTime` 都要走同一套时间戳格式，逐个属性标注就太繁琐了，可以改为通过 `JsonSerializerOptions.Converters` 全局注册，对该类型的所有出现位置统一生效：
+
+```csharp
+var options = new JsonSerializerOptions();
+options.Converters.Add(new UnixTimestampConverter());
+```
+
+{{< notice tip >}}
+`[JsonConverter]` 标注在属性上时优先级最高，会覆盖全局注册的转换器；同一类型只需在两者之一处配置即可，不必重复。
+{{< /notice >}}
+
 ## 源生成器
 
 无论是强类型的 `JsonSerializer`，还是动态的 `JsonNode`，它们在底层都依赖同一套机制——反射。而反射在性能和 NativeAOT 场景下都有隐患，源生成器就是为解决这个问题而生的。
@@ -540,4 +622,4 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 System.Text.Json 是 .NET 平台上现代化的 JSON 序列化方案。相比 Newtonsoft.Json，它在性能、内存分配和 NativeAOT 支持上都有显著优势，并且自 .NET Core 3.0 起就作为框架内置库随附，无需额外引入第三方依赖。
 
-如果你正在从 Newtonsoft.Json 迁移，本文梳理的 JsonNode、Record 支持和特性标注等内容应该能覆盖大多数日常场景。而对于追求极致性能或需要 NativeAOT 发布的项目，源生成器则是必选项。随着 .NET 的持续演进，System.Text.Json 的功能覆盖已经相当完善，完全可以在大多数项目中替代 Newtonsoft.Json。
+如果你正在从 Newtonsoft.Json 迁移，本文梳理的 JsonNode、Record 支持、特性标注和 JsonConverter 自定义转换等内容应该能覆盖大多数日常场景。而对于追求极致性能或需要 NativeAOT 发布的项目，源生成器则是必选项。随着 .NET 的持续演进，System.Text.Json 的功能覆盖已经相当完善，完全可以在大多数项目中替代 Newtonsoft.Json。
