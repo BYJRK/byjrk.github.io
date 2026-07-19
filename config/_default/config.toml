@@ -17,3 +17,7 @@ hasCJKLanguage = true
 
 capitalizeListTitles = false
 preserveTaxonomyNames = true
+
+[services]
+  [services.googleAnalytics]
+    ID = "G-FB38ZGP0J4"
