@@ -91,54 +91,21 @@ using Figgle;
 Console.WriteLine(FiggleFonts.Standard.Render("Hello, World!"));
 ```
 
-`Render` 方法接收需要显示的文本，返回一个包含换行符的字符串。因此除了直接传给 `Console.WriteLine`，也可以先保存结果，再写入日志、文件或其他输出位置：
-
-```csharp
-using Figgle;
-
-string banner = FiggleFonts.Standard.Render("My Application");
-Console.WriteLine(banner);
-```
-
-### 切换字体
+`Render` 方法接收需要显示的文本，返回一个包含换行符的字符串。
 
 `Figgle.Fonts` 内置了 250 多种字体。不同字体的高度、宽度和风格差异很大，只要更换 `FiggleFonts` 上的字体属性，就能得到完全不同的效果。
 
-例如，`Slant` 字体会让字符呈现倾斜效果：
+例如，`Slant` 字体会让字符呈现倾斜效果，而 `ThreePoint` 字体非常紧凑，适合控制台宽度有限，或者不希望 Banner 占用太多行的场景。
 
 ```csharp
 using Figgle;
 
 Console.WriteLine(FiggleFonts.Slant.Render("Figgle"));
-```
-
-而 `ThreePoint` 字体非常紧凑，适合控制台宽度有限，或者不希望 Banner 占用太多行的场景：
-
-```csharp
-using Figgle;
-
 Console.WriteLine(FiggleFonts.ThreePoint.Render("Figgle"));
 ```
 
-还可以尝试 `Graffiti`、`Ogre`、`Rectangles` 等字体。选择字体时，建议同时考虑终端窗口的宽度和文本长度：有些字体的单个字符很宽，较长的应用名称可能会导致换行，从而破坏显示效果。
-
-### 复用字体对象
-
-`FiggleFonts.Standard` 这类属性返回的是 `FiggleFont` 对象。如果在多个地方使用同一种字体，可以将它保存下来，再多次调用 `Render`：
-
-```csharp
-using Figgle;
-
-FiggleFont font = FiggleFonts.Slant;
-
-Console.WriteLine(font.Render("Server"));
-Console.WriteLine(font.Render("Started"));
-```
-
-这样做也让代码的意图更明确：同一个程序中的几段艺术字会使用一致的视觉风格。
-
 {{< notice tip >}}
-内置 FIGlet 字体大多为 ASCII 字符设计，英文、数字和常见符号的效果最好。渲染中文时是否能得到预期结果，取决于所选字体是否定义了对应字符；实际使用前应先在目标终端中测试。
+在选择字体时，建议同时考虑终端窗口的宽度和文本长度，并务必使用等宽字体（常见的有 Consolas、Courier New、Monaco 等），否则 ASCII 艺术字的对齐会被破坏。另外，Figgle 只支持 ASCII 字符，也就是英文字母、数字和常用符号；中文或其他非 ASCII 字符无法渲染。
 {{< /notice >}}
 
 ## 使用 Figgle.Generator
