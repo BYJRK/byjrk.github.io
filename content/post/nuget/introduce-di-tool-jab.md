@@ -9,6 +9,8 @@ tags:
     - source-generator
     - dependency-injection
     - nuget
+categories:
+    - nuget
 ---
 
 最近在研究 Avalonia 的一款名为 [ShadUI](https://github.com/accntech/shad-ui) 的主题库时，发现它的示例项目使用了 [Jab](https://github.com/pakrym/jab) 这款 DI 容器来注册各种服务。
