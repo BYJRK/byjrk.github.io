@@ -13,6 +13,8 @@ categories:
     - dotnet
 ---
 
+> 本文有对应的视频教程：[哔哩哔哩](https://www.bilibili.com/video/BV1KbKH6sE1o)
+
 在 .NET 平台上提到 JSON 序列化，很多人第一时间想到的还是 Newtonsoft.Json。这款诞生于 2006 年的第三方库长期占据 NuGet 下载量榜首，一度几乎是 .NET 项目的"标配"。但自 .NET Core 3.0 起，框架已经内置了 System.Text.Json 这款现代化的 JSON 库，并在 ASP.NET Core 中将其设为默认序列化器。
 
 本文就来系统地梳理一下 System.Text.Json 的历史背景、基本用法、Record 支持、JsonNode 动态 DOM 以及源生成器等特性，帮助你全面了解这款内置 JSON 库。
