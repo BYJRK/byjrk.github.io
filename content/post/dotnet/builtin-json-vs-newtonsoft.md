@@ -42,7 +42,7 @@ var cheapTitles = root
     .Select(token => token.Value<string>());
 ```
 
-相对地，`System.Text.Json` 截至 .NET 10 仍没有提供 JSONPath 查询 API。现阶段，我们恐怕只能用 `JsonNode` 的索引器逐层访问，从而一定程度上绕开这个限制：
+相对地，`System.Text.Json` 截至 .NET 10 仍没有提供 JSONPath 查询 API（在 GitHub 上有一个[目前仍然 open 的 issue](https://github.com/dotnet/runtime/issues/31068)）现阶段，我们恐怕只能用 `JsonNode` 的索引器逐层访问，从而一定程度上绕开这个限制：
 
 ```csharp
 using System.Text.Json.Nodes;
@@ -66,8 +66,52 @@ var cheapTitles = root?["store"]?["books"]?
     .Select(book => book?["title"]?.GetValue<string>());
 ```
 
-但这种方式终究只是个临时方案，适合访问固定层级或自行编写少量遍历逻辑，但它不是 JSONPath 的替代品。如果业务逻辑依赖大量的 JSONPath，那么建议还是继续使用
-`Newtonsoft.Json`，或者使用一些第三方库。这个我们后面会提到。
+但这种方式终究只是个临时方案，适合访问固定层级或自行编写少量遍历逻辑，但它不是 JSONPath 的替代品。如果业务逻辑依赖大量的 JSONPath，那么建议还是继续使用 `Newtonsoft.Json`。
+
+### 使用 JsonPath.NET
+
+如果希望继续使用 `System.Text.Json` 的 `JsonNode` 模型，同时又需要标准 JSONPath 查询，还可以使用 [JsonPath.Net](https://www.nuget.org/packages/JsonPath.Net)。它是 `json-everything` 项目的一部分，基于 `System.Text.Json` 实现，并遵循 [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535.html) 定义的 JSONPath 语法，支持属性访问、数组下标与切片、通配符、递归下降（如 `$..title`）和筛选器等。
+
+先安装 NuGet 包：
+
+```shell
+dotnet add package JsonPath.Net
+```
+
+随后将 JSON 解析为 `JsonNode`，调用 `JsonPath.Parse` 解析查询表达式，再通过 `Evaluate` 执行查询。返回结果的 `Matches` 中同时包含匹配节点的值和它在原文档中的位置：
+
+```csharp
+using System.Text.Json.Nodes;
+using Json.Path;
+
+var root = JsonNode.Parse("""
+{
+  "store": {
+    "books": [
+      { "title": "C# in Depth", "price": 45 },
+      { "title": "JSON 入门", "price": 9 }
+    ]
+  }
+}
+""");
+
+var path = JsonPath.Parse("$.store.books[?(@.price < 10)].title");
+var result = path.Evaluate(root);
+
+var cheapTitles = result.Matches
+    .Select(match => match.Value?.GetValue<string>());
+// "JSON 入门"
+```
+
+对于由用户输入的查询表达式，可以改用 `TryParse`，避免格式错误直接抛出异常：
+
+```csharp
+if (JsonPath.TryParse(query, out var path))
+{
+    var result = path.Evaluate(root);
+    // 使用 result.Matches 处理所有匹配项。
+}
+```
 
 ## PopulateObject 填充既有对象
 
