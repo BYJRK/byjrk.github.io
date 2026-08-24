@@ -21,7 +21,7 @@ readingTime: false
 - Go
 - ……
 
-平时的我喜欢学习语言（English、日本語），吹吹半音阶口琴，玩一些单机游戏，偶尔可能还会发点<a href="https://yunwuyue.xyz" target="_blank">牢骚</a>。学习语言之余，有时我还会翻译一些外语内容，和大家分享一些有趣的东西。
+平时的我喜欢学习语言（English、日本語），吹吹半音阶口琴，玩一些单机游戏，偶尔可能还会发点<a href="https://blog.yunwuyue.xyz" target="_blank">牢骚</a>。学习语言之余，有时我还会翻译一些外语内容，和大家分享一些有趣的东西。
 
 如果你想联系我，可以发送邮件到：[albedo.shade@proton.me](mailto:albedo.shade@proton.me)
 
