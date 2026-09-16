@@ -1,7 +1,7 @@
 ---
 title: "关于 .NET 单文件应用我的一些看法"
 slug: "my-thoughts-on-dotnet-file-based-app"
-description: ".NET 10 引入了单文件应用，看起来像是 C# 的脚本化革命。但用得越多，我越觉得它处在一个很尴尬的位置。"
+description: ".NET 10 引入了单文件应用（file-based apps），看起来像是 C# 的脚本化革命。但用得越多，我越觉得它处在一个很尴尬的位置。"
 date: 2026-09-14
 tags:
     - dotnet
